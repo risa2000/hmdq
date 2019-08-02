@@ -1,0 +1,59 @@
+/******************************************************************************
+ * HMDQ - Query tool for an OpenVR HMD and some other hardware                *
+ * https://github.com/risa2000/hmdq                                           *
+ *                                                                            *
+ * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
+ *                                                                            *
+ * This source code is licensed under the BSD 3-Clause "New" or "Revised"     *
+ * License found in the LICENSE file in the root directory of this project.   *
+ * SPDX-License-Identifier: BSD-3-Clause                                      *
+ ******************************************************************************/
+
+#include <verrsrc.h>
+
+#define VER_FILEVERSION        ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0
+#define VER_FILEVERSION_STR    "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
+
+#define VER_PRODUCTVERSION     ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},0,0
+#define VER_PRODUCTVERSION_STR "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\0"
+
+#cmakedefine VI_DEBUG
+
+#ifndef VI_DEBUG
+#define VER_DEBUG 0
+#else
+#define VER_DEBUG VS_FF_DEBUG
+#endif
+
+//  add an icon to the executable
+1 ICON "${PROJECT_RES_DIR}\vr_icon.ico"
+
+//  define version info
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     VER_FILEVERSION
+PRODUCTVERSION  VER_PRODUCTVERSION
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       VER_DEBUG
+FILEOS          VOS__WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName", "Richard Musil\0"
+            VALUE "FileDescription", "OpenVR headset utility\0"
+            VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
+            VALUE "InternalName", "${PROJECT_NAME}\0"
+            VALUE "LegalCopyright", "© 2019 Richard Musil\0"
+            VALUE "OriginalFilename", "${PROJECT_NAME}.exe\0"
+            VALUE "ProductName", "${PROJECT_NAME}\0"
+            VALUE "ProductVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252 
+    END
+END
