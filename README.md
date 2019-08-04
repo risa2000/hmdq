@@ -23,7 +23,7 @@ Shows all the commands and options with short descriptions.
 ```bash
 $ hmdq help
 Usage:
-        hmdq (geom|props|version|all|help) [-a <name>] [-o <name>] [-v [<level>]]
+        hmdq (geom|props|version|all|help) [-a <name>] [-o <name>] [-v [<level>]] [-n]
 Options:
         geom        show only geometry data
         props       show only device properties
@@ -38,6 +38,9 @@ Options:
 
         -v, --verb <level>
                     verbosity level [0]
+
+        -n, --anonymize
+                    anonymize serial numbers in the output [false]
 ```
 
 #### `geom`
@@ -124,6 +127,15 @@ Adds as well all the properties, which are defined by the OpenVR API, but are ne
 
 The levels can be redefined in the configuration file. The values listed above are the default ones.
 
+#### `-n, --anonymize`
+If specified, it will anonymize values in pre-selected tracked device properties, basically anything which looks like a serial number. Some are predefined in the default configuration (and therefore in the config file), others could be added to the config, if needed.
+
+The anonymization happens in both the console output and in the output JSON file.
+
+This could be useful for sharing the output data in public, without disclosing the unique identifiers.
+
+The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: #1005 (`Prop_ManufacturerName_String`), concatenated with #1001 (`Prop_ModelNumber_String`), and finally with the incriminated value to anonymize. The manufacturer and model number are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers, will not anonymize into the same values.
+
 ### Configuration
 The configuration file `hmdq.conf.json` is always created with the default values, and can be changed later by the user. The tool will not "touch" the configuration file as long as it exists and only create a new one if none is present.
 
@@ -135,6 +147,9 @@ There are following configuration options:
 
 * `meta`  
 This section is read-only. Changing it has no meaning or impact on the tool operation.
+* `control`
+    * `anonymize` decides whether the sensitive data (the serial numbers) are anonymized by default. Default value is `false`.
+    * `anon_props` defines the list of tracked device properties which are anonymized, if requested either by the user with the  command line option or by specifying the default behavior in the config file.
 * `format`  
 Defines the indentation (in spaces):
     * `cli_indent` for standard output in the console,
@@ -179,6 +194,7 @@ for parsing the command line arguments.
 * [`nlohmann/json`](https://github.com/nlohmann/json) for all JSON parsing and creating.
 * [`nlohmann/fifo_map`](https://github.com/nlohmann/fifo_map) for supporting ordered JSON output.
 * [`ValveSoftware/openvr`](https://github.com/ValveSoftware/openvr) for obvious reasons.
+* [`randombit/botan`](https://github.com/randombit/botan) for secure hash implementation.
 
 On top of that you will also need `cmake` version 3.15 or higher.
 

@@ -32,6 +32,7 @@ extern const heyes_t EYES;
 
 //  typedefs
 //------------------------------------------------------------------------------
+typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
 typedef std::vector<std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass>>
     hdevlist_t;
 
@@ -60,12 +61,14 @@ json parse_json_oapi(const json& jd);
 
 //  Return dict of properties for device `did`.
 json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                   vr::ETrackedDeviceClass dclass, int cat, const json& api,
-                   bool use_pname = false, int verb = 0, int ind = 0, int ts = 0);
+                   vr::ETrackedDeviceClass dclass, int cat, const json& api, bool anon,
+                   const hproplist_t& props_to_hash, bool use_pname = false, int verb = 0,
+                   int ind = 0, int ts = 0);
 
 //  Return properties for all devices.
 json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
-                   bool use_pname = false, int verb = 0, int ind = 0, int ts = 0);
+                   bool anon, bool use_pname = false, int verb = 0, int ind = 0,
+                   int ts = 0);
 
 //  Enumerate view and projection geometry for both eyes.
 json get_eyes_geometry(vr::IVRSystem* vrsys, const heyes_t& eyes, int verb = 0,

@@ -15,12 +15,9 @@
 
 //  globals
 //------------------------------------------------------------------------------
-constexpr int HMDQ_LOG_VERSION = 1;
-constexpr int HMDQ_CFG_VERSION = 1;
-
 extern json g_cfg;
 
 //  functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-void init_config(int argc, char* argv[]);
+bool init_config(int argc, char* argv[]);

@@ -104,7 +104,11 @@ link_directories(AFTER "${CMAKE_PREFIX_PATH}/lib")
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
 target_include_directories (hmdq PRIVATE "${CMAKE_PREFIX_PATH}/include")
-target_link_libraries (hmdq PRIVATE version.lib debug "${OPENVRLIB}d" optimized "${OPENVRLIB}")
+target_include_directories (hmdq PRIVATE "${CMAKE_PREFIX_PATH}/include/botan-2")
+target_link_libraries (hmdq PRIVATE version.lib
+    debug ${OPENVRLIB}d debug botand.lib
+    optimized ${OPENVRLIB} optimized botan.lib
+    )
 
 # Generate a binary dump for a quick check of a CRT linakge type
 add_custom_command (TARGET hmdq

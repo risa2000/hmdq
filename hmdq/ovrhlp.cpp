@@ -22,6 +22,9 @@
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
+#include <botan/blake2b.h>
+#include <botan/hex.h>
+
 #include "config.h"
 #include "geom.h"
 #include "optmesh.h"
@@ -37,6 +40,8 @@ const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
 
 //  locals
 //------------------------------------------------------------------------------
+static constexpr size_t BUFFSIZE = 256;
+
 static const int PROP_CAT_COMMON = 1;
 static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
@@ -45,6 +50,15 @@ static const int PROP_CAT_TRACKEDREF = 4;
 static constexpr const char* DEG = " deg";
 static constexpr const char* MM = " mm";
 static constexpr const char* PRCT = " %";
+
+//  Anonymizing pre-defs
+static constexpr auto BLAKE2B_BIT_SIZE = 96;
+static constexpr const char* ANON_PREFIX = "anon@";
+
+//  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
+//  different manufacturers (in this order)
+static const hproplist_t PROPS_TO_SEED
+    = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
 
 //  functions
 //------------------------------------------------------------------------------
@@ -207,8 +221,8 @@ inline void prop_head_out(const std::string& spid, const std::string& pname, int
 
 //  Check the returned value and print out the error message if detected.
 inline bool check_tp_result(vr::IVRSystem* vrsys, vr::ETrackedPropertyError res,
-                            const std::string& spid, std::string& pname, int verb = 0,
-                            int verr = 0, int ind = 0, int ts = 0)
+                            const std::string& spid, const std::string& pname,
+                            int verb = 0, int verr = 0, int ind = 0, int ts = 0)
 {
     if (res == vr::TrackedProp_Success) {
         return true;
@@ -261,7 +275,7 @@ vr::PropertyTypeTag_t get_ptag_from_ptype(const std::string& ptype)
     }
 }
 
-//  Set TrackedPropertyValue (vector value) in the JSON dict
+//  Set TrackedPropertyValue (vector value) in the JSON dict.
 template<typename T>
 void set_tp_val_1d_array(json& j, const std::string& spid, const std::string& pname,
                          const std::vector<unsigned char>& buffer, size_t buffsize,
@@ -287,7 +301,7 @@ void set_tp_val_1d_array(json& j, const std::string& spid, const std::string& pn
     }
 }
 
-//  Set TrackedPropertyValue (matrix array value) in the JSON dict
+//  Set TrackedPropertyValue (matrix array value) in the JSON dict.
 template<typename M>
 void set_tp_val_mat_array(json& j, const std::string& spid, const std::string& pname,
                           const std::vector<unsigned char>& buffer, size_t buffsize,
@@ -314,7 +328,7 @@ void set_tp_val_mat_array(json& j, const std::string& spid, const std::string& p
     }
 }
 
-//  Set TrackedPropertyValue (vector array value) in the JSON dict
+//  Set TrackedPropertyValue (vector array value) in the JSON dict.
 template<typename V, typename I = float>
 void set_tp_val_vec_array(json& j, const std::string& spid, const std::string& pname,
                           const std::vector<unsigned char>& buffer, size_t buffsize,
@@ -340,7 +354,7 @@ void set_tp_val_vec_array(json& j, const std::string& spid, const std::string& p
     }
 }
 
-//  Universal routine to get any "Array" property into the JSON dict
+//  Universal routine to get any "Array" property into the JSON dict.
 void get_array_type(vr::IVRSystem* vrsys, json& res, vr::TrackedDeviceIndex_t did,
                     vr::ETrackedDeviceProperty pid, const std::string& spid,
                     std::string& pname, int pverb, bool use_pname, int verb, int verr,
@@ -348,7 +362,6 @@ void get_array_type(vr::IVRSystem* vrsys, json& res, vr::TrackedDeviceIndex_t di
 {
     vr::ETrackedPropertyError error = vr::TrackedProp_Success;
     // abuse vector as a return buffer for an Array property
-    constexpr size_t BUFFSIZE = 256;
     std::vector<unsigned char> buffer(BUFFSIZE);
 
     // find the name of the type (before "_Array" suffix)
@@ -420,10 +433,59 @@ void get_array_type(vr::IVRSystem* vrsys, json& res, vr::TrackedDeviceIndex_t di
     }
 }
 
+//  Get string tracked property (this is a helper to isolate the buffer handling).
+bool get_str_tracked_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                          vr::ETrackedDeviceProperty pid, std::vector<char>& buffer,
+                          const std::string& spid, const std::string& pname, int verb,
+                          int verr, int ind, int ts)
+{
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+    size_t buffsize = vrsys->GetStringTrackedDeviceProperty(
+        did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    if (error == vr::TrackedProp_BufferTooSmall) {
+        // resize buffer
+        buffer.resize(buffsize);
+        buffsize = vrsys->GetStringTrackedDeviceProperty(
+            did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    }
+    return check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts);
+}
+
+//  Get hashed value of the string, pre-seeded with PROPS_TO_SEED values.
+void get_str_hashed(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                    std::vector<char>& buffer, int verb, int verr, int ind, int ts)
+{
+    auto b2b = Botan::BLAKE2b(BLAKE2B_BIT_SIZE);
+    std::string prefix(ANON_PREFIX);
+    std::vector<char> tempbuff(BUFFSIZE);
+    // first hash the "seed"
+    for (auto pid : PROPS_TO_SEED) {
+        if (get_str_tracked_prop(vrsys, did, pid, tempbuff, std::to_string(pid), "N/A",
+                                 verb, verr, ind, ts)) {
+            b2b.update(reinterpret_cast<uint8_t*>(&tempbuff[0]),
+                       std::strlen(&tempbuff[0]));
+        }
+    }
+    // then add the actual serial number
+    b2b.update(reinterpret_cast<uint8_t*>(&buffer[0]), std::strlen(&buffer[0]));
+    // the size in chars is cipher size in bytes * 2 for BINHEX encoding
+    // plus the anon prefix plus the terminating zero
+    const auto anon_size = prefix.length() + BLAKE2B_BIT_SIZE / 8 * 2 + 1;
+    if (buffer.size() < anon_size) {
+        // resize buffer to fit the hash
+        buffer.resize(anon_size);
+    }
+    auto hash_bh = Botan::hex_encode(b2b.final());
+    std::copy(prefix.begin(), prefix.end(), buffer.begin());
+    std::copy(hash_bh.begin(), hash_bh.end(), buffer.begin() + prefix.length());
+    buffer[anon_size - 1] = '\0';
+}
+
 //  Return dict of properties for device `did`.
 json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                   vr::ETrackedDeviceClass dclass, int cat, const json& api,
-                   bool use_pname, int verb, int ind, int ts)
+                   vr::ETrackedDeviceClass dclass, int cat, const json& api, bool anon,
+                   const hproplist_t& props_to_hash, bool use_pname, int verb, int ind,
+                   int ts)
 {
     const auto jverb = g_cfg["verbosity"];
     const auto verr = jverb["error"].get<int>();
@@ -434,7 +496,6 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
 
     vr::ETrackedPropertyError error = vr::TrackedProp_Success;
     // abuse vector as a return buffer for the String property
-    constexpr size_t BUFFSIZE = 256;
     std::vector<char> buffer(BUFFSIZE);
 
     for (auto [spid, jname] : api["props"][scat].items()) {
@@ -466,16 +527,14 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
             }
         }
         else if (ptype == "String") {
-            size_t buffsize = vrsys->GetStringTrackedDeviceProperty(
-                did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-            if (error == vr::TrackedProp_BufferTooSmall) {
-                // resize buffer
-                buffer.resize(buffsize);
-                buffsize = vrsys->GetStringTrackedDeviceProperty(
-                    did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-            }
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
+            if (!get_str_tracked_prop(vrsys, did, pid, buffer, spid, pname, verb, verr,
+                                      ind, ts)) {
                 continue;
+            }
+            if (anon
+                && (props_to_hash.end()
+                    != std::find(props_to_hash.begin(), props_to_hash.end(), pid))) {
+                get_str_hashed(vrsys, did, buffer, verb, verr, ind, ts);
             }
             set_tp_val(res, spid, pname, &buffer[0], use_pname);
             if (verb >= pverb) {
@@ -548,12 +607,17 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
 
 //  Return properties for all devices.
 json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
-                   bool use_pname, int verb, int ind, int ts)
+                   bool anon, bool use_pname, int verb, int ind, int ts)
 {
+    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
     const std::string sf(ind * ts, ' ');
     json pvals;
 
+    if (anon && verb >= vsil) {
+        std::cout << "--- Anonymizer activated: all serial numbers are hashed ---\n";
+    }
     for (auto [did, dclass] : devs) {
         auto sdid = std::to_string(did);
         auto sdclass = std::to_string(dclass);
@@ -561,19 +625,22 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
             std::cout << sf << "[" << did << ":"
                       << api["classes"][sdclass].get<std::string>() << "]\n";
         }
-        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api, use_pname,
-                                    verb, ind + 1, ts);
+        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api, anon,
+                                    props_to_hash, use_pname, verb, ind + 1, ts);
         if (dclass == vr::TrackedDeviceClass_HMD) {
-            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api,
-                                             use_pname, verb, ind + 1, ts));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api, anon,
+                                             props_to_hash, use_pname, verb, ind + 1,
+                                             ts));
         }
         else if (dclass == vr::TrackedDeviceClass_Controller) {
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api,
-                                             use_pname, verb, ind + 1, ts));
+                                             anon, props_to_hash, use_pname, verb,
+                                             ind + 1, ts));
         }
         else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api,
-                                             use_pname, verb, ind + 1, ts));
+                                             anon, props_to_hash, use_pname, verb,
+                                             ind + 1, ts));
         }
     }
     return pvals;

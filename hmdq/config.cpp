@@ -28,8 +28,18 @@ json g_cfg;
 
 //  locals
 //------------------------------------------------------------------------------
-// default config file name
+//  actual version of the config file
+constexpr int CFG_VERSION = 2;
+//  default config file name
 static const char* CONF_FILE = "hmdq.conf.json";
+
+//  control defaults
+//------------------------------------------------------------------------------
+static constexpr bool CTRL_ANONYMIZE = false;
+//  currently identified properties with serial numbers
+static const std::vector<vr::ETrackedDeviceProperty> PROPS_TO_HASH
+    = {vr::Prop_SerialNumber_String, vr::Prop_Firmware_ProgrammingTarget_String,
+       vr::Prop_ConnectedWirelessDongle_String};
 
 //  verbosity defaults
 //------------------------------------------------------------------------------
@@ -108,6 +118,15 @@ static void write_config(const std::filesystem::path& cfile, const json& jd)
     jf << jd.dump(JSON_INDENT);
 }
 
+//  Build default config for control settings
+static json build_control()
+{
+    json res;
+    res["anonymize"] = CTRL_ANONYMIZE;
+    res["anon_props"] = PROPS_TO_HASH;
+    return res;
+}
+
 //  Build default config for verbosity settings
 static json build_verbosity()
 {
@@ -143,8 +162,7 @@ static json build_openvr()
 static json build_meta()
 {
     json res;
-    res["cfg_ver"] = HMDQ_CFG_VERSION;
-    res["log_ver"] = HMDQ_LOG_VERSION;
+    res["cfg_ver"] = CFG_VERSION;
     res["hmdq_ver"] = HMDQ_VERSION;
     return res;
 }
@@ -154,6 +172,7 @@ static json build_config(const std::filesystem::path& cfile)
 {
     json jd;
     jd["meta"] = build_meta();
+    jd["control"] = build_control();
     jd["format"] = build_format();
     jd["openvr"] = build_openvr();
     jd["verbosity"] = build_verbosity();
@@ -174,11 +193,23 @@ static std::filesystem::path build_conf_name(int argc, char* argv[])
 }
 
 //  Initialize config options either from the file or from the defaults.
-void init_config(int argc, char* argv[])
+bool init_config(int argc, char* argv[])
 {
     auto cfile = build_conf_name(argc, argv);
     g_cfg = load_config(cfile);
     if (g_cfg.empty()) {
         g_cfg = build_config(cfile);
     }
+    else {
+        const auto cfg_ver = g_cfg["meta"]["cfg_ver"].get<int>();
+        if (cfg_ver != CFG_VERSION) {
+            std::cerr << "The existing configuration file (" << cfile
+                      << ") has a different version (" << cfg_ver
+                      << ")\nthan what the tool supports (" << CFG_VERSION << ").\n"
+                      << "Please rename the old one, let the new one generate, and then "
+                         "merge the changes.\n";
+            return false;
+        }
+    }
+    return true;
 }

@@ -10,7 +10,6 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#define __STDC_WANT_LIB_EXT1__ 1
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -18,6 +17,8 @@
 #include <iostream>
 
 #include <clipp.h>
+
+#include <botan/version.h>
 
 #include "config.h"
 #include "gitversion.h"
@@ -28,14 +29,15 @@
 
 #include "fifo_map_fix.h"
 
+//  typedefs
+//------------------------------------------------------------------------------
+//  mode of operation
+enum class mode { geom, props, all, info, help };
+
 //  locals
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
-
-//  typedefs
-//------------------------------------------------------------------------------
-// mode of operation
-enum class mode { geom, props, all, info, help };
+static constexpr int LOG_VERSION = 1;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -67,6 +69,9 @@ void print_info(int ind = 0, int ts = 0)
               << " (https://github.com/QuantStack/xtl)\n";
     std::cout << sf1 << std::setw(t1) << "QuantStack/xtensor " << XTENSOR_VERSION
               << " (https://github.com/QuantStack/xtensor)\n";
+    std::cout << sf1 << std::setw(t1) << "randombit/botan "
+              << Botan::short_version_string()
+              << " (https://github.com/randombit/botan)\n";
 }
 
 //  Return some miscellanous info about OpenVR.
@@ -85,8 +90,7 @@ json get_misc(int verb = 0, int ind = 0, int ts = 0)
     json res;
     res["time"] = stime.str();
     res["hmdq_ver"] = HMDQ_VERSION;
-    res["log_ver"] = HMDQ_LOG_VERSION;
-    res["cfg_ver"] = HMDQ_CFG_VERSION;
+    res["log_ver"] = LOG_VERSION;
     res["openvr_ver"] = "n/a";
     auto os_ver = get_os_ver();
     res["os_ver"] = os_ver;
@@ -102,8 +106,8 @@ json get_misc(int verb = 0, int ind = 0, int ts = 0)
 }
 
 //  main runner
-int run(mode selected, const std::string& api_json, const std::string& out_json, int verb,
-        int ind, int ts)
+int run(mode selected, const std::string& api_json, const std::string& out_json,
+        bool anon, int verb, int ind, int ts)
 {
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
@@ -150,7 +154,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     if (tverb >= vdef)
         std::cout << '\n';
 
-    out["properties"] = get_all_props(vrsys, devs, api, use_names, tverb, ind, ts);
+    out["properties"] = get_all_props(vrsys, devs, api, anon, use_names, tverb, ind, ts);
     if (tverb >= vdef)
         std::cout << '\n';
 
@@ -171,11 +175,11 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
 //  wrapper for main runner to deal with domestic exceptions
 int run_wrapper(mode selected, const std::string& api_json, const std::string& out_json,
-                int verb, int ind, int ts)
+                bool anon, int verb, int ind, int ts)
 {
     int res = 0;
     try {
-        res = run(selected, api_json, out_json, verb, ind, ts);
+        res = run(selected, api_json, out_json, anon, verb, ind, ts);
     }
     catch (hmdq_error e) {
         std::cerr << "Error: " << e.what() << "\n";
@@ -190,13 +194,16 @@ int main(int argc, char* argv[])
     const auto OPENVR_API_JSON = "openvr_api.json";
 
     // init global config before anything else
-    init_config(argc, argv);
+    const auto cfg_ok = init_config(argc, argv);
+    if (!cfg_ok)
+        return 1;
 
     const auto ts = g_cfg["format"]["cli_indent"].get<int>();
     const auto ind = IND;
 
     // defaults for the arguments
     auto verb = g_cfg["verbosity"]["default"].get<int>();
+    auto anon = g_cfg["control"]["anonymize"].get<bool>();
 
     mode selected = mode::all;
     std::string api_json = OPENVR_API_JSON;
@@ -206,6 +213,8 @@ int main(int argc, char* argv[])
         = std::string("verbosity level [") + std::to_string(verb) + std::string("]");
     std::string api_json_help
         = std::string("OpenVR API JSON definition file [") + api_json + std::string("]");
+    std::string anon_help = std::string("anonymize serial numbers in the output [")
+        + (anon ? "true" : "false") + std::string("]");
 
     // use this as a workaround to accept "empty" command, first parse
     // all together (cli_cmds, cli_opts) then only cli_opts, to accepts
@@ -213,7 +222,8 @@ int main(int argc, char* argv[])
     clipp::group cli_opts
         = ((option("-a", "--api_json") & value("name", api_json)) % api_json_help,
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
-           (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help);
+           (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help,
+           (option("-n", "--anonymize").set(anon, !anon)) % anon_help);
 
     clipp::group cli_cmds
         = (command("geom").set(selected, mode::geom).doc("show only geometry data")
@@ -237,7 +247,7 @@ int main(int argc, char* argv[])
         case mode::geom:
         case mode::props:
         case mode::all:
-            res = run_wrapper(selected, api_json, out_json, verb, ind, ts);
+            res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
             break;
         case mode::help:
             std::cout << "Usage:\n"
@@ -248,7 +258,7 @@ int main(int argc, char* argv[])
     }
     else {
         if (parse(argc, argv, cli_opts)) {
-            res = run_wrapper(mode::all, api_json, out_json, verb, ind, ts);
+            res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);
         }
         else {
             std::cout << "Usage:\n" << usage_lines(cli, HMDQ_NAME) << '\n';
