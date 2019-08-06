@@ -10,6 +10,7 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include "except.h"
 #include "optmesh.h"
 
 // Already defined in geom_test.cpp

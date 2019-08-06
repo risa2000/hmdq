@@ -10,26 +10,24 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <iomanip>
 
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include <xtensor/xadapt.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xeval.hpp>
-#include <xtensor/xio.hpp>
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
-#include <botan/blake2b.h>
-#include <botan/hex.h>
+#include <fmt/format.h>
 
 #include "config.h"
+#include "fmthlp.h"
 #include "geom.h"
+#include "hmdview.h"
+#include "jtools.h"
 #include "optmesh.h"
 #include "ovrhlp.h"
-#include "utils.h"
+#include "prtdata.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
@@ -47,20 +45,367 @@ static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
 
-static constexpr const char* DEG = " deg";
-static constexpr const char* MM = " mm";
-static constexpr const char* PRCT = " %";
-
-//  Anonymizing pre-defs
-static constexpr auto BLAKE2B_BIT_SIZE = 96;
-static constexpr const char* ANON_PREFIX = "anon@";
-
 //  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
 //  different manufacturers (in this order)
 static const hproplist_t PROPS_TO_SEED
     = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
 
-//  functions
+//  OpenVR API loader
+//------------------------------------------------------------------------------
+//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
+json parse_json_oapi(const json& jd)
+{
+    json tdprops;
+    json tdcls;
+    for (auto e : jd["enums"]) {
+        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
+            for (auto v : e["values"]) {
+                auto name = v["name"].get<std::string>();
+                // val type is actually vr::ETrackedDeviceProperty
+                auto val = std::stoi(v["value"].get<std::string>());
+                auto cat = static_cast<int>(val) / 1000;
+                tdprops[std::to_string(cat)][std::to_string(val)] = name;
+                tdprops["name2id"][name] = val;
+            }
+        }
+        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
+            for (auto v : e["values"]) {
+                auto name = v["name"].get<std::string>();
+                // val type is actually vr::ETrackedDeviceClass
+                auto val = std::stoi(v["value"].get<std::string>());
+                auto fs = name.find('_');
+                if (fs != std::string::npos) {
+                    name = name.substr(fs + 1, std::string::npos);
+                }
+                tdcls[std::to_string(val)] = name;
+            }
+        }
+    }
+    return json({{"classes", tdcls}, {"props", tdprops}});
+}
+
+//  functions (devices and properties)
+//------------------------------------------------------------------------------
+//  Enumerate the attached devices.
+hdevlist_t enum_devs(vr::IVRSystem* vrsys)
+{
+    hdevlist_t res;
+    for (vr::TrackedDeviceIndex_t dev_id = 0; dev_id < vr::k_unMaxTrackedDeviceCount;
+         ++dev_id) {
+        auto dev_class = vrsys->GetTrackedDeviceClass(dev_id);
+        if (dev_class != vr::TrackedDeviceClass_Invalid) {
+            res.push_back(std::make_pair(dev_id, dev_class));
+        }
+    }
+    return res;
+}
+
+//  Resolve property tag enum from the type name.
+vr::PropertyTypeTag_t get_ptag_from_ptype(const std::string& ptype)
+{
+    if (ptype == "Float") {
+        return vr::k_unFloatPropertyTag;
+    }
+    else if (ptype == "Int32") {
+        return vr::k_unInt32PropertyTag;
+    }
+    else if (ptype == "Uint64") {
+        return vr::k_unUint64PropertyTag;
+    }
+    else if (ptype == "Bool") {
+        return vr::k_unBoolPropertyTag;
+    }
+    else if (ptype == "String") {
+        return vr::k_unBoolPropertyTag;
+    }
+    else if (ptype == "Matrix34") {
+        return vr::k_unHmdMatrix34PropertyTag;
+    }
+    else if (ptype == "Matrix44") {
+        return vr::k_unHmdMatrix44PropertyTag;
+    }
+    else if (ptype == "Vector2") {
+        return vr::k_unHmdVector2PropertyTag;
+    }
+    else if (ptype == "Vector3") {
+        return vr::k_unHmdVector3PropertyTag;
+    }
+    else if (ptype == "Vector4") {
+        return vr::k_unHmdVector4PropertyTag;
+    }
+    else if (ptype == "Quad") {
+        return vr::k_unHmdQuadPropertyTag;
+    }
+    else {
+        return vr::k_unInvalidPropertyTag;
+    }
+}
+
+//  Check the returned value and print out the error message if detected.
+inline bool check_tp_result(vr::IVRSystem* vrsys, json& jd, const std::string& pname,
+                            vr::ETrackedPropertyError res)
+{
+    if (res == vr::TrackedProp_Success) {
+        return true;
+    }
+    auto msg = fmt::format("{:s}", vrsys->GetPropErrorNameFromEnum(res));
+    jd[pname][ERROR_PREFIX] = msg;
+    return false;
+}
+
+//  Set TrackedPropertyValue (vector value) in the JSON dict.
+template<typename T>
+void set_tp_val_1d_array(json& jd, const std::string& pname,
+                         const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    // we got float array in buffer of buffsize / sizeof(float)
+    auto ptype = reinterpret_cast<const T*>(&buffer[0]);
+    auto size = buffsize / sizeof(T);
+    std::vector<std::size_t> shape = {size};
+    xt::xtensor<T, 1> atype = xt::adapt(ptype, size, xt::no_ownership(), shape);
+    jd[pname] = atype;
+}
+
+//  Set TrackedPropertyValue (matrix array value) in the JSON dict.
+template<typename M>
+void set_tp_val_mat_array(json& jd, const std::string& pname,
+                          const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    // we got float array in buffer of buffsize / sizeof(float)
+    auto pfloat = reinterpret_cast<const float*>(&buffer[0]);
+    auto size = buffsize / sizeof(float);
+    auto constexpr nrows = sizeof(M::m) / sizeof(M::m[0]);
+    auto constexpr ncols = sizeof(M::m[0]) / sizeof(float);
+    std::vector<std::size_t> shape = {buffsize / sizeof(M::m), nrows, ncols};
+    harray_t amats = xt::adapt(pfloat, size, xt::no_ownership(), shape);
+    jd[pname] = amats;
+}
+
+//  Set TrackedPropertyValue (vector array value) in the JSON dict.
+template<typename V, typename I = float>
+void set_tp_val_vec_array(json& jd, const std::string& pname,
+                          const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    // we got I type array in buffer of buffsize / sizeof(I)
+    auto pitem = reinterpret_cast<const I*>(&buffer[0]);
+    auto size = buffsize / sizeof(I);
+    auto constexpr vsize = sizeof(V::v) / sizeof(I);
+    std::vector<std::size_t> shape = {buffsize / sizeof(V::v), vsize};
+    harray_t avecs = xt::adapt(pitem, size, xt::no_ownership(), shape);
+    jd[pname] = avecs;
+}
+
+//  Universal routine to get any "Array" property into the JSON dict.
+void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did,
+                    vr::ETrackedDeviceProperty pid, const std::string& pname)
+{
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+    // abuse vector as a return buffer for an Array property
+    std::vector<unsigned char> buffer(BUFFSIZE);
+
+    // find the name of the type (before "_Array" suffix)
+    auto sarray = pname.rfind('_');
+    auto stype = pname.rfind('_', sarray - 1) + 1;
+    auto ptype = pname.substr(stype, sarray - stype);
+    vr::PropertyTypeTag_t ptag = get_ptag_from_ptype(ptype);
+
+    if (ptag == vr::k_unInvalidPropertyTag) {
+        auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+        jd[pname][ERROR_PREFIX] = msg;
+        return;
+    }
+
+    size_t buffsize = vrsys->GetArrayTrackedDeviceProperty(
+        did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    if (error == vr::TrackedProp_BufferTooSmall) {
+        // resize buffer
+        buffer.resize(buffsize);
+        buffsize = vrsys->GetArrayTrackedDeviceProperty(
+            did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    }
+    if (!check_tp_result(vrsys, jd, pname, error)) {
+        return;
+    }
+
+    if (ptag == vr::k_unFloatPropertyTag) {
+        set_tp_val_1d_array<float>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unInt32PropertyTag) {
+        set_tp_val_1d_array<int32_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unUint64PropertyTag) {
+        set_tp_val_1d_array<uint64_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unBoolPropertyTag) {
+        set_tp_val_1d_array<bool>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unHmdMatrix34PropertyTag) {
+        set_tp_val_mat_array<vr::HmdMatrix34_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unHmdMatrix44PropertyTag) {
+        set_tp_val_mat_array<vr::HmdMatrix44_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unHmdVector2PropertyTag) {
+        set_tp_val_vec_array<vr::HmdVector2_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unHmdVector3PropertyTag) {
+        set_tp_val_vec_array<vr::HmdVector3_t>(jd, pname, buffer, buffsize);
+    }
+    else if (ptag == vr::k_unHmdVector4PropertyTag) {
+        set_tp_val_vec_array<vr::HmdVector4_t>(jd, pname, buffer, buffsize);
+    }
+    else {
+        auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+        jd[pname][ERROR_PREFIX] = msg;
+    }
+}
+
+//  Get string tracked property (this is a helper to isolate the buffer handling).
+bool get_str_tracked_prop(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did,
+                          vr::ETrackedDeviceProperty pid, const std::string& pname,
+                          std::vector<char>& buffer)
+{
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+    size_t buffsize = vrsys->GetStringTrackedDeviceProperty(
+        did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    if (error == vr::TrackedProp_BufferTooSmall) {
+        // resize buffer
+        buffer.resize(buffsize);
+        buffsize = vrsys->GetStringTrackedDeviceProperty(
+            did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    }
+    return check_tp_result(vrsys, jd, pname, error);
+}
+
+//  Get hashed value of the string, pre-seeded with PROPS_TO_SEED values.
+void get_str_hashed(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                    const std::string& pname, std::vector<char>& buffer)
+{
+    std::vector<char> tempbuff(BUFFSIZE);
+    std::vector<char> msgbuff;
+    // first hash the "seed"
+    json empty;
+    for (auto pid : PROPS_TO_SEED) {
+        if (get_str_tracked_prop(vrsys, empty, did, pid, pname, tempbuff)) {
+            std::copy(tempbuff.begin(), tempbuff.begin() + std::strlen(&tempbuff[0]),
+                      std::back_inserter(msgbuff));
+        }
+    }
+    // finally add the actual S/N
+    std::copy(buffer.begin(), buffer.begin() + std::strlen(&buffer[0]),
+              std::back_inserter(msgbuff));
+    // and the terminating '\0'
+    msgbuff.push_back('\0');
+    // anonymize
+    anonymize(buffer, msgbuff);
+}
+
+//  Return dict of properties for device `did`.
+json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                   vr::ETrackedDeviceClass dclass, int cat, const json& api, bool anon)
+{
+    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
+    const auto scat = std::to_string(cat);
+
+    json res;
+
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+    // abuse vector as a return buffer for the String property
+    std::vector<char> buffer(BUFFSIZE);
+
+    for (auto [spid, jname] : api["props"][scat].items()) {
+        // convert string to the correct type
+        auto pid = static_cast<vr::ETrackedDeviceProperty>(std::stoi(spid));
+        // property name
+        auto pname = jname.get<std::string>();
+        // property type (the last part after '_')
+        auto ptype = pname.substr(pname.rfind('_') + 1);
+
+        if (ptype == "Bool") {
+            auto pval = vrsys->GetBoolTrackedDeviceProperty(did, pid, &error);
+            if (!check_tp_result(vrsys, res, pname, error)) {
+                continue;
+            }
+            res[pname] = pval;
+        }
+        else if (ptype == "String") {
+            if (!get_str_tracked_prop(vrsys, res, did, pid, pname, buffer)) {
+                continue;
+            }
+            if (anon
+                && (props_to_hash.end()
+                    != std::find(props_to_hash.begin(), props_to_hash.end(), pid))) {
+                get_str_hashed(vrsys, did, pname, buffer);
+            }
+            res[pname] = &buffer[0];
+        }
+        else if (ptype == "Uint64") {
+            auto pval = vrsys->GetUint64TrackedDeviceProperty(did, pid, &error);
+            if (!check_tp_result(vrsys, res, pname, error)) {
+                continue;
+            }
+            res[pname] = pval;
+        }
+        else if (ptype == "Int32") {
+            auto pval = vrsys->GetInt32TrackedDeviceProperty(did, pid, &error);
+            if (!check_tp_result(vrsys, res, pname, error)) {
+                continue;
+            }
+            res[pname] = pval;
+        }
+        else if (ptype == "Float") {
+            auto pval = vrsys->GetFloatTrackedDeviceProperty(did, pid, &error);
+            if (!check_tp_result(vrsys, res, pname, error)) {
+                continue;
+            }
+            res[pname] = pval;
+        }
+        else if (ptype == "Matrix34") {
+            auto pval = vrsys->GetMatrix34TrackedDeviceProperty(did, pid, &error);
+            if (!check_tp_result(vrsys, res, pname, error)) {
+                continue;
+            }
+            std::vector<std::size_t> shape = {3, 4};
+            auto mat34 = xt::adapt(&pval.m[0][0], shape);
+            res[pname] = mat34;
+        }
+        else if (ptype == "Array") {
+            get_array_type(vrsys, res, did, pid, pname);
+        }
+        else {
+            auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+            res[pname][ERROR_PREFIX] = msg;
+        }
+    }
+    return res;
+}
+
+//  Return properties for all devices.
+json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
+                   bool anon)
+{
+    json pvals;
+
+    for (auto [did, dclass] : devs) {
+        auto sdid = std::to_string(did);
+        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api, anon);
+        if (dclass == vr::TrackedDeviceClass_HMD) {
+            pvals[sdid].update(
+                get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api, anon));
+        }
+        else if (dclass == vr::TrackedDeviceClass_Controller) {
+            pvals[sdid].update(
+                get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api, anon));
+        }
+        else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
+            pvals[sdid].update(
+                get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api, anon));
+        }
+    }
+    return pvals;
+}
+
+//  functions (geometry)
 //------------------------------------------------------------------------------
 //  Convert hidden area mask mesh from OpenVR to numpy array of vertices.
 harray2d_t hmesh2np(const vr::HiddenAreaMesh_t& hmesh)
@@ -126,639 +471,9 @@ json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye)
     return res;
 }
 
-//  Enumerate the attached devices.
-hdevlist_t enum_devs(vr::IVRSystem* vrsys, const json& api, int verb, int ind, int ts)
-{
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const std::string sf1(ts * (ind + 1), ' ');
-
-    // space fill at the beginning of the line
-    if (verb >= vdef) {
-        std::cout << std::string(ind * ts, ' ') << "Device enumeration:\n";
-    }
-    hdevlist_t res;
-    for (vr::TrackedDeviceIndex_t dev_id = 0; dev_id < vr::k_unMaxTrackedDeviceCount;
-         ++dev_id) {
-        auto dev_class = vrsys->GetTrackedDeviceClass(dev_id);
-        if (dev_class != vr::TrackedDeviceClass_Invalid) {
-            if (verb >= vdef) {
-                std::cout << sf1 << "Found dev: id=" << dev_id << ", class=" << dev_class
-                          << ", name="
-                          << api["classes"][std::to_string(dev_class)].get<std::string>()
-                          << '\n';
-            }
-            res.push_back(std::make_pair(dev_id, dev_class));
-        }
-    }
-    return res;
-}
-
-//  OpenVR API loader
-//------------------------------------------------------------------------------
-//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
-json parse_json_oapi(const json& jd)
-{
-    json tdprops;
-    json tdcls;
-    for (auto e : jd["enums"]) {
-        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
-            for (auto v : e["values"]) {
-                auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceProperty
-                auto val = std::stoi(v["value"].get<std::string>());
-                auto cat = static_cast<int>(val) / 1000;
-                tdprops[std::to_string(cat)][std::to_string(val)] = name;
-            }
-        }
-        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
-            for (auto v : e["values"]) {
-                auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceClass
-                auto val = std::stoi(v["value"].get<std::string>());
-                auto fs = name.find('_');
-                if (fs != std::string::npos) {
-                    name = name.substr(fs + 1, std::string::npos);
-                }
-                tdcls[std::to_string(val)] = name;
-            }
-        }
-    }
-    return json({{"classes", tdcls}, {"props", tdprops}});
-}
-
-//  Set TrackedDeviceProperty value in the JSON dict.
-template<typename T>
-inline void set_tp_val(json& j, const std::string& spid, const std::string& pname, T pval,
-                       bool use_pname)
-{
-    if (use_pname) {
-        j[pname] = pval;
-    }
-    else {
-        j[spid] = pval;
-    }
-}
-
-//  Set TrackedDeviceProperty value (which is an xt:xarray) in the JSON dict
-inline void set_tp_val_xt(json& j, const std::string& spid, const std::string& pname,
-                          const xt::xarray<float>& pval, bool use_pname)
-{
-    if (use_pname) {
-        j[pname] = pval;
-    }
-    else {
-        j[spid] = pval;
-    }
-}
-
-//  Print the property name to stdout.
-inline void prop_head_out(const std::string& spid, const std::string& pname, int ind = 0,
-                          int ts = 0)
-{
-    std::cout << std::string(static_cast<size_t>(ind) * ts, ' ') << std::setw(4) << spid
-              << " : " << pname << " = ";
-}
-
-//  Check the returned value and print out the error message if detected.
-inline bool check_tp_result(vr::IVRSystem* vrsys, vr::ETrackedPropertyError res,
-                            const std::string& spid, const std::string& pname,
-                            int verb = 0, int verr = 0, int ind = 0, int ts = 0)
-{
-    if (res == vr::TrackedProp_Success) {
-        return true;
-    }
-    if (verb >= verr) {
-        prop_head_out(spid, pname, ind, ts);
-        std::cout << "[error: " << vrsys->GetPropErrorNameFromEnum(res) << "]\n";
-    }
-    return false;
-}
-
-//  Resolve property tag enum from the type name.
-vr::PropertyTypeTag_t get_ptag_from_ptype(const std::string& ptype)
-{
-    if (ptype == "Float") {
-        return vr::k_unFloatPropertyTag;
-    }
-    else if (ptype == "Int32") {
-        return vr::k_unInt32PropertyTag;
-    }
-    else if (ptype == "Uint64") {
-        return vr::k_unUint64PropertyTag;
-    }
-    else if (ptype == "Bool") {
-        return vr::k_unBoolPropertyTag;
-    }
-    else if (ptype == "String") {
-        return vr::k_unBoolPropertyTag;
-    }
-    else if (ptype == "Matrix34") {
-        return vr::k_unHmdMatrix34PropertyTag;
-    }
-    else if (ptype == "Matrix44") {
-        return vr::k_unHmdMatrix44PropertyTag;
-    }
-    else if (ptype == "Vector2") {
-        return vr::k_unHmdVector2PropertyTag;
-    }
-    else if (ptype == "Vector3") {
-        return vr::k_unHmdVector3PropertyTag;
-    }
-    else if (ptype == "Vector4") {
-        return vr::k_unHmdVector4PropertyTag;
-    }
-    else if (ptype == "Quad") {
-        return vr::k_unHmdQuadPropertyTag;
-    }
-    else {
-        return vr::k_unInvalidPropertyTag;
-    }
-}
-
-//  Set TrackedPropertyValue (vector value) in the JSON dict.
-template<typename T>
-void set_tp_val_1d_array(json& j, const std::string& spid, const std::string& pname,
-                         const std::vector<unsigned char>& buffer, size_t buffsize,
-                         bool use_pname, bool bverb, int ind, int ts)
-{
-    // we got float array in buffer of buffsize / sizeof(float)
-    auto ptype = reinterpret_cast<const T*>(&buffer[0]);
-    auto size = buffsize / sizeof(T);
-    std::vector<std::size_t> shape = {size};
-    xt::xtensor<T, 1> atype = xt::adapt(ptype, size, xt::no_ownership(), shape);
-
-    if (use_pname) {
-        j[pname] = atype;
-    }
-    else {
-        j[spid] = atype;
-    }
-
-    if (bverb) {
-        prop_head_out(spid, pname, ind, ts);
-        std::cout << '\n';
-        print_array(atype, ind + 1, ts);
-    }
-}
-
-//  Set TrackedPropertyValue (matrix array value) in the JSON dict.
-template<typename M>
-void set_tp_val_mat_array(json& j, const std::string& spid, const std::string& pname,
-                          const std::vector<unsigned char>& buffer, size_t buffsize,
-                          bool use_pname, bool bverb, int ind, int ts)
-{
-    // we got float array in buffer of buffsize / sizeof(float)
-    auto pfloat = reinterpret_cast<const float*>(&buffer[0]);
-    auto size = buffsize / sizeof(float);
-    auto constexpr nrows = sizeof(M::m) / sizeof(M::m[0]);
-    auto constexpr ncols = sizeof(M::m[0]) / sizeof(float);
-    std::vector<std::size_t> shape = {buffsize / sizeof(M::m), nrows, ncols};
-    harray_t amats = xt::adapt(pfloat, size, xt::no_ownership(), shape);
-
-    if (use_pname) {
-        j[pname] = amats;
-    }
-    else {
-        j[spid] = amats;
-    }
-    if (bverb) {
-        prop_head_out(spid, pname, ind, ts);
-        std::cout << '\n';
-        print_array(amats, ind + 1, ts);
-    }
-}
-
-//  Set TrackedPropertyValue (vector array value) in the JSON dict.
-template<typename V, typename I = float>
-void set_tp_val_vec_array(json& j, const std::string& spid, const std::string& pname,
-                          const std::vector<unsigned char>& buffer, size_t buffsize,
-                          bool use_pname, bool bverb, int ind, int ts)
-{
-    // we got I type array in buffer of buffsize / sizeof(I)
-    auto pitem = reinterpret_cast<const I*>(&buffer[0]);
-    auto size = buffsize / sizeof(I);
-    auto constexpr vsize = sizeof(V::v) / sizeof(I);
-    std::vector<std::size_t> shape = {buffsize / sizeof(V::v), vsize};
-    harray_t avecs = xt::adapt(pitem, size, xt::no_ownership(), shape);
-
-    if (use_pname) {
-        j[pname] = avecs;
-    }
-    else {
-        j[spid] = avecs;
-    }
-    if (bverb) {
-        prop_head_out(spid, pname, ind, ts);
-        std::cout << '\n';
-        print_array(avecs, ind + 1, ts);
-    }
-}
-
-//  Universal routine to get any "Array" property into the JSON dict.
-void get_array_type(vr::IVRSystem* vrsys, json& res, vr::TrackedDeviceIndex_t did,
-                    vr::ETrackedDeviceProperty pid, const std::string& spid,
-                    std::string& pname, int pverb, bool use_pname, int verb, int verr,
-                    int ind, int ts)
-{
-    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
-    // abuse vector as a return buffer for an Array property
-    std::vector<unsigned char> buffer(BUFFSIZE);
-
-    // find the name of the type (before "_Array" suffix)
-    auto sarray = pname.rfind('_');
-    auto stype = pname.rfind('_', sarray - 1) + 1;
-    auto ptype = pname.substr(stype, sarray - stype);
-    vr::PropertyTypeTag_t ptag = get_ptag_from_ptype(ptype);
-
-    if (ptag == vr::k_unInvalidPropertyTag) {
-        if (verb >= verr) {
-            prop_head_out(spid, pname, ind, ts);
-            std::cout << "[property type not implemented]\n";
-        }
-    }
-
-    size_t buffsize = vrsys->GetArrayTrackedDeviceProperty(
-        did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-    if (error == vr::TrackedProp_BufferTooSmall) {
-        // resize buffer
-        buffer.resize(buffsize);
-        buffsize = vrsys->GetArrayTrackedDeviceProperty(
-            did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-    }
-    if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-        return;
-    }
-
-    if (ptag == vr::k_unFloatPropertyTag) {
-        set_tp_val_1d_array<float>(res, spid, pname, buffer, buffsize, use_pname,
-                                   verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unInt32PropertyTag) {
-        set_tp_val_1d_array<int32_t>(res, spid, pname, buffer, buffsize, use_pname,
-                                     verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unUint64PropertyTag) {
-        set_tp_val_1d_array<uint64_t>(res, spid, pname, buffer, buffsize, use_pname,
-                                      verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unBoolPropertyTag) {
-        set_tp_val_1d_array<bool>(res, spid, pname, buffer, buffsize, use_pname,
-                                  verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unHmdMatrix34PropertyTag) {
-        set_tp_val_mat_array<vr::HmdMatrix34_t>(res, spid, pname, buffer, buffsize,
-                                                use_pname, verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unHmdMatrix44PropertyTag) {
-        set_tp_val_mat_array<vr::HmdMatrix44_t>(res, spid, pname, buffer, buffsize,
-                                                use_pname, verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unHmdVector2PropertyTag) {
-        set_tp_val_vec_array<vr::HmdVector2_t>(res, spid, pname, buffer, buffsize,
-                                               use_pname, verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unHmdVector3PropertyTag) {
-        set_tp_val_vec_array<vr::HmdVector3_t>(res, spid, pname, buffer, buffsize,
-                                               use_pname, verb >= pverb, ind, ts);
-    }
-    else if (ptag == vr::k_unHmdVector4PropertyTag) {
-        set_tp_val_vec_array<vr::HmdVector4_t>(res, spid, pname, buffer, buffsize,
-                                               use_pname, verb >= pverb, ind, ts);
-    }
-    else {
-        if (verb >= verr) {
-            prop_head_out(spid, pname, ind, ts);
-            std::cout << "[property type not implemented]\n";
-        }
-    }
-}
-
-//  Get string tracked property (this is a helper to isolate the buffer handling).
-bool get_str_tracked_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                          vr::ETrackedDeviceProperty pid, std::vector<char>& buffer,
-                          const std::string& spid, const std::string& pname, int verb,
-                          int verr, int ind, int ts)
-{
-    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
-    size_t buffsize = vrsys->GetStringTrackedDeviceProperty(
-        did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-    if (error == vr::TrackedProp_BufferTooSmall) {
-        // resize buffer
-        buffer.resize(buffsize);
-        buffsize = vrsys->GetStringTrackedDeviceProperty(
-            did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-    }
-    return check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts);
-}
-
-//  Get hashed value of the string, pre-seeded with PROPS_TO_SEED values.
-void get_str_hashed(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                    std::vector<char>& buffer, int verb, int verr, int ind, int ts)
-{
-    auto b2b = Botan::BLAKE2b(BLAKE2B_BIT_SIZE);
-    std::string prefix(ANON_PREFIX);
-    std::vector<char> tempbuff(BUFFSIZE);
-    // first hash the "seed"
-    for (auto pid : PROPS_TO_SEED) {
-        if (get_str_tracked_prop(vrsys, did, pid, tempbuff, std::to_string(pid), "N/A",
-                                 verb, verr, ind, ts)) {
-            b2b.update(reinterpret_cast<uint8_t*>(&tempbuff[0]),
-                       std::strlen(&tempbuff[0]));
-        }
-    }
-    // then add the actual serial number
-    b2b.update(reinterpret_cast<uint8_t*>(&buffer[0]), std::strlen(&buffer[0]));
-    // the size in chars is cipher size in bytes * 2 for BINHEX encoding
-    // plus the anon prefix plus the terminating zero
-    const auto anon_size = prefix.length() + BLAKE2B_BIT_SIZE / 8 * 2 + 1;
-    if (buffer.size() < anon_size) {
-        // resize buffer to fit the hash
-        buffer.resize(anon_size);
-    }
-    auto hash_bh = Botan::hex_encode(b2b.final());
-    std::copy(prefix.begin(), prefix.end(), buffer.begin());
-    std::copy(hash_bh.begin(), hash_bh.end(), buffer.begin() + prefix.length());
-    buffer[anon_size - 1] = '\0';
-}
-
-//  Return dict of properties for device `did`.
-json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                   vr::ETrackedDeviceClass dclass, int cat, const json& api, bool anon,
-                   const hproplist_t& props_to_hash, bool use_pname, int verb, int ind,
-                   int ts)
-{
-    const auto jverb = g_cfg["verbosity"];
-    const auto verr = jverb["error"].get<int>();
-    const auto scat = std::to_string(cat);
-
-    json res;
-    res["TrackedDeviceClass"] = api["classes"][std::to_string(dclass)];
-
-    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
-    // abuse vector as a return buffer for the String property
-    std::vector<char> buffer(BUFFSIZE);
-
-    for (auto [spid, jname] : api["props"][scat].items()) {
-        // convert string to the correct type
-        auto pid = static_cast<vr::ETrackedDeviceProperty>(std::stoi(spid));
-        // property name
-        auto pname = jname.get<std::string>();
-        // property type (the last part after '_')
-        auto ptype = pname.substr(pname.rfind('_') + 1);
-        // property verbosity level (if defined) or max
-        int pverb;
-
-        if (jverb["props"].count(pname)) {
-            pverb = jverb["props"][pname].get<int>();
-        }
-        else {
-            pverb = jverb["max"].get<int>();
-        }
-
-        if (ptype == "Bool") {
-            auto pval = vrsys->GetBoolTrackedDeviceProperty(did, pid, &error);
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-                continue;
-            }
-            set_tp_val(res, spid, pname, pval, use_pname);
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << (pval ? "true" : "false") << '\n';
-            }
-        }
-        else if (ptype == "String") {
-            if (!get_str_tracked_prop(vrsys, did, pid, buffer, spid, pname, verb, verr,
-                                      ind, ts)) {
-                continue;
-            }
-            if (anon
-                && (props_to_hash.end()
-                    != std::find(props_to_hash.begin(), props_to_hash.end(), pid))) {
-                get_str_hashed(vrsys, did, buffer, verb, verr, ind, ts);
-            }
-            set_tp_val(res, spid, pname, &buffer[0], use_pname);
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << "\"" << &buffer[0] << "\"" << '\n';
-            }
-        }
-        else if (ptype == "Uint64") {
-            auto pval = vrsys->GetUint64TrackedDeviceProperty(did, pid, &error);
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-                continue;
-            }
-            set_tp_val(res, spid, pname, pval, use_pname);
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << pval << '\n';
-            }
-        }
-        else if (ptype == "Int32") {
-            auto pval = vrsys->GetInt32TrackedDeviceProperty(did, pid, &error);
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-                continue;
-            }
-            set_tp_val(res, spid, pname, pval, use_pname);
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << pval << '\n';
-            }
-        }
-        else if (ptype == "Float") {
-            auto pval = vrsys->GetFloatTrackedDeviceProperty(did, pid, &error);
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-                continue;
-            }
-            set_tp_val(res, spid, pname, pval, use_pname);
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << pval << '\n';
-            }
-        }
-        else if (ptype == "Matrix34") {
-            auto pval = vrsys->GetMatrix34TrackedDeviceProperty(did, pid, &error);
-            if (!check_tp_result(vrsys, error, spid, pname, verb, verr, ind, ts)) {
-                continue;
-            }
-
-            std::vector<std::size_t> shape = {3, 4};
-            auto mat34 = xt::adapt(&pval.m[0][0], shape);
-            set_tp_val_xt(res, spid, pname, mat34, use_pname);
-
-            if (verb >= pverb) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << '\n';
-                print_array(mat34, ind + 1, ts);
-            }
-        }
-        else if (ptype == "Array") {
-            get_array_type(vrsys, res, did, pid, spid, pname, pverb, use_pname, verb,
-                           verr, ind, ts);
-        }
-        else {
-            if (verb >= verr) {
-                prop_head_out(spid, pname, ind, ts);
-                std::cout << "[property type not implemented]\n";
-            }
-        }
-    }
-    return res;
-}
-
-//  Return properties for all devices.
-json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
-                   bool anon, bool use_pname, int verb, int ind, int ts)
-{
-    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
-    const std::string sf(ind * ts, ' ');
-    json pvals;
-
-    if (anon && verb >= vsil) {
-        std::cout << "--- Anonymizer activated: all serial numbers are hashed ---\n";
-    }
-    for (auto [did, dclass] : devs) {
-        auto sdid = std::to_string(did);
-        auto sdclass = std::to_string(dclass);
-        if (verb >= vdef) {
-            std::cout << sf << "[" << did << ":"
-                      << api["classes"][sdclass].get<std::string>() << "]\n";
-        }
-        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api, anon,
-                                    props_to_hash, use_pname, verb, ind + 1, ts);
-        if (dclass == vr::TrackedDeviceClass_HMD) {
-            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api, anon,
-                                             props_to_hash, use_pname, verb, ind + 1,
-                                             ts));
-        }
-        else if (dclass == vr::TrackedDeviceClass_Controller) {
-            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api,
-                                             anon, props_to_hash, use_pname, verb,
-                                             ind + 1, ts));
-        }
-        else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
-            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api,
-                                             anon, props_to_hash, use_pname, verb,
-                                             ind + 1, ts));
-        }
-    }
-    return pvals;
-}
-
-//  Print out the raw (tangent) LRBT values.
-void print_raw_lrbt(const json& jd, int ind, int ts)
-{
-    const std::string sf(ts * ind, ' ');
-    constexpr int t1 = 8, t2 = 14, p1 = 6;
-    std::cout << std::fixed << std::setprecision(p1);
-    std::cout << sf << std::setw(t1) << std::left << "left: " << std::setw(t2)
-              << std::right << jd["tan_left"].get<double>() << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "right: " << std::setw(t2)
-              << std::right << jd["tan_right"].get<double>() << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "bottom: " << std::setw(t2)
-              << std::right << jd["tan_bottom"].get<double>() << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "top: " << std::setw(t2)
-              << std::right << jd["tan_top"].get<double>() << '\n';
-    std::cout << std::setprecision(6);
-}
-
-//  Print single eye FOV values in degrees.
-void print_fov(const json& jd, int ind, int ts)
-{
-    const std::string sf(ts * ind, ' ');
-    constexpr int t1 = 8, t2 = 10, p1 = 2;
-    std::cout << std::fixed << std::setprecision(p1);
-    std::cout << sf << std::setw(t1) << std::left << "left: " << std::setw(t2)
-              << std::right << jd["deg_left"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "right: " << std::setw(t2)
-              << std::right << jd["deg_right"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "bottom: " << std::setw(t2)
-              << std::right << jd["deg_bottom"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "top: " << std::setw(t2)
-              << std::right << jd["deg_top"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "horiz.: " << std::setw(t2)
-              << std::right << jd["deg_hor"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "vert.: " << std::setw(t2)
-              << std::right << jd["deg_ver"].get<double>() << DEG << '\n';
-    std::cout << std::setprecision(6);
-}
-
-//  Print total stereo FOV values in degrees.
-void print_fov_total(const json& jd, int ind, int ts)
-{
-    const std::string sf(ts * ind, ' ');
-    constexpr int t1 = 12, t2 = 6, p1 = 2;
-    std::cout << std::fixed << std::setprecision(p1);
-    std::cout << sf << std::setw(t1) << std::left << "horizontal: " << std::setw(t2)
-              << std::right << jd["fov_hor"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "vertical: " << std::setw(t2)
-              << std::right << jd["fov_ver"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "diagonal: " << std::setw(t2)
-              << std::right << jd["fov_diag"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "overlap: " << std::setw(t2)
-              << std::right << jd["overlap"].get<double>() << DEG << '\n';
-    std::cout << std::setprecision(6);
-}
-
-//  Print view geometry (panel rotation, IPD).
-void print_view_geom(const json& jd, int ind, int ts)
-{
-    const std::string sf(ts * ind, ' ');
-    constexpr int t1 = 22, t2 = 6, p1 = 1;
-    std::cout << std::fixed << std::setprecision(p1);
-    std::cout << sf << std::setw(t1) << std::left
-              << "left panel rotation: " << std::setw(t2) << std::right
-              << jd["left_rot"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left
-              << "right panel rotation: " << std::setw(t2) << std::right
-              << jd["right_rot"].get<double>() << DEG << '\n';
-    std::cout << sf << std::setw(t1) << std::left << "reported IPD: " << std::setw(t2)
-              << std::right << jd["ipd"].get<double>() << MM << '\n';
-    std::cout << std::setprecision(6);
-}
-
-//  Print the hidden area mask mesh statistics.
-void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom, int ind,
-                    int ts)
-{
-    const std::string sf(ts * ind, ' ');
-    const std::string sf1(ts * (ind + 1), ' ');
-    const int t1 = 20;
-
-    std::cout << sf << neye << " eye HAM mesh:\n";
-    if (!ham_mesh.is_null()) {
-        auto nverts = ham_mesh["verts_raw"].size();
-        // just a safety check that the data are authentic
-        HMDQ_ASSERT(nverts % 3 == 0);
-        auto nfaces = nverts / 3;
-        auto nverts_opt = ham_mesh["verts_opt"].size();
-        auto nfaces_opt = ham_mesh["faces_opt"].size();
-        auto ham_area = ham_mesh["ham_area"].get<double>();
-
-        std::cout << sf1 << std::setw(t1) << "original vertices: " << nverts
-                  << ", triangles: " << nfaces << '\n';
-        if (verb >= vgeom) {
-            std::cout << sf1 << std::setw(t1) << "optimized vertices: " << nverts_opt
-                      << ", n-gons: " << nfaces_opt << '\n';
-        }
-        std::cout << sf1 << std::setw(t1) << "mesh area: " << std::fixed
-                  << std::setprecision(2) << ham_area * 100 << PRCT << "\n";
-    }
-    else {
-        std::cout << sf1 << "No mesh defined by the headset\n";
-    }
-}
-
 //  Enumerate view and projection geometry for both eyes.
-json get_eyes_geometry(vr::IVRSystem* vrsys, const heyes_t& eyes, int verb, int ind,
-                       int ts)
+json get_geometry(vr::IVRSystem* vrsys)
 {
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto vgeom = g_cfg["verbosity"]["geom"].get<int>();
-    const std::string sf(ts * ind, ' ');
-    const std::string sf1(ts * (ind + 1), ' ');
-
     // all the data are collected into specific `json`s
     json eye2head;
     json raw_eye;
@@ -770,66 +485,36 @@ json get_eyes_geometry(vr::IVRSystem* vrsys, const heyes_t& eyes, int verb, int 
     uint32_t rec_width, rec_height;
     vrsys->GetRecommendedRenderTargetSize(&rec_width, &rec_height);
     std::vector<uint32_t> rec_rts = {rec_width, rec_height};
-    if (verb >= vdef) {
-        std::cout << sf << "Recommended render target size: " << rec_rts << "\n\n";
-    }
 
-    for (auto [eye, neye] : eyes) {
+    for (auto [eye, neye] : EYES) {
 
+        // get HAM mesh (if supported by the headset, otherwise 'null')
         ham_mesh[neye] = get_ham_mesh_opt(vrsys, eye, vr::k_eHiddenAreaMesh_Standard);
-        if (verb >= vdef) {
-            print_ham_mesh(ham_mesh[neye], neye.c_str(), verb, vgeom, ind, ts);
-            std::cout << '\n';
-        }
 
+        // get eye to head transformation matrix
         auto oe2h = vrsys->GetEyeToHeadTransform(eye);
         std::vector<std::size_t> shape = {3, 4};
         auto e2h = xt::adapt(&oe2h.m[0][0], shape);
         eye2head[neye] = e2h;
-        if (verb >= vgeom) {
-            std::cout << sf << neye << " eye to head transformation matrix:\n";
-            print_array(e2h, ind + 1, ts);
-            std::cout << '\n';
-        }
 
+        // get raw eye values (direct from OpenVR)
         raw_eye[neye] = get_raw_eye(vrsys, eye);
-        if (verb >= vgeom) {
-            std::cout << sf << neye << " eye raw LRBT values:\n";
-            print_raw_lrbt(raw_eye[neye], ind + 1, ts);
-            std::cout << '\n';
-        }
 
-        // build eye FOV points only if eye FOV is different from head FOV
+        // build eye FOV points only if the eye FOV is rotated
         if (xt::view(e2h, xt::all(), xt::range(0, 3)) != xt::eye<double>(3, 0)) {
             fov_eye[neye] = get_fov(raw_eye[neye], ham_mesh[neye]);
-            if (verb >= vdef) {
-                std::cout << sf << neye << " eye raw FOV:\n";
-                print_fov(fov_eye[neye], ind + 1, ts);
-                std::cout << '\n';
-            }
         }
 
+        // build head FOV points (they are eye FOV points if the views are parallel)
         harray2d_t rot = xt::view(e2h, xt::all(), xt::range(0, 3));
         fov_head[neye] = get_fov(raw_eye[neye], ham_mesh[neye], &rot);
-        if (verb >= vdef) {
-            std::cout << sf << neye << " eye head FOV:\n";
-            print_fov(fov_head[neye], ind + 1, ts);
-            std::cout << '\n';
-        }
     }
 
+    // calculate total FOVs and the overlap
     auto fov_tot = get_total_fov(fov_head);
-    if (verb >= vdef) {
-        std::cout << "Total FOV:\n";
-        print_fov_total(fov_tot, ind + 1, ts);
-        std::cout << '\n';
-    }
 
+    // calculate view rotation and the IPD
     auto view_geom = get_view_geom(eye2head);
-    if (verb >= vdef) {
-        std::cout << sf << "View geometry:\n";
-        print_view_geom(view_geom, ind + 1, ts);
-    }
 
     res["rec_rts"] = rec_rts;
     res["raw_eye"] = raw_eye;
@@ -847,7 +532,7 @@ json get_eyes_geometry(vr::IVRSystem* vrsys, const heyes_t& eyes, int verb, int 
 vr::IVRSystem* get_vrsys(vr::EVRApplicationType app_type, int verb, int ind, int ts)
 {
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const std::string sf(ts * ind, ' ');
+    const auto sf = ind * ts;
 
     if (vr::VR_IsRuntimeInstalled()) {
         constexpr size_t cbuffsize = 256;
@@ -862,21 +547,21 @@ vr::IVRSystem* get_vrsys(vr::EVRApplicationType app_type, int verb, int ind, int
         }
         if (res) {
             if (verb >= vdef) {
-                std::cout << sf << "OpenVR runtime path: " << &buffer[0] << '\n';
+                iprint(sf, "OpenVR runtime path: {:s}\n", &buffer[0]);
             }
         }
         else {
-            std::cerr << sf << "Error: Cannot get the runtime path\n";
+            iprint(stderr, sf, "Error: Cannot get the runtime path\n");
             return nullptr;
         }
     }
     else {
-        std::cerr << sf << "Error: No OpenVR runtime found\n";
+        iprint(stderr, sf, "Error: No OpenVR runtime found\n");
         return nullptr;
     }
 
     if (!vr::VR_IsHmdPresent()) {
-        std::cerr << sf << "Error: No HMD found\n";
+        iprint(sf, "Error: No HMD found\n");
         return nullptr;
     }
 
@@ -885,8 +570,7 @@ vr::IVRSystem* get_vrsys(vr::EVRApplicationType app_type, int verb, int ind, int
 
     if (eError != vr::VRInitError_None) {
         vrsys = NULL;
-        std::cerr << sf << "Error: " << vr::VR_GetVRInitErrorAsEnglishDescription(eError)
-                  << '\n';
+        iprint(sf, "Error: {:s}\n", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
         return nullptr;
     }
     return vrsys;

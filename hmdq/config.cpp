@@ -11,8 +11,9 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <vector>
+
+#include <fmt/format.h>
 
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
@@ -28,10 +29,18 @@ json g_cfg;
 
 //  locals
 //------------------------------------------------------------------------------
-//  actual version of the config file
-constexpr int CFG_VERSION = 2;
 //  default config file name
 static const char* CONF_FILE = "hmdq.conf.json";
+
+//  config versions
+//------------------------------------------------------------------------------
+//  Config version 1
+//  Original file format defined by the tool.
+//
+//  Config version 2
+//  Added 'control' section for anonymizing setup.
+//  Removed 'use_names' option, only "names" are suppported.
+static constexpr int CFG_VERSION = 2;
 
 //  control defaults
 //------------------------------------------------------------------------------
@@ -39,7 +48,8 @@ static constexpr bool CTRL_ANONYMIZE = false;
 //  currently identified properties with serial numbers
 static const std::vector<vr::ETrackedDeviceProperty> PROPS_TO_HASH
     = {vr::Prop_SerialNumber_String, vr::Prop_Firmware_ProgrammingTarget_String,
-       vr::Prop_ConnectedWirelessDongle_String};
+       vr::Prop_ConnectedWirelessDongle_String,
+       vr::Prop_AllWirelessDongleDescriptions_String};
 
 //  verbosity defaults
 //------------------------------------------------------------------------------
@@ -48,7 +58,6 @@ static constexpr int VERB_DEF = 0;
 static constexpr int VERB_GEOM = 1;
 static constexpr int VERB_MAX = 3;
 static constexpr int VERB_ERR = 4;
-static constexpr bool VERB_USE_NAMES = true;
 
 //  formatting defaults
 //------------------------------------------------------------------------------
@@ -114,7 +123,7 @@ static json load_config(const std::filesystem::path& cfile)
 static void write_config(const std::filesystem::path& cfile, const json& jd)
 {
     std::ofstream jf(cfile);
-    std::cout << "Writing config: " << cfile << '\n';
+    fmt::print("Writing config: \"{:s}\"\n", cfile.string());
     jf << jd.dump(JSON_INDENT);
 }
 
@@ -131,7 +140,6 @@ static json build_control()
 static json build_verbosity()
 {
     json res;
-    res["use_names"] = VERB_USE_NAMES;
     res["silent"] = VERB_SIL;
     res["default"] = VERB_DEF;
     res["geom"] = VERB_GEOM;
@@ -203,11 +211,14 @@ bool init_config(int argc, char* argv[])
     else {
         const auto cfg_ver = g_cfg["meta"]["cfg_ver"].get<int>();
         if (cfg_ver != CFG_VERSION) {
-            std::cerr << "The existing configuration file (" << cfile
-                      << ") has a different version (" << cfg_ver
-                      << ")\nthan what the tool supports (" << CFG_VERSION << ").\n"
-                      << "Please rename the old one, let the new one generate, and then "
-                         "merge the changes.\n";
+            fmt::print(stderr,
+                       "The existing configuration file (\"{:s}\") has a different "
+                       "version ({:d})\n"
+                       "than what the tool supports ({:d}).\n",
+                       cfile.string(), cfg_ver, CFG_VERSION);
+            fmt::print(stderr,
+                       "Please rename the old one, let the new one generate, and then "
+                       "merge the changes.\n");
             return false;
         }
     }

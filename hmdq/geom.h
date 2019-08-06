@@ -14,6 +14,7 @@
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <cmath>
 
+#include "except.h"
 #include "xtdef.h"
 
 //  globals

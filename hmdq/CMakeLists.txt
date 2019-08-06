@@ -30,6 +30,7 @@ project (hmdq
 # ============
 find_package (xtensor 0.20.8 REQUIRED)
 find_package (nlohmann_json 3.6.1 REQUIRED)
+find_package (fmt 5.3.0 REQUIRED)
 
 # Standards
 # ============
@@ -84,9 +85,11 @@ set (hmdq_sources
     config.cpp
     geom.cpp
     hmdview.cpp
+    jtools.cpp
     optmesh.cpp
     osver.cpp
     ovrhlp.cpp
+    prtdata.cpp
     xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
@@ -109,6 +112,8 @@ target_link_libraries (hmdq PRIVATE version.lib
     debug ${OPENVRLIB}d debug botand.lib
     optimized ${OPENVRLIB} optimized botan.lib
     )
+target_link_libraries (hmdq PRIVATE fmt::fmt)
+#target_link_libraries (hmdq PRIVATE fmt::fmt-header-only)
 
 # Generate a binary dump for a quick check of a CRT linakge type
 add_custom_command (TARGET hmdq
@@ -133,7 +138,9 @@ if (BUILD_TESTS)
     # Add unity tests
     add_executable (hmdq_test)
     target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
-    target_link_libraries (hmdq_test Catch2::Catch2)
+    target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
+    target_link_libraries (hmdq_test PRIVATE fmt::fmt)
+    #target_link_libraries (hmdq_test PRIVATE fmt::fmt-header-only)
     enable_testing ()
     add_test(NAME hmdq_test COMMAND hmdq_test)
 endif (BUILD_TESTS)

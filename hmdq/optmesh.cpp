@@ -17,11 +17,17 @@
 
 #include "geom.h"
 #include "optmesh.h"
-#include "utils.h"
 #include "xtdef.h"
 
 //  functions
 //------------------------------------------------------------------------------
+//  Positive modulo (result is alway >= 0).
+inline long long mod_pos(long long op, long long mod)
+{
+    long long res = op % mod;
+    return (res >= 0) ? res : res + mod;
+}
+
 //  Test if vertex `v` is in `verts` vertices. Return index or -1.
 long long v_in_verts(const hvector_t& v, const hveclist_t& verts)
 {

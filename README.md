@@ -161,10 +161,6 @@ Sets the operational conditions related to OpenVR. Currently only one is support
     **Note**: _Basically anything different from the default value is untested and unsupported. Putting in a wrong type can also impact the reported values. So only change it if you know what you are doing._
 * `verbosity`  
 Defines all the different verbosity levels to which the user specified verbosity (set by `--verb` on the command line) is compared.
-    * `use_names`
-        * `true` - use property names in the output JSON file,
-        * `false` - use numeric IDs instead.  
-    **Note:** _Please do not change it if you want to share your results. The names are much easier to recognize._  
     * `silent`  
     Defines the level, which, when specified by user, will display only the basic startup info.
     * `default`  
@@ -195,6 +191,7 @@ for parsing the command line arguments.
 * [`nlohmann/fifo_map`](https://github.com/nlohmann/fifo_map) for supporting ordered JSON output.
 * [`ValveSoftware/openvr`](https://github.com/ValveSoftware/openvr) for obvious reasons.
 * [`randombit/botan`](https://github.com/randombit/botan) for secure hash implementation.
+* [`fmtlib/fmt`](https://github.com/fmtlib/fmt) for comfortable printing and formatting of the console output.
 
 On top of that you will also need `cmake` version 3.15 or higher.
 

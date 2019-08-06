@@ -13,19 +13,23 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 
 #include <clipp.h>
 
 #include <botan/version.h>
 
+#include <fmt/chrono.h>
+#include <fmt/format.h>
+
 #include "config.h"
+#include "except.h"
+#include "fmthlp.h"
 #include "gitversion.h"
+#include "jtools.h"
 #include "misc.h"
 #include "osver.h"
 #include "ovrhlp.h"
-#include "utils.h"
+#include "prtdata.h"
 
 #include "fifo_map_fix.h"
 
@@ -37,71 +41,65 @@ enum class mode { geom, props, all, info, help };
 //  locals
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
-static constexpr int LOG_VERSION = 1;
+
+//  log versions
+//------------------------------------------------------------------------------
+//  Log version 1
+//  Original file format defined by the tool.
+//
+//  Log version 2
+//  Added secure checksum to the end of the file.
+static constexpr int LOG_VERSION = 2;
 
 //  functions
 //------------------------------------------------------------------------------
-//  Print version and other usefull info
+//  Print version and other usefull info.
 void print_info(int ind = 0, int ts = 0)
 {
-    std::string sf(ts * ind, ' ');
-    std::string sf1(ts * (ind + 1), ' ');
-    constexpr int t1 = 10;
-
-    std::cout << sf << HMDQ_NAME << " version " << HMDQ_VERSION << " - "
-              << HMDQ_DESCRIPTION << '\n';
-    std::cout << '\n';
-    std::cout << sf << "build info:\n";
-    std::cout << sf1 << std::setw(t1) << "git repo: " << HMDQ_URL << '\n';
-    std::cout << sf1 << std::setw(t1) << "git ver.: " << GIT_REPO_VERSION << '\n';
-    std::cout << sf1 << std::setw(t1) << "compiler: " << CXX_COMPILER_ID << " version "
-              << CXX_COMPILER_VERSION << " (" << CXX_COMPILER_ARCHITECTURE_ID << ")\n";
-    std::cout << sf1 << std::setw(t1) << "host: " << HOST_SYSTEM << " ("
-              << HOST_SYSTEM_PROCESSOR << ")\n";
-    std::cout << sf1 << std::setw(t1) << "date: " << TIMESTAMP << '\n';
-    std::cout << '\n';
-    std::cout << sf << "using libraries:\n";
-    std::cout << sf1 << std::setw(t1)
-              << "muellan/clip (https://github.com/muellan/clipp)\n";
-    std::cout << sf1 << std::setw(t1) << "nlohmann/json " << NLOHMANN_JSON_VERSION
-              << " (https://github.com/nlohmann/json)\n";
-    std::cout << sf1 << std::setw(t1) << "QuantStack/xtl " << XTL_VERSION
-              << " (https://github.com/QuantStack/xtl)\n";
-    std::cout << sf1 << std::setw(t1) << "QuantStack/xtensor " << XTENSOR_VERSION
-              << " (https://github.com/QuantStack/xtensor)\n";
-    std::cout << sf1 << std::setw(t1) << "randombit/botan "
-              << Botan::short_version_string()
-              << " (https://github.com/randombit/botan)\n";
+    const auto sf = ind * ts;
+    const auto sf1 = (ind + 1) * ts;
+    constexpr int tf1 = 8;
+    iprint(sf, "{:s} version {:s} - {:s}\n", HMDQ_NAME, HMDQ_VERSION, HMDQ_DESCRIPTION);
+    fmt::print("\n");
+    iprint(sf, "build info:\n");
+    iprint(sf1, "{:>{}s}: {:s}\n", "git repo", tf1, HMDQ_URL);
+    iprint(sf1, "{:>{}s}: {:s}\n", "git ver.", tf1, GIT_REPO_VERSION);
+    iprint(sf1, "{:>{}s}: {:s} version {:s} ({:s})\n", "compiler", tf1, CXX_COMPILER_ID,
+           CXX_COMPILER_VERSION, CXX_COMPILER_ARCHITECTURE_ID);
+    iprint(sf1, "{:>{}s}: {:s} ({:s})\n", "host", tf1, HOST_SYSTEM,
+           HOST_SYSTEM_PROCESSOR);
+    iprint(sf1, "{:>{}s}: {:s}\n", "date", tf1, TIMESTAMP);
+    fmt::print("\n");
+    iprint(sf, "using libraries:\n");
+    iprint(sf1, "{:s} ({:s})\n", "muellan/clip", "https://github.com/muellan/clipp");
+    iprint(sf1, "{:s} {:s} ({:s})\n", "nlohmann/json", NLOHMANN_JSON_VERSION,
+           "https://github.com/nlohmann/json");
+    iprint(sf1, "{:s} {:s} ({:s})\n", "QuantStack/xtl", XTL_VERSION,
+           "https://github.com/QuantStack/xtl");
+    iprint(sf1, "{:s} {:s} ({:s})\n", "QuantStack/xtensor", XTENSOR_VERSION,
+           "https://github.com/QuantStack/xtensor");
+    iprint(sf1, "{:s} {:s} ({:s})\n", "randombit/botan", Botan::short_version_string(),
+           "https://github.com/randombit/botan");
+    iprint(sf1, "{:s} {:d}.{:d}.{:d} ({:s})\n", "fmtlib/fmt", FMT_VERSION / 10000,
+           (FMT_VERSION % 10000) / 100, FMT_VERSION % 100,
+           "https://github.com/fmtlib/fmt");
 }
 
 //  Return some miscellanous info about OpenVR.
-json get_misc(int verb = 0, int ind = 0, int ts = 0)
+json get_misc()
 {
-    const std::string sf(ts * ind, ' ');
-    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    std::stringstream stime;
     std::tm tm;
 
     std::time_t t = std::time(nullptr);
     localtime_s(&tm, &t);
-    stime << std::put_time(&tm, "%FT%T");
 
     json res;
-    res["time"] = stime.str();
+    res["time"] = fmt::format("{:%F %T}", tm);
     res["hmdq_ver"] = HMDQ_VERSION;
     res["log_ver"] = LOG_VERSION;
     res["openvr_ver"] = "n/a";
     auto os_ver = get_os_ver();
     res["os_ver"] = os_ver;
-    if (verb >= vsil) {
-        std::cout << sf << HMDQ_NAME << " version " << HMDQ_VERSION << " - "
-                  << HMDQ_DESCRIPTION << '\n';
-    }
-    if (verb >= vdef) {
-        std::cout << sf << "Current time: " << std::put_time(&tm, "%c") << '\n';
-        std::cout << sf << "OS version: " << os_ver << '\n';
-    }
     return res;
 }
 
@@ -112,16 +110,16 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
     const auto app_type = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
-    const auto use_names = g_cfg["verbosity"]["use_names"].get<bool>();
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
     const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
+    const auto verr = g_cfg["verbosity"]["error"].get<int>();
 
     // make sure that OpenVR API file (default, or specified) exists
     std::filesystem::path apath(api_json);
     if (!std::filesystem::exists(apath)) {
-        std::stringstream msg;
-        msg << "OpenVR API JSON file not found: " << apath;
-        throw hmdq_error(msg.str());
+        auto msg
+            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.string());
+        throw hmdq_error(msg);
     }
 
     // read JSON API def
@@ -136,34 +134,47 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     json out;
 
     // get the miscellanous (system and app) data
-    out["misc"] = get_misc(verb, ind, ts);
+    out["misc"] = get_misc();
+    print_misc(out["misc"], HMDQ_NAME, HMDQ_DESCRIPTION, verb, ind, ts);
 
     // Initializing OpenVR runtime (IVRSystem)
     auto vrsys = get_vrsys(app_type, verb, ind, ts);
-    if (verb >= vdef)
-        std::cout << '\n';
-
     if (vrsys == nullptr) {
         throw hmdq_error("Cannot initialize OpenVR");
     }
+    if (verb >= vdef)
+        fmt::print("\n");
 
     // get all the properties
     auto tverb = (selected == mode::props || selected == mode::all) ? verb : vsil;
-    hdevlist_t devs = enum_devs(vrsys, api, tverb, ind, ts);
+    hdevlist_t devs = enum_devs(vrsys);
     out["devices"] = devs;
-    if (tverb >= vdef)
-        std::cout << '\n';
+    if (tverb >= vdef) {
+        print_devs(api, out["devices"], ind, ts);
+        fmt::print("\n");
+    }
 
-    out["properties"] = get_all_props(vrsys, devs, api, anon, use_names, tverb, ind, ts);
+    out["properties"] = get_all_props(vrsys, devs, api, anon);
+    print_all_props(api, out["properties"], tverb, ind, ts);
     if (tverb >= vdef)
-        std::cout << '\n';
+        fmt::print("\n");
 
     // get all the geometry
     tverb = (selected == mode::geom || selected == mode::all) ? verb : vsil;
-    out["geometry"] = get_eyes_geometry(vrsys, EYES, tverb, ind, ts);
+    out["geometry"] = get_geometry(vrsys);
+    print_geometry(out["geometry"], tverb, ind, ts);
+    if (tverb >= vdef)
+        fmt::print("\n");
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
+        // if verbosity is not high enough (verr + 1) purge errors
+        if (verb <= verr) {
+            purge_errors(out["properties"]);
+        }
+        // add the checksum
+        add_checksum(out);
+        // save the JSON with indentation
         std::filesystem::path opath(out_json);
         std::ofstream jfo(opath);
         jfo << out.dump(json_indent);
@@ -182,7 +193,7 @@ int run_wrapper(mode selected, const std::string& api_json, const std::string& o
         res = run(selected, api_json, out_json, anon, verb, ind, ts);
     }
     catch (hmdq_error e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        fmt::print(stderr, "Error: {:s}\n", e.what());
         res = 1;
     }
     return res;
@@ -209,12 +220,10 @@ int main(int argc, char* argv[])
     std::string api_json = OPENVR_API_JSON;
     std::string out_json;
     // custom help texts
-    std::string verb_help
-        = std::string("verbosity level [") + std::to_string(verb) + std::string("]");
-    std::string api_json_help
-        = std::string("OpenVR API JSON definition file [") + api_json + std::string("]");
-    std::string anon_help = std::string("anonymize serial numbers in the output [")
-        + (anon ? "true" : "false") + std::string("]");
+    auto verb_help = fmt::format("verbosity level [{:d}]", verb);
+    auto api_json_help
+        = fmt::format("OpenVR API JSON definition file [\"{:s}\"]", api_json);
+    auto anon_help = fmt::format("anonymize serial numbers in the output [{}]", anon);
 
     // use this as a workaround to accept "empty" command, first parse
     // all together (cli_cmds, cli_opts) then only cli_opts, to accepts
@@ -250,9 +259,8 @@ int main(int argc, char* argv[])
             res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
             break;
         case mode::help:
-            std::cout << "Usage:\n"
-                      << usage_lines(cli, HMDQ_NAME) << "\nOptions:\n"
-                      << documentation(cli) << '\n';
+            fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
+                       usage_lines(cli, HMDQ_NAME).str(), documentation(cli).str());
             break;
         }
     }
@@ -261,7 +269,7 @@ int main(int argc, char* argv[])
             res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);
         }
         else {
-            std::cout << "Usage:\n" << usage_lines(cli, HMDQ_NAME) << '\n';
+            fmt::print("Usage:\n{:s}\n", usage_lines(cli, HMDQ_NAME).str());
             res = 1;
         }
     }

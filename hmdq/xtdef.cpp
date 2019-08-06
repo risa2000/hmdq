@@ -10,13 +10,19 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <xtensor/xio.hpp>
 #include <xtensor/xview.hpp>
 
-#include "utils.h"
+//  prtstl.h should precede fmt/ostream.h
+#include "prtstl.h"
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+
+#include "except.h"
+#include "fmthlp.h"
 #include "xtdef.h"
 
 //  debug functions
@@ -27,14 +33,14 @@ void dump_shape(const char* name, const harray_t& ha)
     std::vector<size_t> vshape(ha.dimension());
     auto shape = ha.shape();
     std::copy(shape.cbegin(), shape.cend(), vshape.begin());
-    std::cout << name << ".shape() = " << vshape << '\n';
+    fmt::print("{:s}.shape() = {}\n", name, vshape);
 }
 
 //  Write the shape and the content of the harray to the stdout.
 void dump_ha(const char* name, const harray_t& ha)
 {
     dump_shape(name, ha);
-    std::cout << name << " = " << ha << '\n';
+    fmt::print("{:s} = {}\n", name, ha);
 }
 
 //  functions
@@ -54,13 +60,12 @@ harray2d_t build_array(const hveclist_t& vecs)
 //  Indent print xarray.
 void print_array(const harray_t& a, int ind, int ts)
 {
-    // string fill
-    std::string sf(ts * ind, ' ');
+    const auto sf = ind * ts;
     // stringstream to dump the xarray
     std::stringstream temp;
     temp << a;
 
     for (std::string line; getline(temp, line);) {
-        std::cout << sf << line << '\n';
+        iprint(sf, "{}\n", line);
     }
 }

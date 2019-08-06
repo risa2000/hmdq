@@ -1,5 +1,12 @@
 # `hmdq` Change Log
 
+## 0.3.1
+*August 6th, 2019*
+
+* Added secure checksum to the output file.
+* Removed `use_names` option from the configuration file.
+* Internal: Converted all `iostream` outputs to using `{fmt}`.
+
 ## 0.3.0
 *August 4th, 2019*
 

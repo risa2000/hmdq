@@ -12,45 +12,7 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <iostream>
 #include <stdexcept>
-#include <vector>
-
-//  debugging functions
-//------------------------------------------------------------------------------
-// Write the standard type to std::cout prefixed by the name
-template<typename T>
-inline void dump_st(const char* name, const T& v)
-{
-    std::cout << name << " = " << v << '\n';
-}
-
-//  template functions
-//------------------------------------------------------------------------------
-//  Write std::pair to stdout
-template<typename T1, typename T2>
-std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& input)
-{
-    os << "{" << input.first << ", " << input.second << "}";
-    return os;
-}
-
-template<typename T>
-//  Write std::vector to stdout
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& input)
-{
-    os << "{";
-    bool more = false;
-    for (auto const& i : input) {
-        if (more)
-            os << ", ";
-        else
-            more = true;
-        os << i;
-    }
-    os << "}";
-    return os;
-}
 
 //  custom runtime exception
 //------------------------------------------------------------------------------
@@ -80,12 +42,3 @@ class hmdq_error : public std::runtime_error
             HMDQ_EXCEPTION("assert: (" #_expr ")");                                      \
         }                                                                                \
     }
-
-//  general stuff
-//------------------------------------------------------------------------------
-// positive modulo (result is alway >= 0)
-inline long long mod_pos(long long op, long long mod)
-{
-    long long res = op % mod;
-    return (res >= 0) ? res : res + mod;
-}

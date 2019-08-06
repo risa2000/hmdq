@@ -11,10 +11,11 @@
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <cassert>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include <fmt/format.h>
 
 #include <windows.h>
 #include <winver.h>
@@ -25,15 +26,8 @@
 bool error(const std::string& msg)
 {
     DWORD err = ::GetLastError();
-    LPSTR buff;
-    DWORD res = ::FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, 0, err,
-        LANG_SYSTEM_DEFAULT, reinterpret_cast<LPSTR>(&buff), 0, nullptr);
-    if (res) {
-        std::cerr << "Error: "
-                  << "[" << msg << "] " << reinterpret_cast<char*>(buff);
-        ::LocalFree(reinterpret_cast<HLOCAL>(buff));
-    }
+    auto werr = fmt::windows_error(err, "Error: [{:s}]", msg);
+    fmt::print(stderr, werr.what());
     return true;
 }
 
@@ -53,12 +47,10 @@ std::string get_os_ver()
             res = ::VerQueryValueA(static_cast<LPCVOID>(&buffer[0]), rpath, &info, &len);
             if (res) {
                 const VS_FIXEDFILEINFO* fi = static_cast<const VS_FIXEDFILEINFO*>(info);
-                std::stringstream ver;
-                ver << HIWORD(fi->dwProductVersionMS) << "."
-                    << LOWORD(fi->dwProductVersionMS) << "."
-                    << HIWORD(fi->dwProductVersionLS) << "."
-                    << LOWORD(fi->dwProductVersionLS);
-                return ver.str();
+                return fmt::format("{:d}.{:d}.{:d}.{:d}", HIWORD(fi->dwProductVersionMS),
+                                   LOWORD(fi->dwProductVersionMS),
+                                   HIWORD(fi->dwProductVersionLS),
+                                   LOWORD(fi->dwProductVersionLS));
             }
             else {
                 assert(error(rpath));

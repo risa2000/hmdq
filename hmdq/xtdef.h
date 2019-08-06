@@ -12,10 +12,20 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
+#include <xtensor/xjson.hpp>
 #include <xtensor/xtensor.hpp>
 
-#include "utils.h"
+//  prtstl.h should precede fmt/ostream.h
+#include "prtstl.h"
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 //  typedefs
 //------------------------------------------------------------------------------
@@ -41,7 +51,7 @@ void dump_shape(const char* name, const xt::xtensor<T, N>& ha)
     std::vector<size_t> vshape(ha.dimension());
     auto shape = ha.shape();
     std::copy(shape.cbegin(), shape.cend(), vshape.begin());
-    std::cout << name << ".shape() = " << vshape << '\n';
+    fmt::print("{:s}.shape() = {}\n", name, vshape);
 }
 
 //  Write the shape of the xarray to the stdout.
@@ -51,7 +61,7 @@ void dump_shape(const char* name, const xt::xarray<T>& ha)
     std::vector<size_t> vshape(ha.dimension());
     auto shape = ha.shape();
     std::copy(shape.cbegin(), shape.cend(), vshape.begin());
-    std::cout << name << ".shape() = " << vshape << '\n';
+    fmt::print("{:s}.shape() = {}\n", name, vshape);
 }
 
 //  Write the shape and the content of the harray to the stdout:
@@ -62,7 +72,7 @@ template<typename T, int N>
 void dump_ha(const char* name, const xt::xtensor<T, N>& ha)
 {
     dump_shape(name, ha);
-    std::cout << name << " = " << ha << '\n';
+    fmt::print("{:s} = {}\n", name, ha);
 }
 
 //  Write the shape and the content of the xarray to the stdout.
@@ -70,7 +80,7 @@ template<typename T>
 void dump_ha(const char* name, const xt::xarray<T>& ha)
 {
     dump_shape(name, ha);
-    std::cout << name << " = " << ha << '\n';
+    fmt::print("{:s} = {}\n", name, ha);
 }
 
 //  utility functions
@@ -84,14 +94,13 @@ void print_array(const harray_t& a, int ind, int ts);
 template<typename T, int N>
 void print_array(const xt::xtensor<T, N>& a, int ind, int ts)
 {
-    // string fill
-    std::string sf(ts * ind, ' ');
+    const auto sf = ind * ts;
     // stringstream to dump the xarray
     std::stringstream temp;
     temp << a;
 
     for (std::string line; getline(temp, line);) {
-        std::cout << sf << line << '\n';
+        iprint(sf, "{}\n", line);
     }
 }
 
@@ -99,13 +108,12 @@ void print_array(const xt::xtensor<T, N>& a, int ind, int ts)
 template<typename T>
 void print_array(const xt::xarray<T>& a, int ind, int ts)
 {
-    // string fill
-    std::string sf(ts * ind, ' ');
+    const auto sf = ind * ts;
     // stringstream to dump the xarray
     std::stringstream temp;
     temp << a;
 
     for (std::string line; getline(temp, line);) {
-        std::cout << sf << line << '\n';
+        iprint(sf, "{}\n", line);
     }
 }
