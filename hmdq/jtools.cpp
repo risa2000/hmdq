@@ -30,15 +30,15 @@
 void purge_errors(json& jd)
 {
     std::vector<std::string> to_drop;
-    for (const auto [sdid, dprops] : jd.items()) {
+    for (const auto& [sdid, dprops] : jd.items()) {
         std::vector<std::string> to_drop;
-        for (const auto [pname, pval] : dprops.items()) {
+        for (const auto& [pname, pval] : dprops.items()) {
             if (pval.count(ERROR_PREFIX)) {
                 to_drop.push_back(pname);
             }
         }
         // purge the props with errors
-        for (const auto pname : to_drop) {
+        for (const auto& pname : to_drop) {
             dprops.erase(pname);
         }
     }
@@ -62,9 +62,9 @@ bool verify_checksum(const json& jd)
         return false;
 
     json jcopy = jd;
-    auto chksm = jcopy[CHECKSUM].get<std::string>();
+    const auto chksm = jcopy[CHECKSUM].get<std::string>();
     jcopy.erase(CHECKSUM);
-    auto vchksm = calculate_checksum(jcopy);
+    const auto vchksm = calculate_checksum(jcopy);
     return (chksm == vchksm);
 }
 
@@ -72,7 +72,7 @@ bool verify_checksum(const json& jd)
 void anonymize(std::vector<char>& out, const std::vector<char>& in)
 {
     auto b2b = Botan::BLAKE2b(ANON_BITSIZE);
-    std::string prefix(ANON_PREFIX);
+    const std::string prefix(ANON_PREFIX);
     b2b.update(reinterpret_cast<const uint8_t*>(&in[0]), std::strlen(&in[0]));
     // the size in chars is cipher size in bytes * 2 for BINHEX encoding
     // plus the anon prefix plus the terminating zero
@@ -81,7 +81,7 @@ void anonymize(std::vector<char>& out, const std::vector<char>& in)
         // resize out buffer to fit the hash
         out.resize(anon_size);
     }
-    auto hash_bh = Botan::hex_encode(b2b.final());
+    const auto hash_bh = Botan::hex_encode(b2b.final());
     std::copy(prefix.begin(), prefix.end(), out.begin());
     std::copy(hash_bh.begin(), hash_bh.end(), out.begin() + prefix.length());
     out[anon_size - 1] = '\0';

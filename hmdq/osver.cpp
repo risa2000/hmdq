@@ -25,8 +25,10 @@
 //  Print system error message for ::GetLastError to stderr, add `msg` as contextual info
 bool error(const std::string& msg)
 {
-    DWORD err = ::GetLastError();
-    auto werr = fmt::windows_error(err, "Error: [{:s}]", msg);
+    const DWORD err = ::GetLastError();
+    // this one uses specific format, since the fmt::windows_error output includes also
+    // the Windows error message (which is not obvious from the format alone).
+    const auto werr = fmt::windows_error(err, "Error: [{:s}]", msg);
     fmt::print(stderr, werr.what());
     return true;
 }

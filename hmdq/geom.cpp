@@ -24,7 +24,7 @@
 harray2d_t matmul(const harray2d_t& a1, const harray2d_t& a2)
 {
     HMDQ_ASSERT(a1.shape(1) == a2.shape(0));
-    xt::xtensor<double, 2>::shape_type shape = {a1.shape(0), a2.shape(1)};
+    const xt::xtensor<double, 2>::shape_type shape = {a1.shape(0), a2.shape(1)};
     harray2d_t res = xt::empty<double>(shape);
     for (size_t row = 0, erow = a1.shape(0); row < erow; ++row) {
         for (size_t col = 0, ecol = a2.shape(1); col < ecol; ++col) {
@@ -57,17 +57,17 @@ hvecpair_t seg_seg_int(const hvector_t& a1, const hvector_t& a2, const hvector_t
     }
 
     // build LR mat from vectors
-    auto mat = xt::stack(xt::xtuple(a2 - a1, b1 - b2, b1 - a1), 1);
-    double deto = det_mat(xt::view(mat, xt::all(), xt::keep(0, 1)));
+    const auto mat = xt::stack(xt::xtuple(a2 - a1, b1 - b2, b1 - a1), 1);
+    const auto deto = det_mat(xt::view(mat, xt::all(), xt::keep(0, 1)));
     if (abs(deto) < EPS) {
         // return "empty" vectors if the determinant -> 0
         return {hvector_t(), hvector_t()};
     }
 
-    double detu = det_mat(xt::view(mat, xt::all(), xt::keep(2, 1)));
-    double detv = det_mat(xt::view(mat, xt::all(), xt::keep(0, 2)));
-    double u = detu / deto;
-    double v = detv / deto;
+    const auto detu = det_mat(xt::view(mat, xt::all(), xt::keep(2, 1)));
+    const auto detv = det_mat(xt::view(mat, xt::all(), xt::keep(0, 2)));
+    auto u = detu / deto;
+    auto v = detv / deto;
 
     if (u < 0)
         u = 0;
@@ -92,9 +92,9 @@ harray2d_t seg_mesh_int(const hvector_t& a1, const hvector_t& a2, const harray2d
     hveclist_t points;
     for (auto const& f : faces) {
         for (size_t i = 0; i < f.size(); ++i) {
-            auto v1 = xt::view(verts, f[i], xt::all());
-            auto v2 = xt::view(verts, f[(i + 1) % f.size()], xt::all());
-            hvecpair_t tpts = seg_seg_int(a1, a2, v1, v2);
+            const auto v1 = xt::view(verts, f[i], xt::all());
+            const auto v2 = xt::view(verts, f[(i + 1) % f.size()], xt::all());
+            const hvecpair_t tpts = seg_seg_int(a1, a2, v1, v2);
             if (tpts.first.size() > 0) {
                 // if size > 0 => not "empty" vector
                 if (point_dist(tpts.first, tpts.second) < EPS) {
@@ -115,8 +115,8 @@ hvector_t find_closest(const hvector_t& pt, const harray2d_t& verts)
 {
     double dmin = std::numeric_limits<double>::max();
     hvector_t res;
-    for (auto i = 0; i < verts.shape(0); ++i) {
-        auto v = xt::view(verts, i);
+    for (size_t i = 0; i < verts.shape(0); ++i) {
+        const auto v = xt::view(verts, i);
         double dist = norm(v - pt);
         if (dist < dmin) {
             res = v;
@@ -129,8 +129,8 @@ hvector_t find_closest(const hvector_t& pt, const harray2d_t& verts)
 //  Calculate the area of the triangle given by the vertices.
 double area_triangle(const hvector_t& v1, const hvector_t& v2, const hvector_t& v3)
 {
-    auto ab = v2 - v1;
-    auto ac = v3 - v1;
+    const auto ab = v2 - v1;
+    const auto ac = v3 - v1;
     return sqrt(dot_prod(ab, ab) * dot_prod(ac, ac) - pow(dot_prod(ab, ac), 2)) / 2;
 }
 

@@ -28,7 +28,6 @@ constexpr const char* ANON_PREFIX = "anon@";
 
 //  Error reporting pre-defs
 constexpr const char* ERROR_PREFIX = "error@";
-constexpr const char* ERR_MSG_FMT = "[error: {:s}]\n";
 constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
 
 //  functions

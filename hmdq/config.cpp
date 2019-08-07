@@ -34,12 +34,9 @@ static const char* CONF_FILE = "hmdq.conf.json";
 
 //  config versions
 //------------------------------------------------------------------------------
-//  Config version 1
-//  Original file format defined by the tool.
-//
-//  Config version 2
-//  Added 'control' section for anonymizing setup.
-//  Removed 'use_names' option, only "names" are suppported.
+//  v1: Original file format defined by the tool.
+//  v2: Added 'control' section for anonymizing setup.
+//      Removed 'use_names' option, only "names" are suppported.
 static constexpr int CFG_VERSION = 2;
 
 //  control defaults

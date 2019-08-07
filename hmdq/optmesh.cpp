@@ -24,7 +24,7 @@
 //  Positive modulo (result is alway >= 0).
 inline long long mod_pos(long long op, long long mod)
 {
-    long long res = op % mod;
+    const long long res = op % mod;
     return (res >= 0) ? res : res + mod;
 }
 
@@ -45,9 +45,9 @@ std::pair<harray2d_t, hfaces_t> reduce_verts(const harray2d_t& verts,
 {
     hveclist_t r_verts;
     hfaces_t r_faces;
-    for (const auto f : faces) {
+    for (const auto& f : faces) {
         hface_t new_f;
-        for (auto v_i : f) {
+        for (const auto v_i : f) {
             auto i = v_in_verts(xt::view(verts, v_i), r_verts);
             if (i >= 0) {
                 new_f.push_back(i);
@@ -77,7 +77,7 @@ hedgelist_t face2edges(const hface_t& face)
 hedgelist_t sort_edges(const hedgelist_t& edges)
 {
     hedgelist_t res;
-    for (const auto e : edges) {
+    for (const auto& e : edges) {
         if (e.first <= e.second) {
             res.push_back(e);
         }
@@ -97,9 +97,9 @@ hedgelist_t shared_edges(const hedgelist_t& edges1, const hedgelist_t& edges2)
     std::sort(te1.begin(), te1.end());
     std::sort(te2.begin(), te2.end());
     auto f1 = te1.begin();
-    auto e1 = te1.end();
+    const auto e1 = te1.end();
     auto f2 = te2.begin();
-    auto e2 = te2.end();
+    const auto e2 = te2.end();
     hedgelist_t res;
     while (f1 != e1 && f2 != e2) {
         if (*f1 < *f2) {
@@ -140,11 +140,11 @@ hface_t build_face(const hedgelist_t& edges1, const hedgelist_t& edges2)
         te2 = edges2;
     }
 
-    for (const auto e : edges1) {
+    for (const auto& e : edges1) {
         res.push_back(e.first);
     }
 
-    for (const auto e : te2) {
+    for (const auto& e : te2) {
         res.push_back(e.first);
     }
     return res;
@@ -153,7 +153,7 @@ hface_t build_face(const hedgelist_t& edges1, const hedgelist_t& edges2)
 //  remains again continous.
 hedgelist_t remove_chain(const hedgelist_t& chain, const hedgelist_t& edges)
 {
-    long long se = static_cast<long long>(edges.size());
+    const long long se = static_cast<long long>(edges.size());
     long long pivot = 0;
     long long count = 0;
     for (long long i = 0; i < se; ++i) {
@@ -213,8 +213,8 @@ hedgelist_t remove_chain(const hedgelist_t& chain, const hedgelist_t& edges)
 hface_t merge_edges(const hedgelist_t& edges1, const hedgelist_t& edges2,
                     const hedgelist_t& chain)
 {
-    auto tes1 = remove_chain(chain, edges1);
-    auto tes2 = remove_chain(chain, edges2);
+    const auto tes1 = remove_chain(chain, edges1);
+    const auto tes2 = remove_chain(chain, edges2);
     return build_face(tes1, tes2);
 }
 
@@ -223,8 +223,8 @@ hface_t merge_edges(const hedgelist_t& edges1, const hedgelist_t& edges2,
 //  Otherwise return [].
 hedgelist_t check_chained(const hedgelist_t& edges)
 {
-    auto se = edges.size();
-    if (edges.size() <= 1) {
+    const auto se = edges.size();
+    if (se <= 1) {
         return edges;
     }
 

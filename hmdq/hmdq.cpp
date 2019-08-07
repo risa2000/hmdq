@@ -44,12 +44,10 @@ static constexpr int IND = 0;
 
 //  log versions
 //------------------------------------------------------------------------------
-//  Log version 1
-//  Original file format defined by the tool.
-//
-//  Log version 2
-//  Added secure checksum to the end of the file.
-static constexpr int LOG_VERSION = 2;
+//  v1: Original file format defined by the tool.
+//  v2: Added secure checksum to the end of the file.
+//  v3: Added new section 'openvr'.
+static constexpr int LOG_VERSION = 3;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -85,21 +83,28 @@ void print_info(int ind = 0, int ts = 0)
            "https://github.com/fmtlib/fmt");
 }
 
-//  Return some miscellanous info about OpenVR.
+//  Return some miscellanous info about the app and the OS.
 json get_misc()
 {
     std::tm tm;
 
-    std::time_t t = std::time(nullptr);
+    const std::time_t t = std::time(nullptr);
     localtime_s(&tm, &t);
 
     json res;
     res["time"] = fmt::format("{:%F %T}", tm);
     res["hmdq_ver"] = HMDQ_VERSION;
     res["log_ver"] = LOG_VERSION;
-    res["openvr_ver"] = "n/a";
-    auto os_ver = get_os_ver();
-    res["os_ver"] = os_ver;
+    res["os_ver"] = get_os_ver();
+    return res;
+}
+
+//  Return some info about OpenVR.
+json get_openvr(vr::IVRSystem* vrsys)
+{
+    json res;
+    res["rt_path"] = get_vr_runtime_path();
+    res["rt_ver"] = get_openvr_ver(vrsys);
     return res;
 }
 
@@ -113,6 +118,9 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
     const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
     const auto verr = g_cfg["verbosity"]["error"].get<int>();
+
+    // print the execution header
+    print_header(HMDQ_NAME, HMDQ_VERSION, HMDQ_DESCRIPTION, verb, ind, ts);
 
     // make sure that OpenVR API file (default, or specified) exists
     std::filesystem::path apath(api_json);
@@ -128,26 +136,31 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     jfa >> oapi;
 
     // parse the API file to hmdq used json (dict)
-    json api = parse_json_oapi(oapi);
+    const json api = parse_json_oapi(oapi);
 
     // output
     json out;
 
     // get the miscellanous (system and app) data
     out["misc"] = get_misc();
-    print_misc(out["misc"], HMDQ_NAME, HMDQ_DESCRIPTION, verb, ind, ts);
+    print_misc(out["misc"], HMDQ_NAME, verb, ind, ts);
 
-    // Initializing OpenVR runtime (IVRSystem)
-    auto vrsys = get_vrsys(app_type, verb, ind, ts);
-    if (vrsys == nullptr) {
-        throw hmdq_error("Cannot initialize OpenVR");
-    }
+    // get OpenVR runtime path (sanity check)
+    const auto vr_rt_path = get_vr_runtime_path();
+    // check if HMD is present (sanity check)
+    is_hmd_present();
+    // initialize OpenVR runtime (IVRSystem)
+    auto vrsys = init_vrsys(app_type);
+
+    // get some data about the OpenVR system
+    out["openvr"] = get_openvr(vrsys);
+    print_openvr(out["openvr"], verb, ind, ts);
     if (verb >= vdef)
         fmt::print("\n");
 
     // get all the properties
     auto tverb = (selected == mode::props || selected == mode::all) ? verb : vsil;
-    hdevlist_t devs = enum_devs(vrsys);
+    const hdevlist_t devs = enum_devs(vrsys);
     out["devices"] = devs;
     if (tverb >= vdef) {
         print_devs(api, out["devices"], ind, ts);
@@ -193,7 +206,7 @@ int run_wrapper(mode selected, const std::string& api_json, const std::string& o
         res = run(selected, api_json, out_json, anon, verb, ind, ts);
     }
     catch (hmdq_error e) {
-        fmt::print(stderr, "Error: {:s}\n", e.what());
+        fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
         res = 1;
     }
     return res;
@@ -220,10 +233,11 @@ int main(int argc, char* argv[])
     std::string api_json = OPENVR_API_JSON;
     std::string out_json;
     // custom help texts
-    auto verb_help = fmt::format("verbosity level [{:d}]", verb);
-    auto api_json_help
+    const auto verb_help = fmt::format("verbosity level [{:d}]", verb);
+    const auto api_json_help
         = fmt::format("OpenVR API JSON definition file [\"{:s}\"]", api_json);
-    auto anon_help = fmt::format("anonymize serial numbers in the output [{}]", anon);
+    const auto anon_help
+        = fmt::format("anonymize serial numbers in the output [{}]", anon);
 
     // use this as a workaround to accept "empty" command, first parse
     // all together (cli_cmds, cli_opts) then only cli_opts, to accepts

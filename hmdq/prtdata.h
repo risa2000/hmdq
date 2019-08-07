@@ -12,28 +12,36 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <tuple>
 
 #include "fifo_map_fix.h"
 
-//  inlined functions
+//  globals
 //------------------------------------------------------------------------------
-//  Print the property name to stdout.
-inline void prop_head_out(const std::string& spid, const std::string& pname, int ind = 0,
-                          int ts = 0)
-{
-    iprint(ind * ts, "{:4s} : {:s} = ", spid, pname);
-}
+//  Error message format
+constexpr const char* ERR_MSG_FMT_JSON = "[error: {:s}]\n";
+constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
+//  Print header (displayed when the execution starts) needs verbosity=silent
+void print_header(const char* prog_name, const char* prog_ver, const char* prog_desc,
+                  int verb, int ind, int ts);
+
 //  Print miscellanous info.
-void print_misc(const json& jd, const char* prog_name, const char* prog_desc, int verb,
-                int ind, int ts);
+void print_misc(const json& jd, const char* prog_name, int verb, int ind, int ts);
+
+//  Print OpenVR info.
+void print_openvr(const json& jd, int verb, int ind, int ts);
 
 //  functions (devices and properties)
 //------------------------------------------------------------------------------
 //  Print enumerated devices.
 void print_devs(const json& api, const json& devs, int ind, int ts);
+
+//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
+std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
+parse_prop_name(const std::string& pname);
 
 //  Print (non-error) value of an Array type property.
 void print_array_type(const std::string& pname, const json& pval, int ind, int ts);

@@ -11,6 +11,7 @@
 
 #pragma once
 
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <nlohmann/fifo_map.hpp>
 #include <nlohmann/json.hpp>
 
