@@ -1,7 +1,7 @@
 # `hmdq`
 ![hmdq application icon](docs/images/hmdq_128.png)
 
-`hmdq` is a command line tool for collecting different information from an OpenVR headset (a.k.a head mounted display - HMD) and other VR devices for Windows. In order to run it, one needs an OpenVR stack installed, which usually means SteamVR and, of course, the hardware.
+`hmdq` is a command line tool for an OpenVR headset and other hardware introspection for Windows. In order to run it, one needs an OpenVR subsystem installed, which usually means SteamVR and, of course, the hardware.
 
 [Change Log](Changelog.md)
 
@@ -77,16 +77,21 @@ Example (excerpt):
 ```c
 Device enumeration:
     Found dev: id=0, class=1, name=HMD
+    Found dev: id=1, class=4, name=TrackingReference
+    Found dev: id=2, class=4, name=TrackingReference
 
 [0:HMD]
-    1000 : Prop_TrackingSystemName_String = "lighthouse"
-    1001 : Prop_ModelNumber_String = "Vive. MV"
-    1002 : Prop_SerialNumber_String = "LHR-ABCDEFGH"
-    1003 : Prop_RenderModelName_String = "generic_hmd"
-    1005 : Prop_ManufacturerName_String = "HTC"
-    1006 : Prop_TrackingFirmwareVersion_String = "1462663157 steamservices@firmware-win32 2016-05-08 FPGA 262(1.6/0/0) BL 0"
-    1007 : Prop_HardwareRevision_String = "product 128 rev 2.1.0 lot 2000/0/0 0"
-    2002 : Prop_DisplayFrequency_Float = 90
+    1000 : TrackingSystemName = "lighthouse"
+    1001 : ModelNumber = "Vive. MV"
+    1002 : SerialNumber = "anon@1B02287EBB399418DC264E14"
+    1003 : RenderModelName = "generic_hmd"
+    1004 : WillDriftInYaw = false
+    1005 : ManufacturerName = "HTC"
+    1006 : TrackingFirmwareVersion = "1462663157 steamservices@firmware-win32 2016-05-08 FPGA 262(1.6/0/0) BL 0"
+    1007 : HardwareRevision = "product 128 rev 2.1.0 lot 2000/0/0 0"
+    1008 : AllWirelessDongleDescriptions = "anon@E0274499D83512E548FB4966"
+    2001 : SecondsFromVsyncToPhotons = 0.0111111
+    2002 : DisplayFrequency = 90
 ```
 
 #### `version`
@@ -128,13 +133,13 @@ Adds as well all the properties, which are defined by the OpenVR API, but are ne
 The levels can be redefined in the configuration file. The values listed above are the default ones.
 
 #### `-n, --anonymize`
-If specified, it will anonymize values in pre-selected tracked device properties, basically anything which looks like a serial number. Some are predefined in the default configuration (and therefore in the config file), others could be added to the config, if needed.
+If specified, it will anonymize values in defined tracked device properties which are predefined in the default configuration (config file). Others can be added to the config file if needed.
 
 The anonymization happens in both the console output and in the output JSON file.
 
-This could be useful for sharing the output data in public, without disclosing the unique identifiers.
+This could be useful when sharing the output data in the public, without disclosing the unique identifiers.
 
-The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: #1005 (`Prop_ManufacturerName_String`), concatenated with #1001 (`Prop_ModelNumber_String`), and finally with the incriminated value to anonymize. The manufacturer and model number are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers, will not anonymize into the same values.
+The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: #1005 (`Prop_ManufacturerName_String`), concatenated with #1001 (`Prop_ModelNumber_String`), and finally with the incriminated value to anonymize. The manufacturer and model numbers are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers will not anonymize into the same values.
 
 ### Configuration
 The configuration file `hmdq.conf.json` is always created with the default values, and can be changed later by the user. The tool will not "touch" the configuration file as long as it exists and only create a new one if none is present.
