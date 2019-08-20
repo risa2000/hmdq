@@ -57,10 +57,9 @@ std::vector<std::wstring> get_wargs()
     if (nullptr == wargv) {
         throw sys_error("CommandLineToArgvW failed");
     }
-    std::vector<std::wstring> res;
-    for (int i = 0; i < wargc; ++i) {
-        res.push_back(std::wstring(wargv[i]));
-    }
+    std::vector<std::wstring> res(wargc);
+    std::transform(wargv, wargv + wargc, res.begin(),
+                   [](const auto& wa) { return std::wstring(wa); });
     ::LocalFree(wargv);
     return res;
 }
@@ -82,10 +81,9 @@ std::string wstr2utf8(const wchar_t* wstr)
 //  Convert wstring list of args to list of UTF-8 strings.
 std::vector<std::string> wargs_to_u8args(const std::vector<std::wstring>& wargs)
 {
-    std::vector<std::string> res;
-    for (const auto& wstr : wargs) {
-        res.push_back(wstr2utf8(wstr.c_str()));
-    }
+    std::vector<std::string> res(wargs.size());
+    std::transform(wargs.cbegin(), wargs.cend(), res.begin(),
+                   [](const auto& w) { return wstr2utf8(w.c_str()); });
     return res;
 }
 
@@ -99,9 +97,9 @@ std::vector<std::string> get_u8args()
 std::tuple<std::vector<size_t>, std::vector<char>>
 get_c_argv(const std::vector<std::string>& args)
 {
-    size_t vsize
-        = std::transform_reduce(args.begin(), args.end(), size_t(0), std::plus<size_t>(),
-                                [](const std::string& a) { return a.size() + 1; });
+    size_t vsize = std::transform_reduce(args.cbegin(), args.cend(), size_t(0),
+                                         std::plus<size_t>(),
+                                         [](const auto& a) { return a.size() + 1; });
     std::vector<char> buffer(vsize);
     std::vector<size_t> ptrs;
     auto parg = &buffer[0];
