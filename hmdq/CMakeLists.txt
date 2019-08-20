@@ -87,7 +87,7 @@ set (hmdq_sources
     hmdview.cpp
     jtools.cpp
     optmesh.cpp
-    osver.cpp
+    wintools.cpp
     ovrhlp.cpp
     prtdata.cpp
     xtdef.cpp

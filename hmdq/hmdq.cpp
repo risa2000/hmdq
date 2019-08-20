@@ -27,9 +27,9 @@
 #include "gitversion.h"
 #include "jtools.h"
 #include "misc.h"
-#include "osver.h"
 #include "ovrhlp.h"
 #include "prtdata.h"
+#include "wintools.h"
 
 #include "fifo_map_fix.h"
 
@@ -41,6 +41,7 @@ enum class mode { geom, props, all, info, help };
 //  locals
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
+static constexpr unsigned int CP_UTF8 = 65001;
 
 //  log versions
 //------------------------------------------------------------------------------
@@ -123,10 +124,10 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     print_header(HMDQ_NAME, HMDQ_VERSION, HMDQ_DESCRIPTION, verb, ind, ts);
 
     // make sure that OpenVR API file (default, or specified) exists
-    std::filesystem::path apath(api_json);
+    std::filesystem::path apath = std::filesystem::u8path(api_json);
     if (!std::filesystem::exists(apath)) {
         auto msg
-            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.string());
+            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.u8string());
         throw hmdq_error(msg);
     }
 
@@ -188,7 +189,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
         // add the checksum
         add_checksum(out);
         // save the JSON with indentation
-        std::filesystem::path opath(out_json);
+        std::filesystem::path opath = std::filesystem::u8path(out_json);
         std::ofstream jfo(opath);
         jfo << out.dump(json_indent);
     }
@@ -209,7 +210,19 @@ int run_wrapper(mode selected, const std::string& api_json, const std::string& o
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
         res = 1;
     }
+    catch (std::runtime_error e) {
+        fmt::print(stderr, "{}\n", e.what());
+    }
     return res;
+}
+
+void print_u8args(std::vector<std::string> u8args)
+{
+    fmt::print("Command line arguments:\n");
+    for (int i = 0, e = u8args.size(); i < e; ++i) {
+        fmt::print("{:d}: {}\n", i, u8args[i]);
+    }
+    fmt::print("\n");
 }
 
 int main(int argc, char* argv[])
@@ -217,8 +230,19 @@ int main(int argc, char* argv[])
     using namespace clipp;
     const auto OPENVR_API_JSON = "openvr_api.json";
 
+    // Set UTF-8 code page for the console if available
+    // if not, print UTF-8 strings to the console anyway.
+    set_console_cp(CP_UTF8);
+
+    // get command line args in Windows Unicode and in UTF-8
+    const auto u8args = get_u8args();
+    if (u8args.size() == 0) {
+        throw hmdq_error("Cannot get the command line arguments");
+    }
+    // print_u8args(u8args);
+
     // init global config before anything else
-    const auto cfg_ok = init_config(argc, argv);
+    const auto cfg_ok = init_config(u8args[0]);
     if (!cfg_ok)
         return 1;
 
@@ -229,8 +253,15 @@ int main(int argc, char* argv[])
     auto verb = g_cfg["verbosity"]["default"].get<int>();
     auto anon = g_cfg["control"]["anonymize"].get<bool>();
 
+    // default command is 'all'
     mode selected = mode::all;
-    std::string api_json = OPENVR_API_JSON;
+
+    // build relative path to OPENVR_API_JSON file
+    auto api_json_path = std::filesystem::relative(
+        std::filesystem::absolute(std::filesystem::u8path(u8args[0])));
+    api_json_path.replace_filename(OPENVR_API_JSON);
+    auto api_json = api_json_path.u8string();
+
     std::string out_json;
     // custom help texts
     const auto verb_help = fmt::format("verbosity level [{:d}]", verb);
@@ -239,9 +270,9 @@ int main(int argc, char* argv[])
     const auto anon_help
         = fmt::format("anonymize serial numbers in the output [{}]", anon);
 
-    // use this as a workaround to accept "empty" command, first parse
-    // all together (cli_cmds, cli_opts) then only cli_opts, to accepts
-    // only the options without the command.
+    // Use this as a workaround to accept an "empty" command. First parse
+    // all together (cli_cmds, cli_opts) then only cli_opts to accepts
+    // only the options without any command.
     clipp::group cli_opts
         = ((option("-a", "--api_json") & value("name", api_json)) % api_json_help,
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
@@ -261,25 +292,32 @@ int main(int argc, char* argv[])
 
     clipp::group cli = (cli_cmds, cli_opts);
 
+    // build C-like argument array from UTF-8 arguments
+    auto [ptrs, buff] = get_c_argv(u8args);
+    std::vector<char*> cargv;
+    for (auto& p : ptrs) {
+        cargv.push_back(p + &buff[0]);
+    }
+
     int res = 0;
-    if (parse(argc, argv, cli)) {
+    if (parse(cargv.size(), &cargv[0], cli)) {
         switch (selected) {
-        case mode::info:
-            print_info(ind, ts);
-            break;
-        case mode::geom:
-        case mode::props:
-        case mode::all:
-            res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
-            break;
-        case mode::help:
-            fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
-                       usage_lines(cli, HMDQ_NAME).str(), documentation(cli).str());
-            break;
+            case mode::info:
+                print_info(ind, ts);
+                break;
+            case mode::geom:
+            case mode::props:
+            case mode::all:
+                res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
+                break;
+            case mode::help:
+                fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
+                           usage_lines(cli, HMDQ_NAME).str(), documentation(cli).str());
+                break;
         }
     }
     else {
-        if (parse(argc, argv, cli_opts)) {
+        if (parse(cargv.size(), &cargv[0], cli_opts)) {
             res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);
         }
         else {

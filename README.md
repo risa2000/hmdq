@@ -46,8 +46,8 @@ Options:
 #### `geom`
 Displays the headset geometry as advertised by the OpenVR subsystem to the application. It includes:
 
-* View geometry (FOVs) for each eye.
-* Total stereo FOVs and the overlap.
+* View geometry (rendered FOVs) for each eye.
+* Total stereo rendered FOVs and the overlap.
 * Rotation (canting) of the panels.
 * IPD value.
 
@@ -180,9 +180,9 @@ Defines all the different verbosity levels to which the user specified verbosity
     Defines the individual verbosity levels for listed properties. The default list is more of an example than some sophisticated choice. The number defines the minimal required verbosity level specified by the user, in order to have the property value displayed in the output.
 
 ## Theory behind the FOV calculations
-While listing the properties of (tracked) devices is a routine task, nothing to write much about, the FOV calculation turned out to be an interesting challenge with few unexpected outcomes.
+While listing the properties of (tracked) devices is a routine task, nothing to write much about, the rendered FOV calculation turned out to be an interesting challenge with few unexpected outcomes.
 
-Since it deserves a separate space on its own, it is in detail dissected here [FOV calculation of a VR headset](https://github.com/risa2000/vr_docs/blob/master/docs/fov_calculation.md).
+Since it deserves a separate space on its own, it is in detail dissected here [Rendered FOV calculation of a VR headset](https://github.com/risa2000/vr_docs/blob/master/docs/fov_calculation.md).
 
 ## Building the tool from the source code
 The tool was developed as a fun project, so it is probably overdone on many levels, but should never the less be buildable relatively easily. There are few external dependencies though.

@@ -13,6 +13,17 @@
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <string>
+#include <vector>
 
 //  Get OS version or "n/a" if the attempt fails (print error in DEBUG build)
 std::string get_os_ver();
+
+//  Set console output code page, if installed
+void set_console_cp(unsigned int codepage);
+
+//  Return command line arguments as UTF-8 string list (in vector).
+std::vector<std::string> get_u8args();
+
+//  Get C-like args array from the list of strings (in a vector).
+std::tuple<std::vector<size_t>, std::vector<char>>
+get_c_argv(const std::vector<std::string>& args);

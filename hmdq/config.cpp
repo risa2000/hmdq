@@ -103,7 +103,7 @@ static const json VERB_PROPS = {
 };
 // clang-format on
 
-//  functions
+//  local functions
 //------------------------------------------------------------------------------
 //  Load config file, if it exists.
 static json load_config(const std::filesystem::path& cfile)
@@ -120,7 +120,7 @@ static json load_config(const std::filesystem::path& cfile)
 static void write_config(const std::filesystem::path& cfile, const json& jd)
 {
     std::ofstream jf(cfile);
-    fmt::print("Writing config: \"{:s}\"\n", cfile.string());
+    fmt::print("Writing config: \"{:s}\"\n", cfile.u8string());
     jf << jd.dump(JSON_INDENT);
 }
 
@@ -186,21 +186,20 @@ static json build_config(const std::filesystem::path& cfile)
 }
 
 //  Build config file name (or use the default one)
-static std::filesystem::path build_conf_name(int argc, char* argv[])
+static std::filesystem::path build_conf_name(const std::string& argv0)
 {
-    if (argc == 0) {
-        return std::filesystem::path(CONF_FILE);
-    }
-    else {
-        auto exepath = std::filesystem::path(argv[0]);
-        return exepath.filename().replace_extension(".conf.json");
-    }
+    auto relative = std::filesystem::relative(
+        std::filesystem::absolute(std::filesystem::u8path(argv0)));
+    relative.replace_extension(".conf.json");
+    return relative;
 }
 
+//  exported functions
+//------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(int argc, char* argv[])
+bool init_config(const std::string& argv0)
 {
-    auto cfile = build_conf_name(argc, argv);
+    auto cfile = build_conf_name(argv0);
     g_cfg = load_config(cfile);
     if (g_cfg.empty()) {
         g_cfg = build_config(cfile);
@@ -212,7 +211,7 @@ bool init_config(int argc, char* argv[])
                        "The existing configuration file (\"{:s}\") has a different "
                        "version ({:d})\n"
                        "than what the tool supports ({:d}).\n",
-                       cfile.string(), cfg_ver, CFG_VERSION);
+                       cfile.u8string(), cfg_ver, CFG_VERSION);
             fmt::print(stderr,
                        "Please rename the old one, let the new one generate, and then "
                        "merge the changes.\n");

@@ -20,4 +20,4 @@ extern json g_cfg;
 //  functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(int argc, char* argv[]);
+bool init_config(const std::string& argv0);

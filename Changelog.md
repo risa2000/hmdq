@@ -1,5 +1,9 @@
 # `hmdq` Change Log
 
+## 1.0.1 - August 20, 2019
+* Fixed relative path handling for default and specified files.
+* Internal: Converting command line arguments to UTF-8 and handling them this way.
+
 ## 1.0.0 - August 7, 2019
 * **Official release of the binary.**
 * Added support for OpenVR runtime version.
