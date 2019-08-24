@@ -26,7 +26,7 @@
 #endif
 
 //  add an icon to the executable
-1 ICON "${PROJECT_RES_DIR}\hmdq_icon.ico"
+1 ICON "${PROJECT_RES_DIR}\hmdv_icon.ico"
 
 //  define version info
 VS_VERSION_INFO VERSIONINFO
@@ -43,7 +43,7 @@ BEGIN
         BLOCK "040904E4"
         BEGIN
             VALUE "CompanyName", "Richard Musil\0"
-            VALUE "FileDescription", "OpenVR headset utility\0"
+            VALUE "FileDescription", "OpenVR headset data processing utility\0"
             VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
             VALUE "InternalName", "${PROJECT_NAME}\0"
             VALUE "LegalCopyright", "© 2019 Richard Musil\0"

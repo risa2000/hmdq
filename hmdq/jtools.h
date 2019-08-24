@@ -30,6 +30,11 @@ constexpr const char* ANON_PREFIX = "anon@";
 constexpr const char* ERROR_PREFIX = "error@";
 constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
 
+//  OpenVR API loader
+//------------------------------------------------------------------------------
+//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
+json parse_json_oapi(const json& jd);
+
 //  functions
 //------------------------------------------------------------------------------
 //  Remove all properties with errors reported from the dict.

@@ -10,33 +10,36 @@
 #----------------------------------------------------------------------------+
 
 cmake_minimum_required (VERSION 3.15)
-# Set policy to accept MSVC runtime selector (requires CMake >= 3.15)
-cmake_policy (SET CMP0091 NEW)
 
-# Dummy project root
-project (hmdq_root)
+include(utils)
 
-# Add path for modules (helpers)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# Standards
+# Project def
 # ============
-set (CMAKE_CXX_STANDARD 17)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
+project (hmdq_test
+    DESCRIPTION "Unit tests for hmdq tool"
+    )
 
-# CMake options
+# Dependencies
 # ============
-option(BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
-option(BUILD_STATIC "Build the executables with statically linked runtime libraries" ON)
-if (BUILD_STATIC)
-    set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    message (STATUS "Building with static CRT.")
-endif()
+find_package (xtensor 0.20.8 REQUIRED)
+# Use Catch2 unit test framework
+find_package (Catch2 REQUIRED)
 
-# Include sub-projects.
-add_subdirectory ("hmdq")
-add_subdirectory ("hmdv")
+set (hmdq_dir ../hmdq)
+set (hmdq_test_sources
+    ${hmdq_dir}/geom.cpp
+    geom_test.cpp # this one defines main
+    ${hmdq_dir}/optmesh.cpp
+    optmesh_test.cpp
+    ${hmdq_dir}/xtdef.cpp
+    )
 
-if (BUILD_TESTS)
-    add_subdirectory ("hmdq_test")
-endif (BUILD_TESTS)
+# Add unity tests
+add_executable (hmdq_test)
+target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
+target_include_directories (hmdq_test PRIVATE ${hmdq_dir})
+target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
+enable_testing ()
+add_test(NAME hmdq_test COMMAND hmdq_test)
+
+print_variables ("hmdq_test*")

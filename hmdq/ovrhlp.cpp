@@ -31,10 +31,6 @@
 
 #include "fifo_map_fix.h"
 
-//  globals
-//------------------------------------------------------------------------------
-const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
-
 //  locals
 //------------------------------------------------------------------------------
 static constexpr size_t BUFFSIZE = 256;
@@ -48,40 +44,6 @@ static const int PROP_CAT_TRACKEDREF = 4;
 //  different manufacturers (in this order)
 static const hproplist_t PROPS_TO_SEED
     = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
-
-//  OpenVR API loader
-//------------------------------------------------------------------------------
-//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
-json parse_json_oapi(const json& jd)
-{
-    json tdprops;
-    json tdcls;
-    for (const auto& e : jd["enums"]) {
-        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
-            for (const auto& v : e["values"]) {
-                const auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceProperty
-                const auto val = std::stoi(v["value"].get<std::string>());
-                const auto cat = static_cast<int>(val) / 1000;
-                tdprops[std::to_string(cat)][std::to_string(val)] = name;
-                tdprops["name2id"][name] = val;
-            }
-        }
-        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
-            for (const auto& v : e["values"]) {
-                auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceClass
-                const auto val = std::stoi(v["value"].get<std::string>());
-                const auto fs = name.find('_');
-                if (fs != std::string::npos) {
-                    name = name.substr(fs + 1, std::string::npos);
-                }
-                tdcls[std::to_string(val)] = name;
-            }
-        }
-    }
-    return json({{"classes", tdcls}, {"props", tdprops}});
-}
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------

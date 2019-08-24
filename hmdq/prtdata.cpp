@@ -32,6 +32,10 @@
 
 #include "fifo_map_fix.h"
 
+//  globals
+//------------------------------------------------------------------------------
+const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
+
 //  locals
 //------------------------------------------------------------------------------
 static constexpr const char* DEG = "deg";
@@ -58,7 +62,7 @@ void print_misc(const json& jd, const char* prog_name, int verb, int ind, int ts
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
     if (verb >= vdef) {
         const std::vector<std::pair<std::string, std::string>> msg_templ = {
-            {"Current time", jd["time"].get<std::string>()},
+            {"Time stamp", jd["time"].get<std::string>()},
             {fmt::format("{:s} version", prog_name), jd["hmdq_ver"].get<std::string>()},
             {"Output version", std::to_string(jd["log_ver"].get<int>())},
             {"OS version", jd["os_ver"].get<std::string>()}};

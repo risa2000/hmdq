@@ -27,7 +27,6 @@
 #include "gitversion.h"
 #include "jtools.h"
 #include "misc.h"
-#include "ovrhlp.h"
 #include "prtdata.h"
 #include "wintools.h"
 
@@ -42,13 +41,6 @@ enum class mode { geom, props, all, info, help };
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
 static constexpr unsigned int CP_UTF8 = 65001;
-
-//  log versions
-//------------------------------------------------------------------------------
-//  v1: Original file format defined by the tool.
-//  v2: Added secure checksum to the end of the file.
-//  v3: Added new section 'openvr'.
-static constexpr int LOG_VERSION = 3;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -84,34 +76,9 @@ void print_info(int ind = 0, int ts = 0)
            "https://github.com/fmtlib/fmt");
 }
 
-//  Return some miscellanous info about the app and the OS.
-json get_misc()
-{
-    std::tm tm;
-
-    const std::time_t t = std::time(nullptr);
-    localtime_s(&tm, &t);
-
-    json res;
-    res["time"] = fmt::format("{:%F %T}", tm);
-    res["hmdq_ver"] = PROG_VERSION;
-    res["log_ver"] = LOG_VERSION;
-    res["os_ver"] = get_os_ver();
-    return res;
-}
-
-//  Return some info about OpenVR.
-json get_openvr(vr::IVRSystem* vrsys)
-{
-    json res;
-    res["rt_path"] = get_vr_runtime_path();
-    res["rt_ver"] = get_openvr_ver(vrsys);
-    return res;
-}
-
 //  main runner
-int run(mode selected, const std::string& api_json, const std::string& out_json,
-        bool anon, int verb, int ind, int ts)
+int run(mode selected, const std::string& api_json, const std::string& in_json,
+        const std::string& out_json, bool anon, int verb, int ind, int ts)
 {
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
@@ -122,12 +89,21 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
+    if (verb >= vdef)
+        fmt::print("\n");
 
     // make sure that OpenVR API file (default, or specified) exists
     std::filesystem::path apath = std::filesystem::u8path(api_json);
     if (!std::filesystem::exists(apath)) {
         auto msg
             = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.u8string());
+        throw hmdq_error(msg);
+    }
+
+    // check the specified input file exists
+    std::filesystem::path inpath = std::filesystem::u8path(in_json);
+    if (!std::filesystem::exists(inpath)) {
+        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
         throw hmdq_error(msg);
     }
 
@@ -140,72 +116,62 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // parse the API file to hmdq used json (dict)
     const json api = parse_json_oapi(oapi);
 
-    // output
+    // read JSON data input
+    std::ifstream jin(inpath);
     json out;
+    jin >> out;
+    jin.close();
 
-    // get the miscellanous (system and app) data
-    out["misc"] = get_misc();
-    print_misc(out["misc"], PROG_NAME, verb, ind, ts);
+    // verify the checksum
+    auto check_ok = verify_checksum(out);
+    if (!check_ok && verb >= vdef) {
+        iprint(ind, "Warning: Input file checksum is invalid\n\n");
+    }
 
-    // get OpenVR runtime path (sanity check)
-    const auto vr_rt_path = get_vr_runtime_path();
-    // check if HMD is present (sanity check)
-    is_hmd_present();
-    // initialize OpenVR runtime (IVRSystem)
-    auto vrsys = init_vrsys(app_type);
-
-    // get some data about the OpenVR system
-    out["openvr"] = get_openvr(vrsys);
+    print_misc(out["misc"], "hmdq", verb, ind, ts);
     print_openvr(out["openvr"], verb, ind, ts);
     if (verb >= vdef)
         fmt::print("\n");
 
     // get all the properties
     auto tverb = (selected == mode::props || selected == mode::all) ? verb : vsil;
-    const hdevlist_t devs = enum_devs(vrsys);
-    out["devices"] = devs;
     if (tverb >= vdef) {
         print_devs(api, out["devices"], ind, ts);
         fmt::print("\n");
     }
 
-    out["properties"] = get_all_props(vrsys, devs, api, anon);
     print_all_props(api, out["properties"], tverb, ind, ts);
     if (tverb >= vdef)
         fmt::print("\n");
 
     // get all the geometry
     tverb = (selected == mode::geom || selected == mode::all) ? verb : vsil;
-    out["geometry"] = get_geometry(vrsys);
     print_geometry(out["geometry"], tverb, ind, ts);
     if (tverb >= vdef)
         fmt::print("\n");
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
-        // if verbosity is not high enough (verr + 1) purge errors
-        if (verb <= verr) {
-            purge_errors(out["properties"]);
+        out.erase(CHECKSUM);
+        // add the checksum only if the original file was authentic
+        if (check_ok) {
+            add_checksum(out);
         }
-        // add the checksum
-        add_checksum(out);
         // save the JSON with indentation
         std::filesystem::path opath = std::filesystem::u8path(out_json);
         std::ofstream jfo(opath);
         jfo << out.dump(json_indent);
     }
-
-    vr::VR_Shutdown();
     return 0;
 }
 
 //  wrapper for main runner to deal with domestic exceptions
-int run_wrapper(mode selected, const std::string& api_json, const std::string& out_json,
-                bool anon, int verb, int ind, int ts)
+int run_wrapper(mode selected, const std::string& api_json, const std::string& in_json,
+                const std::string& out_json, bool anon, int verb, int ind, int ts)
 {
     int res = 0;
     try {
-        res = run(selected, api_json, out_json, anon, verb, ind, ts);
+        res = run(selected, api_json, in_json, out_json, anon, verb, ind, ts);
     }
     catch (hmdq_error e) {
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
@@ -264,6 +230,7 @@ int main(int argc, char* argv[])
     auto api_json = api_json_path.u8string();
 
     std::string out_json;
+    std::string in_json;
     // custom help texts
     const auto verb_help = fmt::format("verbosity level [{:d}]", verb);
     const auto api_json_help
@@ -271,17 +238,17 @@ int main(int argc, char* argv[])
     const auto anon_help
         = fmt::format("anonymize serial numbers in the output [{}]", anon);
 
-    // Use this construct to accept an "empty" command. First parse all
-    // together (cli_cmds, cli_opts) then cli_opts to accept also only the
+    // Use this construct to accept an "empty" command. First parse all together
+    // (cli_cmds, cli_args, cli_opts) then (cli_args, cli_opts) to accept also only the
     // options without any command.
-    const auto cli_opts
+    auto cli_args = (value("in_json", in_json) % "input data file");
+    auto cli_opts
         = ((option("-a", "--api_json") & value("name", api_json)) % api_json_help,
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
            (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help,
            (option("-n", "--anonymize").set(anon, !anon)) % anon_help);
-
-    const auto cli_nocmd = cli_opts;
-    const auto cli_cmds
+    auto cli_nocmd = (cli_args, cli_opts);
+    auto cli_cmds
         = ((command("geom").set(selected, mode::geom).doc("show only geometry data")
                 | command("props")
                       .set(selected, mode::props)
@@ -295,8 +262,8 @@ int main(int argc, char* argv[])
                  .doc("show version and other info")
            | command("help").set(selected, mode::help).doc("show this help page"));
 
-    const auto cli = cli_cmds;
-    const auto cli_dup = (cli_cmds | cli_nocmd);
+    auto cli = cli_cmds;
+    auto cli_dup = (cli_cmds | cli_nocmd);
 
     // build C-like argument array from UTF-8 arguments
     auto [ptrs, buff] = get_c_argv(u8args);
@@ -314,7 +281,8 @@ int main(int argc, char* argv[])
             case mode::geom:
             case mode::props:
             case mode::all:
-                res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
+                res = run_wrapper(selected, api_json, in_json, out_json, anon, verb, ind,
+                                  ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
@@ -322,20 +290,21 @@ int main(int argc, char* argv[])
                 break;
         }
     }
-    /*
     else {
         fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
         res = 1;
     }
-    */
+    /*
     else {
         if (parse(cargv.size(), &cargv[0], cli_nocmd)) {
-            res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);
+            res = run_wrapper(mode::all, api_json, in_json, out_json, anon, verb, ind,
+    ts);
         }
         else {
             fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
             res = 1;
         }
     }
+    */
     return res;
 }

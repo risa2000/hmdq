@@ -168,7 +168,7 @@ static json build_meta()
 {
     json res;
     res["cfg_ver"] = CFG_VERSION;
-    res["hmdq_ver"] = HMDQ_VERSION;
+    res["hmdq_ver"] = PROG_VERSION;
     return res;
 }
 

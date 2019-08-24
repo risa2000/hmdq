@@ -14,10 +14,21 @@
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <tuple>
 
+#define OPENVR_BUILD_STATIC
+#include <openvr/openvr.h>
+
 #include "fifo_map_fix.h"
+
+//  typedefs
+//------------------------------------------------------------------------------
+typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
 
 //  globals
 //------------------------------------------------------------------------------
+constexpr const char* LEYE = "Left";
+constexpr const char* REYE = "Right";
+extern const heyes_t EYES;
+
 //  Error message format
 constexpr const char* ERR_MSG_FMT_JSON = "[error: {:s}]\n";
 constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";

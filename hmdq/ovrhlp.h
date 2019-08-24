@@ -21,24 +21,9 @@
 
 //  typedefs
 //------------------------------------------------------------------------------
-typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
-
-//  globals
-//------------------------------------------------------------------------------
-constexpr const char* LEYE = "Left";
-constexpr const char* REYE = "Right";
-extern const heyes_t EYES;
-
-//  typedefs
-//------------------------------------------------------------------------------
 typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
 typedef std::vector<std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass>>
     hdevlist_t;
-
-//  OpenVR API loader
-//------------------------------------------------------------------------------
-//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
-json parse_json_oapi(const json& jd);
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
