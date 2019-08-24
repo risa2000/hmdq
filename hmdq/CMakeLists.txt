@@ -32,20 +32,6 @@ find_package (xtensor 0.20.8 REQUIRED)
 find_package (nlohmann_json 3.6.1 REQUIRED)
 find_package (fmt 5.3.0 REQUIRED)
 
-# Standards
-# ============
-set (CMAKE_CXX_STANDARD 17)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# CMake options
-# ============
-option(BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
-option(BUILD_STATIC "Build the executables with statically linked runtime libraries" ON)
-if (BUILD_STATIC)
-    set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    message (STATUS "Building with static CRT.")
-endif()
-
 # Project defines
 # ============
 set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
@@ -120,30 +106,6 @@ add_custom_command (TARGET hmdq
     POST_BUILD
     COMMAND dumpbin /headers /symbols /imports "$<TARGET_FILE:hmdq>" > "$<TARGET_FILE:hmdq>.txt"
     )
-
-# Tests
-# ============
-if (BUILD_TESTS)
-    # Use Catch2 unit test framework
-    find_package (Catch2 REQUIRED)
-
-    set (hmdq_test_sources
-        geom.cpp
-        geom_test.cpp # this one defines main
-        optmesh.cpp
-        optmesh_test.cpp
-        xtdef.cpp
-        )
-
-    # Add unity tests
-    add_executable (hmdq_test)
-    target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
-    target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
-    target_link_libraries (hmdq_test PRIVATE fmt::fmt)
-    #target_link_libraries (hmdq_test PRIVATE fmt::fmt-header-only)
-    enable_testing ()
-    add_test(NAME hmdq_test COMMAND hmdq_test)
-endif (BUILD_TESTS)
 
 # Install
 # ============

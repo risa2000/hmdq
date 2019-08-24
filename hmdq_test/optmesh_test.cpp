@@ -81,7 +81,10 @@ TEST_CASE("HAM mesh optimization module", "[optmesh]")
         }
     }
 
-    SECTION("sort individual edges", "[sort_edges]") { REQUIRE(se2 == sort_edges(e2)); }
+    SECTION("sort individual edges", "[sort_edges]")
+    {
+        REQUIRE(se2 == sort_edges(e2));
+    }
 
     SECTION("find shared edges", "[shared_edges]")
     {
