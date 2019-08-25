@@ -37,7 +37,8 @@ static const char* CONF_FILE = "hmdq.conf.json";
 //  v1: Original file format defined by the tool.
 //  v2: Added 'control' section for anonymizing setup.
 //      Removed 'use_names' option, only "names" are suppported.
-static constexpr int CFG_VERSION = 2;
+//  v3: Changed `hmdq_ver` key to `prog_ver` key.
+static constexpr int CFG_VERSION = 3;
 
 //  control defaults
 //------------------------------------------------------------------------------
@@ -168,7 +169,7 @@ static json build_meta()
 {
     json res;
     res["cfg_ver"] = CFG_VERSION;
-    res["hmdq_ver"] = PROG_VERSION;
+    res["prog_ver"] = PROG_VERSION;
     return res;
 }
 

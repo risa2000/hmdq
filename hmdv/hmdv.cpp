@@ -35,7 +35,7 @@
 //  typedefs
 //------------------------------------------------------------------------------
 //  mode of operation
-enum class mode { geom, props, all, info, help };
+enum class mode { geom, props, all, verify, info, help };
 
 //  locals
 //------------------------------------------------------------------------------
@@ -76,10 +76,47 @@ void print_info(int ind = 0, int ts = 0)
            "https://github.com/fmtlib/fmt");
 }
 
+//  wrapper for main runner to deal with domestic exceptions
+int run_verify(const std::string& in_json, int verb, int ind, int ts)
+{
+    const auto sf = ind * ts;
+    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+
+    // print the execution header
+    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
+    if (verb >= vdef)
+        fmt::print("\n");
+
+    // check the specified input file exists
+    std::filesystem::path inpath = std::filesystem::u8path(in_json);
+    if (!std::filesystem::exists(inpath)) {
+        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
+        throw hmdq_error(msg);
+    }
+    // read JSON data input
+    std::ifstream jin(inpath);
+    json out;
+    jin >> out;
+    jin.close();
+
+    // verify the checksum
+    auto check_ok = verify_checksum(out);
+    if (verb >= vdef) {
+        if (check_ok) {
+            iprint(sf, "Input file checksum is OK\n");
+        }
+        else {
+            iprint(sf, "Input file checksum is invalid\n");
+        }
+    }
+    return check_ok ? 0 : 1;
+}
+
 //  main runner
 int run(mode selected, const std::string& api_json, const std::string& in_json,
         const std::string& out_json, bool anon, int verb, int ind, int ts)
 {
+    const auto sf = ind * ts;
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
     const auto app_type = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
@@ -125,7 +162,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     // verify the checksum
     auto check_ok = verify_checksum(out);
     if (!check_ok && verb >= vdef) {
-        iprint(ind, "Warning: Input file checksum is invalid\n\n");
+        iprint(sf, "Warning: Input file checksum is invalid\n\n");
     }
 
     print_misc(out["misc"], "hmdq", verb, ind, ts);
@@ -166,12 +203,12 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
 }
 
 //  wrapper for main runner to deal with domestic exceptions
-int run_wrapper(mode selected, const std::string& api_json, const std::string& in_json,
-                const std::string& out_json, bool anon, int verb, int ind, int ts)
+template<typename F, typename... Args>
+int run_wrapper(F func, Args&&... args)
 {
     int res = 0;
     try {
-        res = run(selected, api_json, in_json, out_json, anon, verb, ind, ts);
+        res = func(std::forward<Args>(args)...);
     }
     catch (hmdq_error e) {
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
@@ -247,7 +284,8 @@ int main(int argc, char* argv[])
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
            (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help,
            (option("-n", "--anonymize").set(anon, !anon)) % anon_help);
-    auto cli_nocmd = (cli_args, cli_opts);
+    // auto cli_nocmd = (cli_args, cli_opts);
+    auto cli_nocmd = (cli_opts, cli_args);
     auto cli_cmds
         = ((command("geom").set(selected, mode::geom).doc("show only geometry data")
                 | command("props")
@@ -257,6 +295,10 @@ int main(int argc, char* argv[])
                       .set(selected, mode::all)
                       .doc("show all data (default choice)"),
             cli_nocmd)
+           | (command("verify")
+                  .set(selected, mode::verify)
+                  .doc("verify the data file integrity"),
+              cli_args)
            | command("version")
                  .set(selected, mode::info)
                  .doc("show version and other info")
@@ -281,8 +323,11 @@ int main(int argc, char* argv[])
             case mode::geom:
             case mode::props:
             case mode::all:
-                res = run_wrapper(selected, api_json, in_json, out_json, anon, verb, ind,
-                                  ts);
+                res = run_wrapper(run, selected, api_json, in_json, out_json, anon, verb,
+                                  ind, ts);
+                break;
+            case mode::verify:
+                res = run_wrapper(run_verify, in_json, verb, ind, ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
