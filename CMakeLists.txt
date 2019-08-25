@@ -12,12 +12,14 @@
 cmake_minimum_required (VERSION 3.15)
 # Set policy to accept MSVC runtime selector (requires CMake >= 3.15)
 cmake_policy (SET CMP0091 NEW)
-
-# Dummy project root
-project (hmdq_root)
-
+ 
 # Add path for modules (helpers)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Versioning
+# ============
+include(gitversion)
+message (STATUS "GIT_REPO_VERSION = ${GIT_REPO_VERSION}")
 
 # Standards
 # ============
@@ -33,6 +35,14 @@ if (BUILD_STATIC)
     message (STATUS "Building with static CRT.")
 endif()
 
+# Project root
+# ============
+project (hmdq_tools
+    VERSION ${GIT_REPO_VERSION_MAJOR}.${GIT_REPO_VERSION_MINOR}.${GIT_REPO_VERSION_PATCH}
+    DESCRIPTION "Tools for OpenVR HMD and other hardware introspection."
+    HOMEPAGE_URL "https://github.com/risa2000/hmdq"
+    )
+
 # Include sub-projects.
 add_subdirectory ("hmdq")
 add_subdirectory ("hmdv")
@@ -40,3 +50,23 @@ add_subdirectory ("hmdv")
 if (BUILD_TESTS)
     add_subdirectory ("hmdq_test")
 endif (BUILD_TESTS)
+
+# Install
+# ============
+install (FILES 
+    ${CMAKE_SOURCE_DIR}/api/openvr_api.json
+    ${CMAKE_SOURCE_DIR}/README.md
+    ${CMAKE_SOURCE_DIR}/LICENSE
+    DESTINATION .
+    )
+
+set (CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+set (CPACK_PACKAGE_VENDOR $ENV{USERNAME})
+set (CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set (CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set (CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set (CPACK_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
+set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "hmdq tools package")
+set (CPACK_PACKAGE_HOMEPAGE_URL ${PROJECT_HOMEPAGE_URL})
+set (CPACK_GENERATOR "ZIP" CACHE STRING "Generators to support. semi-colon delimited list")
+include(CPack)

@@ -11,24 +11,10 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <tuple>
-
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
-
 #include "fifo_map_fix.h"
-
-//  typedefs
-//------------------------------------------------------------------------------
-typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
 
 //  globals
 //------------------------------------------------------------------------------
-constexpr const char* LEYE = "Left";
-constexpr const char* REYE = "Right";
-extern const heyes_t EYES;
-
 //  Error message format
 constexpr const char* ERR_MSG_FMT_JSON = "[error: {:s}]\n";
 constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
@@ -49,13 +35,6 @@ void print_openvr(const json& jd, int verb, int ind, int ts);
 //------------------------------------------------------------------------------
 //  Print enumerated devices.
 void print_devs(const json& api, const json& devs, int ind, int ts);
-
-//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
-std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
-parse_prop_name(const std::string& pname);
-
-//  Print (non-error) value of an Array type property.
-void print_array_type(const std::string& pname, const json& pval, int ind, int ts);
 
 //  Print device properties.
 void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts);

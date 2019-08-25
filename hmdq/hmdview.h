@@ -11,10 +11,6 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
-
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"

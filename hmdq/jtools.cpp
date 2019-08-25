@@ -20,9 +20,82 @@
 #include <botan/hex.h>
 #include <botan/pipe.h>
 
+#include "config.h"
 #include "jtools.h"
 
 #include "fifo_map_fix.h"
+
+//  globals
+//------------------------------------------------------------------------------
+const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
+//  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
+//  different manufacturers (in this order)
+const hproplist_t PROPS_TO_SEED
+    = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
+
+//  generic functions
+//------------------------------------------------------------------------------
+//  Resolve property tag enum from the type name.
+vr::PropertyTypeTag_t get_ptag_from_ptype(const std::string& ptype)
+{
+    if (ptype == "Float") {
+        return vr::k_unFloatPropertyTag;
+    }
+    else if (ptype == "Int32") {
+        return vr::k_unInt32PropertyTag;
+    }
+    else if (ptype == "Uint64") {
+        return vr::k_unUint64PropertyTag;
+    }
+    else if (ptype == "Bool") {
+        return vr::k_unBoolPropertyTag;
+    }
+    else if (ptype == "String") {
+        return vr::k_unStringPropertyTag;
+    }
+    else if (ptype == "Matrix34") {
+        return vr::k_unHmdMatrix34PropertyTag;
+    }
+    else if (ptype == "Matrix44") {
+        return vr::k_unHmdMatrix44PropertyTag;
+    }
+    else if (ptype == "Vector2") {
+        return vr::k_unHmdVector2PropertyTag;
+    }
+    else if (ptype == "Vector3") {
+        return vr::k_unHmdVector3PropertyTag;
+    }
+    else if (ptype == "Vector4") {
+        return vr::k_unHmdVector4PropertyTag;
+    }
+    else if (ptype == "Quad") {
+        return vr::k_unHmdQuadPropertyTag;
+    }
+    else {
+        return vr::k_unInvalidPropertyTag;
+    }
+}
+
+//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
+std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
+parse_prop_name(const std::string& pname)
+{
+    bool is_array = false;
+    // cutting out the prefix
+    const auto lpos1 = pname.find('_');
+    // property type (the last part after '_')
+    auto rpos1 = pname.rfind('_');
+    auto ptype = pname.substr(rpos1 + 1);
+    if (ptype == "Array") {
+        const auto rpos2 = pname.rfind('_', rpos1 - 1);
+        ptype = pname.substr(rpos2 + 1, rpos1 - rpos2 - 1);
+        rpos1 = rpos2;
+        is_array = true;
+    }
+    const auto basename = pname.substr(lpos1 + 1, rpos1 - lpos1 - 1);
+    const auto typ_name = pname.substr(rpos1 + 1);
+    return {basename, typ_name, get_ptag_from_ptype(ptype), is_array};
+}
 
 //  OpenVR API loader
 //------------------------------------------------------------------------------
@@ -60,6 +133,56 @@ json parse_json_oapi(const json& jd)
 
 //  functions
 //------------------------------------------------------------------------------
+//  Return property name and value for given property ID from device properties.
+std::tuple<std::string, std::string>
+get_prop_name_val(const json& api, const json& dprops, vr::ETrackedDeviceProperty pid)
+{
+    const auto cat = static_cast<int>(pid) / 1000;
+    const auto pname
+        = api["props"][std::to_string(cat)][std::to_string(pid)].get<std::string>();
+    auto pval = std::string();
+    // return empty string if the value does not exist or is not string (i.e. is an error)
+    if (dprops.count(pname) && dprops[pname].is_string())
+        pval = dprops[pname].get<std::string>();
+    return {pname, pval};
+}
+
+//  Anonymize properties for particular tracked device.
+void anonymize_dev_props(const json& api, json& dprops)
+{
+    // get the list of properties to hash from the config file
+    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
+    const std::string anon_prefix(ANON_PREFIX);
+    for (const auto pid : props_to_hash) {
+        const auto [pname, pval] = get_prop_name_val(api, dprops, pid);
+        if (pval.size() == 0)
+            continue;
+        // hash only non-empty strings
+        const std::string prefix(pval.c_str(), anon_prefix.size());
+        if (prefix != anon_prefix) {
+            std::vector<char> msgbuff;
+            for (const auto pid2 : PROPS_TO_SEED) {
+                const auto [pname2, pval2] = get_prop_name_val(api, dprops, pid2);
+                std::copy(pval2.begin(), pval2.end(), std::back_inserter(msgbuff));
+            }
+            std::copy(pval.begin(), pval.end(), std::back_inserter(msgbuff));
+            msgbuff.push_back('\0');
+            std::vector<char> buffer;
+            anonymize(buffer, msgbuff);
+            dprops[pname] = &buffer[0];
+        }
+    }
+}
+
+//  Anonymize the properties defined in the config file. If the values are already
+//  anonymized, do nothing
+void anonymize_all_props(const json& api, json& props)
+{
+    for (auto& [sdid, dprops] : props.items()) {
+        anonymize_dev_props(api, dprops);
+    }
+}
+
 //  Remove all properties with errors reported from the dict.
 void purge_errors(json& jd)
 {

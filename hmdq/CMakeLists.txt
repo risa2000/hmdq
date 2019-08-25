@@ -13,11 +13,6 @@ cmake_minimum_required (VERSION 3.15)
 
 include(utils)
 
-# Versioning
-# ============
-include(gitversion)
-message (STATUS "GIT_REPO_VERSION = ${GIT_REPO_VERSION}")
-
 # Project def
 # ============
 project (hmdq
@@ -114,27 +109,8 @@ install (FILES
     DESTINATION ./docs/images
     )
 
-install (FILES 
-    ${CMAKE_SOURCE_DIR}/api/openvr_api.json
-    ${CMAKE_SOURCE_DIR}/README.md
-    ${CMAKE_SOURCE_DIR}/LICENSE
-    DESTINATION .
-    )
-
 install (TARGETS hmdq
     DESTINATION .
     )
-
-set (CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-set (CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set (CPACK_PACKAGE_VENDOR $ENV{USERNAME})
-set (CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set (CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set (CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set (CPACK_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "hmdq package")
-set (CPACK_PACKAGE_HOMEPAGE_URL ${PROJECT_HOMEPAGE_URL})
-set (CPACK_GENERATOR "ZIP" CACHE STRING "Generators to support. semi-colon delimited list")
-include(CPack)
 
 print_variables ("hmdq_.*")

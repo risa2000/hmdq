@@ -322,12 +322,6 @@ int main(int argc, char* argv[])
                 break;
         }
     }
-    /*
-    else {
-        fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
-        res = 1;
-    }
-    */
     else {
         if (parse(cargv.size(), &cargv[0], cli_nocmd)) {
             res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);

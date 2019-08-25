@@ -15,15 +15,10 @@
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
+#include "jtools.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
-
-//  typedefs
-//------------------------------------------------------------------------------
-typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
-typedef std::vector<std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass>>
-    hdevlist_t;
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------

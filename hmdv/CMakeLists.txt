@@ -13,11 +13,6 @@ cmake_minimum_required (VERSION 3.15)
 
 include(utils)
 
-# Versioning
-# ============
-include(gitversion)
-message (STATUS "GIT_REPO_VERSION = ${GIT_REPO_VERSION}")
-
 # Project def
 # ============
 project (hmdv
@@ -70,30 +65,18 @@ set (hmdq_dir ../hmdq)
 set (hmdv_sources
     hmdv.cpp
     ${hmdq_dir}/config.cpp
-    #${hmdq_dir}/geom.cpp
-    #${hmdq_dir}/hmdview.cpp
     ${hmdq_dir}/jtools.cpp
-    #${hmdq_dir}/optmesh.cpp
     ${hmdq_dir}/wintools.cpp
-    #${hmdq_dir}/ovrhlp.cpp
     ${hmdq_dir}/prtdata.cpp
     ${hmdq_dir}/xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
-
-#if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-#    set (OPENVRLIB openvr_api64c)
-#else()
-#    set (OPENVRLIB openvr_api64)
-#endif()
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
 link_directories(AFTER "${CMAKE_PREFIX_PATH}/lib")
 
 # Add sources to `hmdv` executable.
 add_executable (hmdv)
-#target_compile_options (hmdv PRIVATE /Gw)
-#target_link_options (hmdv PRIVATE /OPT:REF)
 target_sources (hmdv PRIVATE ${hmdv_sources})
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
 target_include_directories (hmdv PRIVATE "${CMAKE_PREFIX_PATH}/include")
@@ -101,8 +84,6 @@ target_include_directories (hmdv PRIVATE "${CMAKE_PREFIX_PATH}/include/botan-2")
 target_link_libraries (hmdv PRIVATE version.lib
     debug botand.lib
     optimized botan.lib
-    #debug ${OPENVRLIB}d debug botand.lib
-    #optimized ${OPENVRLIB} optimized botan.lib
     )
 target_link_libraries (hmdv PRIVATE fmt::fmt)
 #target_link_libraries (hmdv PRIVATE fmt::fmt-header-only)
@@ -120,27 +101,8 @@ install (FILES
     DESTINATION ./docs/images
     )
 
-install (FILES 
-    ${CMAKE_SOURCE_DIR}/api/openvr_api.json
-    ${CMAKE_SOURCE_DIR}/README.md
-    ${CMAKE_SOURCE_DIR}/LICENSE
-    DESTINATION .
-    )
-
 install (TARGETS hmdv
     DESTINATION .
     )
-
-set (CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-set (CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set (CPACK_PACKAGE_VENDOR $ENV{USERNAME})
-set (CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set (CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set (CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set (CPACK_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "hmdv package")
-set (CPACK_PACKAGE_HOMEPAGE_URL ${PROJECT_HOMEPAGE_URL})
-set (CPACK_GENERATOR "ZIP" CACHE STRING "Generators to support. semi-colon delimited list")
-include(CPack)
 
 print_variables ("hmdv_.*")

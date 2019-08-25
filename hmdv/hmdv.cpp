@@ -165,6 +165,10 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
         iprint(sf, "Warning: Input file checksum is invalid\n\n");
     }
 
+    // anonymize if requested
+    if (anon)
+        anonymize_all_props(api, out["properties"]);
+
     print_misc(out["misc"], "hmdq", verb, ind, ts);
     print_openvr(out["openvr"], verb, ind, ts);
     if (verb >= vdef)
@@ -284,7 +288,6 @@ int main(int argc, char* argv[])
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
            (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help,
            (option("-n", "--anonymize").set(anon, !anon)) % anon_help);
-    // auto cli_nocmd = (cli_args, cli_opts);
     auto cli_nocmd = (cli_opts, cli_args);
     auto cli_cmds
         = ((command("geom").set(selected, mode::geom).doc("show only geometry data")
@@ -339,17 +342,5 @@ int main(int argc, char* argv[])
         fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
         res = 1;
     }
-    /*
-    else {
-        if (parse(cargv.size(), &cargv[0], cli_nocmd)) {
-            res = run_wrapper(mode::all, api_json, in_json, out_json, anon, verb, ind,
-    ts);
-        }
-        else {
-            fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
-            res = 1;
-        }
-    }
-    */
     return res;
 }

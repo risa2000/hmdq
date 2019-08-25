@@ -20,7 +20,7 @@
 
 #include "geom.h"
 #include "hmdview.h"
-#include "prtdata.h"
+#include "jtools.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"

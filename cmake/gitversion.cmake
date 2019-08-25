@@ -34,7 +34,7 @@ if (GIT_REPO_VERSION MATCHES "^v([0-9]+).([0-9]+).([0-9]+)($|(-([0-9]+)-([a-h0-9
     set (GIT_REPO_VERSION_MAJOR ${CMAKE_MATCH_1})
     set (GIT_REPO_VERSION_MINOR ${CMAKE_MATCH_2})
     set (GIT_REPO_VERSION_PATCH ${CMAKE_MATCH_3})
-    set (GIT_REPO_VERSION_DAYS ${CMAKE_MATCH_6})
+    set (GIT_REPO_VERSION_NCOMM ${CMAKE_MATCH_6})
     set (GIT_REPO_VERSION_HASH ${CMAKE_MATCH_7})
     foreach (i RANGE ${CMAKE_MATCH_COUNT})
         message (STATUS "CMAKE_MATCH_${i} = ${CMAKE_MATCH_${i}}")
@@ -49,6 +49,9 @@ string (TIMESTAMP _TIMESTAMP "%Y-%m-%d %H:%M:%S")
 message (STATUS "${_TIMESTAMP}")
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/res/gitversion.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gitversion.h
+    ${CMAKE_CURRENT_BINARY_DIR}/res/gitversion.h
     @ONLY
     )
+
+# add output dir to the search path so the other subprojects find it
+include_directories (${CMAKE_CURRENT_BINARY_DIR}/res)

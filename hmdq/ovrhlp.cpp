@@ -26,7 +26,6 @@
 #include "jtools.h"
 #include "optmesh.h"
 #include "ovrhlp.h"
-#include "prtdata.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
@@ -39,11 +38,6 @@ static const int PROP_CAT_COMMON = 1;
 static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
-
-//  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
-//  different manufacturers (in this order)
-static const hproplist_t PROPS_TO_SEED
-    = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
