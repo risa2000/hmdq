@@ -11,7 +11,7 @@ It can either display the info in the console, or save all the collected informa
 To run it, one needs an OpenVR subsystem installed, which usually means SteamVR and, of course, the hardware.
 
 ## `hmdv`
-is a complementary tool, which only purpose is to process the data files created by `hmdq`, which basically means to view them in more human friendly way.
+is a complementary tool, whose only purpose is to process the data files created by `hmdq`, which basically means to view them in more human friendly way.
 
 It does not need an OpenVR.
 
