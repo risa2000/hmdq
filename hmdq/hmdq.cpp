@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
- * HMDQ - Query tool for an OpenVR HMD and some other hardware                *
+ * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
  * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
