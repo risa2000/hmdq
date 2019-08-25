@@ -1,37 +1,50 @@
-# `hmdq`
-![hmdq application icon](docs/images/hmdq_128.png)
+![hmdq](docs/images/hmdq_128.png) ![hmdv](docs/images/hmdv_128.png)
 
-`hmdq` is a command line tool for an OpenVR headset and other hardware introspection for Windows. In order to run it, one needs an OpenVR subsystem installed, which usually means SteamVR and, of course, the hardware.
+# HMDQ Tools
+HMDQ Tools is a set of two command line tools for an OpenVR headset and other hardware introspection:
 
-[Change Log](Changelog.md)
+## `hmdq`
+is a main tool, which connects to an OpenVR subsystem and collects all available data about the connected devices (called _tracked devices_ in OpenVR terminology).  
+
+It can either display the info in the console, or save all the collected information plus some additional calculated data to the data file in JSON format.
+
+To run it, one needs an OpenVR subsystem installed, which usually means SteamVR and, of course, the hardware.
+
+## `hmdv`
+is a complementary tool, which only purpose is to process the data files created by `hmdq`, which basically means to view them in more human friendly way.
+
+It does not need an OpenVR.
+
+Both tools use very similar command line interface. The only (major) difference is that `hmdq` reads the data it shows (and stores) from OpenVR, while `hmdv` reads the data from already stored file. The following paragraphs address both tools, unless its explicitly specified otherwise.
 
 ## Installation
 Get the latest binary ZIP from [releases](https://github.com/risa2000/hmdq/releases) and unzip it wherever you want to run it.
 
 ## Operation
-Since `hmdq` is a command line tool, it is better run from Windows console (or any other terminal window which supports standard I/O).
+Since both tools are command line tools, it is better to run them from Windows console (or any terminal window which supports standard I/O).
 
-When the tool runs the first time, it creates a configuration file `hmdq.conf.json` in the same directory.
+When the tools run the first time, they create a configuration file `<tool_name>.conf.json` in the same directory.
 
-Another file which is necessary (and is present in the archive) is OpenVR API description file (`openvr_api.json`). This file can be updated independently of `hmdq`.
+Another file which is necessary (and is present in the archive) is OpenVR API description file (`openvr_api.json`). This file can be updated independently of HMDQ tools.
 
 ### Commands
 
 #### `help`
 Shows all the commands and options with short descriptions.
 
-```bash
+* `hmdq`
+```
 $ hmdq help
 Usage:
-        hmdq (geom|props|version|all|help) [-a <name>] [-o <name>] [-v [<level>]] [-n]
+        hmdq (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n]
+        hmdq version
+        hmdq help
 Options:
         geom        show only geometry data
         props       show only device properties
-        version     show version and other info
         all         show all data (default choice)
-        help        show this help page
         -a, --api_json <name>
-                    OpenVR API JSON definition file [openvr_api.json]
+                    OpenVR API JSON definition file ["openvr_api.json"]
 
         -o, --out_json <name>
                     JSON output file
@@ -41,6 +54,39 @@ Options:
 
         -n, --anonymize
                     anonymize serial numbers in the output [false]
+
+        version     show version and other info
+        help        show this help page
+```
+* `hmdv`
+```
+$ hmdv help
+Usage:
+        hmdv (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n] <in_json>
+        hmdv verify <in_json>
+        hmdv version
+        hmdv help
+Options:
+        geom        show only geometry data
+        props       show only device properties
+        all         show all data (default choice)
+        -a, --api_json <name>
+                    OpenVR API JSON definition file ["openvr_api.json"]
+
+        -o, --out_json <name>
+                    JSON output file
+
+        -v, --verb <level>
+                    verbosity level [0]
+
+        -n, --anonymize
+                    anonymize serial numbers in the output [false]
+
+        <in_json>   input data file
+        verify      verify the data file integrity
+        <in_json>   input data file
+        version     show version and other info
+        help        show this help page
 ```
 
 #### `geom`
@@ -53,7 +99,7 @@ Displays the headset geometry as advertised by the OpenVR subsystem to the appli
 
 Additionally to that, it also shows:
 
-* The recommended render target resolution (for the application in whose context `hmdq` runs).
+* The recommended render target resolution (for the application in whose context `hmdq` run).
 * The statistics of the _hidden area mask_ (HAM) mesh (if supported by the headset).
 
 Example (excerpt):
@@ -71,7 +117,7 @@ View geometry:
 ```
 
 #### `props`
-Prints out all different _tracked device properties_ for all currently detected _tracked devices_. The term _tracked device_ includes not only the headset and the controllers, but also the lighthouses and additional (not tracked) devices as the gamepads. The number of properties shown depends on the _verbosity_ level specified by the user, which, by default, is set to `0`.
+Prints out all different _tracked device properties_ for all currently detected _tracked devices_. The term _tracked device_ includes not only the headset and the controllers, but also the lighthouses and the additional (not tracked) devices as the gamepads. The number of properties shown depends on the _verbosity_ level specified by the user, which, by default, is set to `0`.
 
 Example (excerpt):
 ```c
@@ -97,6 +143,9 @@ Device enumeration:
 #### `version`
 Shows the tool version info plus some additional information about the build and the used libraries.
 
+### `verify` (only in `hmdv`)
+Verifies the data file checksum.
+
 #### `all (default)`
 Processes both `geom` and `props`. This is the default command.
 
@@ -105,7 +154,7 @@ Processes both `geom` and `props`. This is the default command.
 #### `--api_json <filename>`
 Allows specifying a custom/different/new JSON file with OpenVR API definitions. Normally, you should not need that. The one included comes directly from [OpenVR repository](https://github.com/ValveSoftware/openvr/tree/master/headers).
 
-You can update this file independently from `hmdq` though to let the tool recognize new properties (if there were any).
+You can update this file independently from the tools to let them recognize new properties (if there were any).
 
 #### `--out_json <filename>`
 When specified, all the information collected by the tool (not only what is actually displayed in the console, but all possible retrievable information), plus some additional information calculated by the tool in the process (e.g. different _FOV points_, HAM mesh optimized layout, etc.) is stored in the specified file in JSON format.
@@ -113,6 +162,8 @@ When specified, all the information collected by the tool (not only what is actu
 This file is mostly useful for additional processing, comparison, and future reference.
 
 **NOTE:** _The amount of the information stored in the file, **is not controlled by the verbosity level**. Every time the file is created, all the available information plus the additionally computed data are stored in the file. The reason for that is to have a well defined set of data, which is guaranteed to be present._
+
+When used with `hmdv` it basically rewrites the information from the input file to the output file. It is useful to anonymize the input file.
 
 #### `-v <level>, --verb <level>`
 Verbosity level of the output (to the console). There are five levels defined:
@@ -142,13 +193,13 @@ This could be useful when sharing the output data in the public, without disclos
 The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: #1005 (`Prop_ManufacturerName_String`), concatenated with #1001 (`Prop_ModelNumber_String`), and finally with the incriminated value to anonymize. The manufacturer and model numbers are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers will not anonymize into the same values.
 
 ### Configuration
-The configuration file `hmdq.conf.json` is always created with the default values, and can be changed later by the user. The tool will not "touch" the configuration file as long as it exists and only create a new one if none is present.
+The configuration file `<tool_name>.conf.json` is always created with the default values, and can be changed later by the user. The tool will not "touch" the configuration file as long as it exists and only create a new one if none is present.
 
-It has a consequence when updating the tool to the new version. It may happen that the new version of the tool introduces new config values, which are not present in the old configuration file. As the config file is never modified by the tool, they will not be added, will always be used with the default presets, and the user will not be able to change them.
+It has a consequence when updating the tool to the new version. It may happen that the new version of the tool introduces new config values, which are not present in the old configuration file, or remove some old ones. When it happens the tool will refuse to run and ask the user to manually update the configuration file.
 
-If this happens the way how to resolve it is let the new version create a new (default) config file (e.g. by renaming the old one) and then manually copy paste the new values added in the new version to the old config and put it back in place.
+One way how to do it is letting the tool to create a new (default) config file (e.g. by renaming the old one) and then manually copy any custom setting from the old config to the new one.
 
-There are following configuration options:
+Configuration options:
 
 * `meta`  
 This section is read-only. Changing it has no meaning or impact on the tool operation.
@@ -159,7 +210,7 @@ This section is read-only. Changing it has no meaning or impact on the tool oper
 Defines the indentation (in spaces):
     * `cli_indent` for standard output in the console,
     * `json_indent` for the output JSON file.
-* `openvr`  
+* `openvr` (only used by `hmdq`)  
 Sets the operational conditions related to OpenVR. Currently only one is supported:
     * `app_type`  
     Defines how the tool initializes the OpenVR subsystem in `vr::VR_Init` call. The different application types are described [here](https://github.com/ValveSoftware/openvr/wiki/API-Documentation#initialization-and-cleanup).  
@@ -180,12 +231,10 @@ Defines all the different verbosity levels to which the user specified verbosity
     Defines the individual verbosity levels for listed properties. The default list is more of an example than some sophisticated choice. The number defines the minimal required verbosity level specified by the user, in order to have the property value displayed in the output.
 
 ## Theory behind the FOV calculations
-While listing the properties of (tracked) devices is a routine task, nothing to write much about, the rendered FOV calculation turned out to be an interesting challenge with few unexpected outcomes.
-
-Since it deserves a separate space on its own, it is in detail dissected here [Rendered FOV calculation of a VR headset](https://github.com/risa2000/vr_docs/blob/master/docs/fov_calculation.md).
+While listing the properties of (tracked) devices is a mundane task, the rendered FOV calculation is an interesting topic which deserves its own space and is in detail dissected here [VR headset rendered FOV calculation](https://github.com/risa2000/vr_docs/blob/master/docs/fov_calculation.md).
 
 ## Building the tool from the source code
-The tool was developed as a fun project, so it is probably overdone on many levels, but should never the less be buildable relatively easily. There are few external dependencies though.
+The tools are being developed as a fun project, so they are probably overdone on many levels, but should never the less be buildable. There are few external dependencies though.
 
 ### Required external libraries
 * [`muellan/clipp`](https://github.com/muellan/clipp)
@@ -204,9 +253,9 @@ On top of that you will also need `cmake` version 3.15 or higher.
 * [`Catch2`](https://github.com/catchorg/Catch2) to build unit tests.
 
 ### Building
-The project was developed as a "CMake project" in Visual Studio 2019, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
+The project is developed as a "CMake project" in Visual Studio 2019, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
 
-Building with `clang-cl` may provide some additional challenges which however should not surprise anyone who is already using this compiler as he should be accustomed to some roughing.
+Building with `clang-cl` may provide some additional challenges which however should not surprise anyone who is using this compiler and as such is already accustomed to some roughing.
 
 Because of the particular use of `nlohmann/json` library, it is also necessary to patch `QuantStack/xtensor` JSON support with this [patch](https://github.com/QuantStack/xtensor/compare/master...risa2000:xjson_patch). At least until this patch is merged or some other solution to the issue is implemented.
 

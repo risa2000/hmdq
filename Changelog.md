@@ -1,5 +1,9 @@
 # `hmdq` Change Log
 
+## 1.2.0 - August 25, 2019
+* Added new tool `hmdv` for data file processing.
+* Internal: code and CMake files refactoring
+
 ## 1.0.1 - August 20, 2019
 * Fixed relative path handling for default and specified files.
 * Internal: Converting command line arguments to UTF-8 and handling them this way.
