@@ -26,6 +26,7 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "jtools.h"
+#include "misc.h"
 #include "prtdata.h"
 #include "xtdef.h"
 
@@ -301,17 +302,13 @@ void print_view_geom(const json& jd, int ind, int ts)
 }
 
 //  Print the hidden area mask mesh statistics.
-void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom, int ind,
-                    int ts)
+void print_ham_mesh(const json& ham_mesh, int verb, int vgeom, int ind, int ts)
 {
     const auto sf = ind * ts;
-    const auto sf1 = (ind + 1) * ts;
     constexpr auto s1 = 18; // strlen("optimized vertices");
 
-    iprint(sf, "{:s} eye HAM mesh:\n", neye);
-
     if (ham_mesh.is_null()) {
-        iprint(sf1, "No mesh defined by the headset\n");
+        iprint(sf, "No mesh defined by the headset\n");
         return;
     }
     const auto nverts = ham_mesh["verts_raw"].size();
@@ -322,13 +319,13 @@ void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom,
     const auto nfaces_opt = ham_mesh["faces_opt"].size();
     const auto ham_area = ham_mesh["ham_area"].get<double>();
 
-    iprint(sf1, "{:>{}s}: {:d}, triangles: {:d}\n", "original vertices", s1, nverts,
+    iprint(sf, "{:>{}s}: {:d}, triangles: {:d}\n", "original vertices", s1, nverts,
            nfaces);
     if (verb >= vgeom) {
-        iprint(sf1, "{:>{}s}: {:d}, n-gons: {:d}\n", "optimized vertices", s1, nverts_opt,
+        iprint(sf, "{:>{}s}: {:d}, n-gons: {:d}\n", "optimized vertices", s1, nverts_opt,
                nfaces_opt);
     }
-    iprint(sf1, "{:>{}s}: {:.2f} {:s}\n", "mesh area", s1, ham_area * 100, PRCT);
+    iprint(sf, "{:>{}s}: {:.2f} {:s}\n", "mesh area", s1, ham_area * 100, PRCT);
 }
 
 //  Print all the info about the view geometry, calculated FOVs, hidden area mesh, etc.
@@ -345,7 +342,8 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     for (const auto& [eye, neye] : EYES) {
 
         if (verb >= vdef) {
-            print_ham_mesh(jd["ham_mesh"][neye], neye.c_str(), verb, vgeom, ind, ts);
+            iprint(sf, "{:s} eye HAM mesh:\n", neye);
+            print_ham_mesh(jd["ham_mesh"][neye], verb, vgeom, ind + 1, ts);
             fmt::print("\n");
         }
         if (verb >= vgeom) {
@@ -378,4 +376,36 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
         iprint(sf, "View geometry:\n");
         print_view_geom(jd["view_geom"], ind + 1, ts);
     }
+}
+
+//  Print the complete data file.
+void print_all(const pmode selected, const json& api, const json& out, int verb, int ind, int ts)
+{
+    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
+    const auto sf = ind * ts;
+
+    // print the miscellanous (system and app) data
+    print_misc(out["misc"], PROG_NAME, verb, ind, ts);
+
+    // print some data about the OpenVR system
+    print_openvr(out["openvr"], verb, ind, ts);
+    if (verb >= vdef)
+        fmt::print("\n");
+
+    // print the devices and the properties
+    auto tverb = (selected == pmode::props || selected == pmode::all) ? verb : vsil;
+    if (tverb >= vdef) {
+        print_devs(api, out["devices"], ind, ts);
+        fmt::print("\n");
+    }
+    print_all_props(api, out["properties"], tverb, ind, ts);
+    if (tverb >= vdef)
+        fmt::print("\n");
+
+    // print all the geometry
+    tverb = (selected == pmode::geom || selected == pmode::all) ? verb : vsil;
+    print_geometry(out["geometry"], tverb, ind, ts);
+    if (tverb >= vdef)
+        fmt::print("\n");
 }

@@ -109,6 +109,21 @@ json get_openvr(vr::IVRSystem* vrsys)
     return res;
 }
 
+// Translate the tool selected mode into print mode.
+static pmode mode2pmode(const mode selected)
+{
+    switch (selected) {
+        case mode::props:
+            return pmode::props;
+        case mode::geom:
+            return pmode::geom;
+        case mode::all:
+            return pmode::all;
+        default:
+            HMDQ_EXCEPTION(fmt::format("mode2pmode({}) is undefined", selected));
+    }
+}
+
 //  main runner
 int run(mode selected, const std::string& api_json, const std::string& out_json,
         bool anon, int verb, int ind, int ts)
@@ -116,8 +131,6 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
     const auto app_type = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
     const auto verr = g_cfg["verbosity"]["error"].get<int>();
 
     // print the execution header
@@ -139,13 +152,11 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // parse the API file to hmdq used json (dict)
     const json api = parse_json_oapi(oapi);
-
     // output
     json out;
 
     // get the miscellanous (system and app) data
     out["misc"] = get_misc();
-    print_misc(out["misc"], PROG_NAME, verb, ind, ts);
 
     // get OpenVR runtime path (sanity check)
     const auto vr_rt_path = get_vr_runtime_path();
@@ -156,30 +167,17 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // get some data about the OpenVR system
     out["openvr"] = get_openvr(vrsys);
-    print_openvr(out["openvr"], verb, ind, ts);
-    if (verb >= vdef)
-        fmt::print("\n");
 
     // get all the properties
-    auto tverb = (selected == mode::props || selected == mode::all) ? verb : vsil;
     const hdevlist_t devs = enum_devs(vrsys);
     out["devices"] = devs;
-    if (tverb >= vdef) {
-        print_devs(api, out["devices"], ind, ts);
-        fmt::print("\n");
-    }
-
     out["properties"] = get_all_props(vrsys, devs, api, anon);
-    print_all_props(api, out["properties"], tverb, ind, ts);
-    if (tverb >= vdef)
-        fmt::print("\n");
 
     // get all the geometry
-    tverb = (selected == mode::geom || selected == mode::all) ? verb : vsil;
     out["geometry"] = get_geometry(vrsys);
-    print_geometry(out["geometry"], tverb, ind, ts);
-    if (tverb >= vdef)
-        fmt::print("\n");
+
+    // print all collected data
+    print_all(mode2pmode(selected), api, out, verb, ind, ts);
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
@@ -193,6 +191,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
         std::filesystem::path opath = std::filesystem::u8path(out_json);
         std::ofstream jfo(opath);
         jfo << out.dump(json_indent);
+        jfo.close();
     }
 
     vr::VR_Shutdown();

@@ -13,6 +13,11 @@
 
 #include "fifo_map_fix.h"
 
+//  typedefs
+//------------------------------------------------------------------------------
+//  mode of operation
+enum class pmode { geom, props, all };
+
 //  globals
 //------------------------------------------------------------------------------
 //  Error message format
@@ -62,3 +67,7 @@ void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom,
 
 //  Print all the info about the view geometry, calculated FOVs, hidden area mesh, etc.
 void print_geometry(const json& jd, int verb, int ind, int ts);
+
+//  Print the complete data file.
+void print_all(const pmode selected, const json& api, const json& out, int verb, int ind,
+               int ts);

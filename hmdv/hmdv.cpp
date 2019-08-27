@@ -112,6 +112,21 @@ int run_verify(const std::string& in_json, int verb, int ind, int ts)
     return check_ok ? 0 : 1;
 }
 
+// Translate the tool selected mode into print mode.
+static pmode mode2pmode(const mode selected)
+{
+    switch (selected) {
+        case mode::props:
+            return pmode::props;
+        case mode::geom:
+            return pmode::geom;
+        case mode::all:
+            return pmode::all;
+        default:
+            HMDQ_EXCEPTION(fmt::format("mode2pmode({}) is undefined", selected));
+    }
+}
+
 //  main runner
 int run(mode selected, const std::string& api_json, const std::string& in_json,
         const std::string& out_json, bool anon, int verb, int ind, int ts)
@@ -119,10 +134,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     const auto sf = ind * ts;
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
-    const auto app_type = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
-    const auto verr = g_cfg["verbosity"]["error"].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
@@ -169,27 +181,8 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     if (anon)
         anonymize_all_props(api, out["properties"]);
 
-    print_misc(out["misc"], "hmdq", verb, ind, ts);
-    print_openvr(out["openvr"], verb, ind, ts);
-    if (verb >= vdef)
-        fmt::print("\n");
-
-    // get all the properties
-    auto tverb = (selected == mode::props || selected == mode::all) ? verb : vsil;
-    if (tverb >= vdef) {
-        print_devs(api, out["devices"], ind, ts);
-        fmt::print("\n");
-    }
-
-    print_all_props(api, out["properties"], tverb, ind, ts);
-    if (tverb >= vdef)
-        fmt::print("\n");
-
-    // get all the geometry
-    tverb = (selected == mode::geom || selected == mode::all) ? verb : vsil;
-    print_geometry(out["geometry"], tverb, ind, ts);
-    if (tverb >= vdef)
-        fmt::print("\n");
+    // print all the data
+    print_all(mode2pmode(selected), api, out, verb, ind, ts);
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
@@ -202,6 +195,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
         std::filesystem::path opath = std::filesystem::u8path(out_json);
         std::ofstream jfo(opath);
         jfo << out.dump(json_indent);
+        jfo.close();
     }
     return 0;
 }
