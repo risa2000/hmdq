@@ -143,7 +143,7 @@ Device enumeration:
 #### `version`
 Shows the tool version info plus some additional information about the build and the used libraries.
 
-### `verify` (only in `hmdv`)
+#### `verify` (only in `hmdv`)
 Verifies the data file checksum.
 
 #### `all (default)`

@@ -1,22 +1,25 @@
 # `hmdq` Change Log
 
+## 1.2.1 - August 27, 2019
+* Internal: printing routines refactored.
+
 ## 1.2.0 - August 25, 2019
 * Added new tool `hmdv` for data file processing.
-* Internal: code and CMake files refactoring
+* Internal: code and CMake files refactoring.
 
 ## 1.0.1 - August 20, 2019
 * Fixed relative path handling for default and specified files.
-* Internal: Converting command line arguments to UTF-8 and handling them this way.
+* Internal: converting command line arguments to UTF-8 and handling them this way.
 
 ## 1.0.0 - August 7, 2019
 * **Official release of the binary.**
 * Added support for OpenVR runtime version.
-* Internal: Added `const` qualifiers wherever possible.
+* Internal: added `const` qualifiers wherever possible.
 
 ## 0.3.1 - August 6, 2019
 * Added secure checksum to the output file.
 * Removed `use_names` option from the configuration file.
-* Internal: Converted all `iostream` outputs to using `{fmt}`.
+* Internal: converted all `iostream` outputs to using `{fmt}`.
 
 ## 0.3.0 - August 4, 2019
 * Added an option for anonymization of sensitive info (basically serial numbers of the tracked devices).
