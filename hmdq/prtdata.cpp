@@ -161,8 +161,14 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
     const auto verr = jverb["error"].get<int>();
 
     for (const auto& [pname, pval] : dprops.items()) {
+        const auto name2id = api["props"]["name2id"];
+        // if there is a property which is no longer supported by current openvr_api.json
+        // ignore it
+        if (name2id.find(pname) == name2id.end()) {
+            continue;
+        }
         // convert string to the correct type
-        const auto pid = api["props"]["name2id"][pname].get<vr::ETrackedDeviceProperty>();
+        const auto pid = name2id[pname].get<vr::ETrackedDeviceProperty>();
         // decode property type
         const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
         // property verbosity level (if defined) or max
@@ -177,9 +183,10 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
         }
         else {
             // determine the "active" verbosity level for the current property
-            if (jverb["props"].count(pname)) {
+            const auto verb_props = jverb["props"];
+            if (verb_props.find(pname) != verb_props.end()) {
                 // explicitly defined property
-                pverb = jverb["props"][pname].get<int>();
+                pverb = verb_props[pname].get<int>();
             }
             else {
                 // otherwise set requested verbosity to vmax
@@ -379,17 +386,21 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
 }
 
 //  Print the complete data file.
-void print_all(const pmode selected, const json& api, const json& out, int verb, int ind, int ts)
+void print_all(const pmode selected, const json& api, const json& out, int verb, int ind,
+               int ts)
 {
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
     const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
     const auto sf = ind * ts;
+    const auto log_ver = out["misc"]["log_ver"].get<int>();
 
     // print the miscellanous (system and app) data
     print_misc(out["misc"], PROG_NAME, verb, ind, ts);
 
-    // print some data about the OpenVR system
-    print_openvr(out["openvr"], verb, ind, ts);
+    // print some data about the OpenVR system (only if present)
+    if (out.find("openvr") != out.end()) {
+        print_openvr(out["openvr"], verb, ind, ts);
+    }
     if (verb >= vdef)
         fmt::print("\n");
 

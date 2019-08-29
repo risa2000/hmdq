@@ -142,7 +142,7 @@ get_prop_name_val(const json& api, const json& dprops, vr::ETrackedDevicePropert
         = api["props"][std::to_string(cat)][std::to_string(pid)].get<std::string>();
     auto pval = std::string();
     // return empty string if the value does not exist or is not string (i.e. is an error)
-    if (dprops.count(pname) && dprops[pname].is_string())
+    if (dprops.find(pname) != dprops.end() && dprops[pname].is_string())
         pval = dprops[pname].get<std::string>();
     return {pname, pval};
 }

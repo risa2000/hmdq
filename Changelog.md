@@ -1,5 +1,8 @@
 # `hmdq` Change Log
 
+## 1.2.2 - August 29, 2019
+* Fixed: `hmdv` compatibility with older data files
+
 ## 1.2.1 - August 27, 2019
 * Internal: printing routines refactored.
 
