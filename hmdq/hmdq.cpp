@@ -48,7 +48,8 @@ static constexpr unsigned int CP_UTF8 = 65001;
 //  v1: Original file format defined by the tool.
 //  v2: Added secure checksum to the end of the file.
 //  v3: Added new section 'openvr'.
-static constexpr int LOG_VERSION = 3;
+//  v4: IPD now reported in meters (was mm)
+static constexpr int LOG_VERSION = 4;
 
 //  functions
 //------------------------------------------------------------------------------

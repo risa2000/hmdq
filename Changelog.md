@@ -1,7 +1,10 @@
 # `hmdq` Change Log
 
+## 1.2.3 - September 7, 2019
+* Changed: reported IPD is now stored in meters in the JSON output file.
+
 ## 1.2.2 - August 29, 2019
-* Fixed: `hmdv` compatibility with older data files
+* Fixed: `hmdv` compatibility with older data files.
 
 ## 1.2.1 - August 27, 2019
 * Internal: printing routines refactored.
