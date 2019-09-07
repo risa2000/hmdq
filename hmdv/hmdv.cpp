@@ -25,6 +25,7 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
+#include "hmdview.h"
 #include "jtools.h"
 #include "misc.h"
 #include "prtdata.h"
@@ -180,6 +181,10 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     // anonymize if requested
     if (anon)
         anonymize_all_props(api, out["properties"]);
+
+    // NOTE: temp fix for vertical FOV calculation (recalculate it)
+    const auto fov_tot = get_total_fov(out["geometry"]["fov_head"]);
+    out["geometry"]["fov_tot"] = fov_tot;
 
     // print all the data
     print_all(mode2pmode(selected), api, out, verb, ind, ts);

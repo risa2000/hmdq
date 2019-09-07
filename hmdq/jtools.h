@@ -14,24 +14,12 @@
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <string>
 
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
+#include "hmddef.h"
 
 #include "fifo_map_fix.h"
 
-//  typedefs
-//------------------------------------------------------------------------------
-typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
-typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
-typedef std::vector<std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass>>
-    hdevlist_t;
-
 //  globals
 //------------------------------------------------------------------------------
-//  Eye nomenclature
-constexpr const char* LEYE = "Left";
-constexpr const char* REYE = "Right";
-extern const heyes_t EYES;
 //  Property IDs to seed the hash for anonymized properties.
 extern const hproplist_t PROPS_TO_SEED;
 
@@ -46,12 +34,6 @@ constexpr const char* ANON_PREFIX = "anon@";
 //  Error reporting pre-defs
 constexpr const char* ERROR_PREFIX = "error@";
 constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
-
-//  generic functions
-//------------------------------------------------------------------------------
-//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
-std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
-parse_prop_name(const std::string& pname);
 
 //  OpenVR API loader
 //------------------------------------------------------------------------------

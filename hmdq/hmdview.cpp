@@ -19,8 +19,8 @@
 #include <xtensor/xview.hpp>
 
 #include "geom.h"
+#include "hmddef.h"
 #include "hmdview.h"
-#include "jtools.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
@@ -160,10 +160,11 @@ json get_total_fov(const json& fov_head)
         - fov_head[LEYE]["deg_left"].get<double>();
 
     // vertical FOV calculated from "straight ahead" look
-    const auto fov_ver = std::min(fov_head[REYE]["deg_top"].get<double>(),
-                                  fov_head[LEYE]["deg_top"].get<double>())
-        - std::max(fov_head[REYE]["deg_bottom"].get<double>(),
-                   fov_head[LEYE]["deg_bottom"].get<double>());
+    const auto ver_right = fov_head[REYE]["deg_top"].get<double>()
+        - fov_head[REYE]["deg_bottom"].get<double>();
+    const auto ver_left = fov_head[LEYE]["deg_top"].get<double>()
+        - fov_head[LEYE]["deg_bottom"].get<double>();
+    const auto fov_ver = (ver_left + ver_right) / 2.0;
 
     // diagonal FOV is calculated from diagonal FOV points:
     // [left_eye:left_bottom] <-> [right_eye:right_top]

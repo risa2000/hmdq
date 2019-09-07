@@ -65,6 +65,7 @@ set (hmdq_sources
     hmdq.cpp
     config.cpp
     geom.cpp
+    hmddef.cpp
     hmdview.cpp
     jtools.cpp
     optmesh.cpp

@@ -65,9 +65,12 @@ set (hmdq_dir ../hmdq)
 set (hmdv_sources
     hmdv.cpp
     ${hmdq_dir}/config.cpp
+    ${hmdq_dir}/geom.cpp
+    ${hmdq_dir}/hmddef.cpp
+    ${hmdq_dir}/hmdview.cpp
     ${hmdq_dir}/jtools.cpp
-    ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/prtdata.cpp
+    ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
