@@ -1,5 +1,13 @@
 # `hmdq` Change Log
 
+## 1.2.4 - September 8, 2019
+* Changed  
+  * Total vertical FOV calculation formula. Instead of using combined minimum from both eyes it now uses arithmetic average.
+  * Fix has been added to `hmdv` to compensate for this, so resaving the data file will save it with fixed value.
+* Internal  
+  * Changed the way data collection and additional data calculation are handled. Now the collection is separate from the calculation.
+  * In the same spirit the anonymization is also separated from the data collection.
+
 ## 1.2.3 - September 7, 2019
 * Changed: reported IPD is now stored in meters in the JSON output file.
 

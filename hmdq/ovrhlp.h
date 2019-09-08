@@ -20,6 +20,20 @@
 
 #include "fifo_map_fix.h"
 
+
+//  functions which do not need OpenVR initialized
+//------------------------------------------------------------------------------
+//  If a HMD is not present abort (does not need IVRSystem).
+void is_hmd_present();
+
+//  Return OpenVR runtime path.
+std::string get_vr_runtime_path();
+
+//  functions (OpenVR init)
+//------------------------------------------------------------------------------
+//  Initialize OpenVR subsystem and return IVRSystem interace.
+vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type);
+
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Return OpenVR version from the runtime.
@@ -31,18 +45,11 @@ const char* get_openvr_ver(vr::IVRSystem* vrsys);
 hdevlist_t enum_devs(vr::IVRSystem* vrsys);
 
 //  Return properties for all devices.
-json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
-                   bool anon);
+json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api);
 
 //  functions (geometry)
 //------------------------------------------------------------------------------
-//  Convert hidden area mask mesh from OpenVR to numpy array of vertices.
-harray2d_t hmesh2np(const vr::HiddenAreaMesh_t& hmesh);
-
 //  Get hidden area mask (HAM) mesh.
-std::pair<harray2d_t, hfaces_t> get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye,
-                                             vr::EHiddenAreaMeshType hamtype);
-
 //  Return hidden area mask mesh for given eye.
 json get_ham_mesh_opt(vr::IVRSystem* vrsys, vr::EVREye eye,
                       vr::EHiddenAreaMeshType hamtype);
@@ -50,16 +57,8 @@ json get_ham_mesh_opt(vr::IVRSystem* vrsys, vr::EVREye eye,
 //  Get raw projection values (LRBT) for `eye`.
 json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye);
 
+//  Get eye to head transform matrix.
+json get_eye2head(vr::IVRSystem* vrsys, vr::EVREye eye);
+
 //  Enumerate view and projection geometry for both eyes.
 json get_geometry(vr::IVRSystem* vrsys);
-
-//  functions (OpenVR init)
-//------------------------------------------------------------------------------
-//  If a HMD is not present abort (does not need IVRSystem).
-void is_hmd_present();
-
-//  Return OpenVR runtime path.
-std::string get_vr_runtime_path();
-
-//  Initialize OpenVR subsystem and return IVRSystem interace.
-vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type);

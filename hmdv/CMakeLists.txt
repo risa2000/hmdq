@@ -70,6 +70,7 @@ set (hmdv_sources
     ${hmdq_dir}/hmdview.cpp
     ${hmdq_dir}/jtools.cpp
     ${hmdq_dir}/prtdata.cpp
+    ${hmdq_dir}/verhlp.cpp
     ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc

@@ -30,11 +30,14 @@ harray2d_t verts_uv2lrbt(const harray2d_t& verts, double l, double r, double b, 
 harray2d_t build_lrbt_quad_2d(const json& raw, double norm = 1.0);
 
 //  Calculate partial FOVs for the projection.
-json get_fov(const json& raw, const json& mesh, const harray2d_t* rot = nullptr);
+json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot = nullptr);
 
 //  Calculate total FOV, vertical, horizontal and diagonal.
-json get_total_fov(const json& fov_head);
+json calc_total_fov(const json& fov_head);
 
 //  Calculate the angle of the canted views and the IPD from eye to head transformation
 //  matrices.
-json get_view_geom(const json& e2h);
+json calc_view_geom(const json& e2h);
+
+//  Calculate the additional data in the geometry data object (json)
+json calc_geometry(const json& jd);

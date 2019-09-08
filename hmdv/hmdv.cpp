@@ -29,6 +29,7 @@
 #include "jtools.h"
 #include "misc.h"
 #include "prtdata.h"
+#include "verhlp.h"
 #include "wintools.h"
 
 #include "fifo_map_fix.h"
@@ -182,9 +183,12 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     if (anon)
         anonymize_all_props(api, out["properties"]);
 
-    // NOTE: temp fix for vertical FOV calculation (recalculate it)
-    const auto fov_tot = get_total_fov(out["geometry"]["fov_head"]);
-    out["geometry"]["fov_tot"] = fov_tot;
+    // NOTE: temp fix for vertical FOV calculation in version < v1.2.4
+    const auto prog_ver = out["misc"]["hmdq_ver"].get<std::string>();
+    if (comp_ver(prog_ver, PROG_VER_FOV_FIX) < 0) {
+        const auto fov_tot = calc_total_fov(out["geometry"]["fov_head"]);
+        out["geometry"]["fov_tot"] = fov_tot;
+    }
 
     // print all the data
     print_all(mode2pmode(selected), api, out, verb, ind, ts);

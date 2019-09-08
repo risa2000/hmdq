@@ -53,7 +53,7 @@ harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
 }
 
 //  Calculate partial FOVs for the projection.
-json get_fov(const json& raw, const json& mesh, const harray2d_t* rot)
+json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot)
 {
     harray2d_t verts2d;
     hfaces_t mfaces;
@@ -153,7 +153,7 @@ json get_fov(const json& raw, const json& mesh, const harray2d_t* rot)
 }
 
 //  Calculate total, vertical, horizontal and diagonal FOVs.
-json get_total_fov(const json& fov_head)
+json calc_total_fov(const json& fov_head)
 {
     // horizontal FOV
     const auto fov_hor = fov_head[REYE]["deg_right"].get<double>()
@@ -189,7 +189,7 @@ json get_total_fov(const json& fov_head)
 
 //  Calculate the angle of the canted views and the IPD from eye to head transformation
 //  matrices.
-json get_view_geom(const json& e2h)
+json calc_view_geom(const json& e2h)
 {
     const harray2d_t left = e2h[LEYE];
     const harray2d_t right = e2h[REYE];
@@ -207,4 +207,50 @@ json get_view_geom(const json& e2h)
     const auto ipd
         = point_dist(xt::view(left, xt::all(), 3), xt::view(right, xt::all(), 3));
     return json({{"left_rot", left_rot}, {"right_rot", right_rot}, {"ipd", ipd}});
+}
+
+//  Calculate the additional data in the geometry data object (json)
+json calc_geometry(const json& jd)
+{
+    json fov_eye;
+    json fov_head;
+
+    for (const auto& [eye, neye] : EYES) {
+        // get HAM mesh (if supported by the headset, otherwise 'null')
+        const auto ham_mesh = jd["ham_mesh"][neye];
+
+        // get eye to head transformation matrix
+        const auto e2h = jd["eye2head"][neye].get<harray2d_t>();
+
+        // get raw eye values (direct from OpenVR)
+        const auto raw_eye = jd["raw_eye"][neye];
+
+        // build eye FOV points only if the eye FOV is rotated
+        if (xt::view(e2h, xt::all(), xt::range(0, 3)) != xt::eye<double>(3, 0)) {
+            fov_eye[neye] = calc_fov(raw_eye, ham_mesh);
+        }
+
+        // build head FOV points (they are eye FOV points if the views are parallel)
+        harray2d_t rot = xt::view(e2h, xt::all(), xt::range(0, 3));
+        fov_head[neye] = calc_fov(raw_eye, ham_mesh, &rot);
+    }
+
+    // calculate total FOVs and the overlap
+    auto fov_tot = calc_total_fov(fov_head);
+
+    // calculate view rotation and the IPD
+    auto view_geom = calc_view_geom(jd["eye2head"]);
+
+    // create a new object to ensure the right order of the newly inserted objects
+    json res;
+    res["rec_rts"] = jd["rec_rts"];
+    res["raw_eye"] = jd["raw_eye"];
+    res["eye2head"] = jd["eye2head"];
+    res["view_geom"] = view_geom;
+    res["fov_eye"] = fov_eye;
+    res["fov_head"] = fov_head;
+    res["fov_tot"] = fov_tot;
+    res["ham_mesh"] = jd["ham_mesh"];
+
+    return res;
 }

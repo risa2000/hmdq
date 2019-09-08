@@ -25,6 +25,7 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
+#include "hmdview.h"
 #include "jtools.h"
 #include "misc.h"
 #include "ovrhlp.h"
@@ -172,10 +173,14 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // get all the properties
     const hdevlist_t devs = enum_devs(vrsys);
     out["devices"] = devs;
-    out["properties"] = get_all_props(vrsys, devs, api, anon);
+    out["properties"] = get_all_props(vrsys, devs, api);
+    // anonymize if requested
+    if (anon)
+        anonymize_all_props(api, out["properties"]);
 
     // get all the geometry
     out["geometry"] = get_geometry(vrsys);
+    out["geometry"] = calc_geometry(out["geometry"]);
 
     // print all collected data
     print_all(mode2pmode(selected), api, out, verb, ind, ts);

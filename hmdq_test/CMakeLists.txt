@@ -31,6 +31,8 @@ set (hmdq_test_sources
     geom_test.cpp # this one defines main
     ${hmdq_dir}/optmesh.cpp
     optmesh_test.cpp
+    ${hmdq_dir}/verhlp.cpp
+    verhlp_test.cpp
     ${hmdq_dir}/xtdef.cpp
     )
 

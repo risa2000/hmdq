@@ -19,11 +19,9 @@
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
-#include "config.h"
 #include "fmthlp.h"
 #include "geom.h"
 #include "hmdview.h"
-#include "jtools.h"
 #include "optmesh.h"
 #include "ovrhlp.h"
 #include "xtdef.h"
@@ -39,6 +37,57 @@ static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
 
+//  functions which do not need OpenVR initialized
+//------------------------------------------------------------------------------
+//  If a HMD is not present abort (does not need IVRSystem).
+void is_hmd_present()
+{
+    if (!vr::VR_IsHmdPresent()) {
+        throw hmdq_error("No HMD detected");
+    }
+}
+
+//  Return OpenVR runtime path.
+std::string get_vr_runtime_path()
+{
+    if (vr::VR_IsRuntimeInstalled()) {
+        constexpr size_t cbuffsize = 256;
+        std::vector<char> buffer(cbuffsize);
+        uint32_t buffsize = 0;
+        bool res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
+                                         &buffsize);
+        if (!res) {
+            buffer.resize(buffsize);
+            res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
+                                        &buffsize);
+        }
+        if (res) {
+            return std::string(&buffer[0], std::strlen(&buffer[0]));
+        }
+        else {
+            throw hmdq_error("Cannot get the runtime path");
+        }
+    }
+    else {
+        throw hmdq_error("OpenVR runtime not installed");
+    }
+}
+
+//  functions (OpenVR init)
+//------------------------------------------------------------------------------
+//  Initialize OpenVR subsystem and return IVRSystem interace.
+vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type)
+{
+    vr::EVRInitError eError = vr::VRInitError_None;
+    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
+
+    if (eError != vr::VRInitError_None) {
+        const auto msg
+            = fmt::format("{:s}", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+        throw hmdq_error(msg);
+    }
+    return vrsys;
+}
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Return OpenVR version from the runtime.
@@ -197,34 +246,10 @@ bool get_str_tracked_prop(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex
     return check_tp_result(vrsys, jd, pname, error);
 }
 
-//  Get hashed value of the string, pre-seeded with PROPS_TO_SEED values.
-void get_str_hashed(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                    const std::string& pname, std::vector<char>& buffer)
-{
-    std::vector<char> tempbuff(BUFFSIZE);
-    std::vector<char> msgbuff;
-    // first hash the "seed"
-    json empty;
-    for (const auto pid : PROPS_TO_SEED) {
-        if (get_str_tracked_prop(vrsys, empty, did, pid, pname, tempbuff)) {
-            std::copy(tempbuff.begin(), tempbuff.begin() + std::strlen(&tempbuff[0]),
-                      std::back_inserter(msgbuff));
-        }
-    }
-    // finally add the actual S/N
-    std::copy(buffer.begin(), buffer.begin() + std::strlen(&buffer[0]),
-              std::back_inserter(msgbuff));
-    // and the terminating '\0'
-    msgbuff.push_back('\0');
-    // anonymize
-    anonymize(buffer, msgbuff);
-}
-
 //  Return dict of properties for device `did`.
 json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                   vr::ETrackedDeviceClass dclass, int cat, const json& api, bool anon)
+                   vr::ETrackedDeviceClass dclass, int cat, const json& api)
 {
-    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
     const auto scat = std::to_string(cat);
 
     json res;
@@ -255,12 +280,6 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
             }
             case vr::k_unStringPropertyTag: {
                 if (get_str_tracked_prop(vrsys, res, did, pid, pname, buffer)) {
-                    const bool bhash
-                        = (props_to_hash.end()
-                           != std::find(props_to_hash.begin(), props_to_hash.end(), pid));
-                    if (anon && std::strlen(&buffer[0]) && bhash) {
-                        get_str_hashed(vrsys, did, pname, buffer);
-                    }
                     res[pname] = &buffer[0];
                 }
                 break;
@@ -307,25 +326,23 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
 }
 
 //  Return properties for all devices.
-json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api,
-                   bool anon)
+json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api)
 {
     json pvals;
 
     for (const auto [did, dclass] : devs) {
         const auto sdid = std::to_string(did);
-        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api, anon);
+        pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api);
         if (dclass == vr::TrackedDeviceClass_HMD) {
-            pvals[sdid].update(
-                get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api, anon));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api));
         }
         else if (dclass == vr::TrackedDeviceClass_Controller) {
             pvals[sdid].update(
-                get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api, anon));
+                get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api));
         }
         else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
             pvals[sdid].update(
-                get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api, anon));
+                get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api));
         }
     }
     return pvals;
@@ -347,7 +364,7 @@ harray2d_t hmesh2np(const vr::HiddenAreaMesh_t& hmesh)
 }
 
 //  Get hidden area mask (HAM) mesh.
-std::pair<harray2d_t, hfaces_t> get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye,
+std::pair<harray2d_t, hfaces_t> get_ham_mesh_pair(vr::IVRSystem* vrsys, vr::EVREye eye,
                                              vr::EHiddenAreaMeshType hamtype)
 {
     const auto hmesh = vrsys->GetHiddenAreaMesh(eye, hamtype);
@@ -365,10 +382,10 @@ std::pair<harray2d_t, hfaces_t> get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye ey
 }
 
 //  Return hidden area mask mesh for given eye.
-json get_ham_mesh_opt(vr::IVRSystem* vrsys, vr::EVREye eye,
+json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye,
                       vr::EHiddenAreaMeshType hamtype)
 {
-    const auto [verts, faces] = get_ham_mesh(vrsys, eye, hamtype);
+    const auto [verts, faces] = get_ham_mesh_pair(vrsys, eye, hamtype);
     if (faces.empty()) {
         return json();
     }
@@ -397,16 +414,24 @@ json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye)
     return res;
 }
 
+//  Get eye to head transform matrix.
+json get_eye2head(vr::IVRSystem* vrsys, vr::EVREye eye)
+{
+    // get eye to head transformation matrix
+    const auto oe2h = vrsys->GetEyeToHeadTransform(eye);
+    const std::vector<std::size_t> shape = {3, 4};
+    const auto e2h = xt::adapt(&oe2h.m[0][0], shape);
+    json je2h = e2h;
+    return je2h;
+}
+
 //  Enumerate view and projection geometry for both eyes.
 json get_geometry(vr::IVRSystem* vrsys)
 {
     // all the data are collected into specific `json`s
     json eye2head;
     json raw_eye;
-    json fov_eye;
-    json fov_head;
     json ham_mesh;
-    json res;
 
     uint32_t rec_width, rec_height;
     vrsys->GetRecommendedRenderTargetSize(&rec_width, &rec_height);
@@ -415,91 +440,20 @@ json get_geometry(vr::IVRSystem* vrsys)
     for (const auto& [eye, neye] : EYES) {
 
         // get HAM mesh (if supported by the headset, otherwise 'null')
-        ham_mesh[neye] = get_ham_mesh_opt(vrsys, eye, vr::k_eHiddenAreaMesh_Standard);
+        ham_mesh[neye] = get_ham_mesh(vrsys, eye, vr::k_eHiddenAreaMesh_Standard);
 
         // get eye to head transformation matrix
-        const auto oe2h = vrsys->GetEyeToHeadTransform(eye);
-        const std::vector<std::size_t> shape = {3, 4};
-        const auto e2h = xt::adapt(&oe2h.m[0][0], shape);
-        eye2head[neye] = e2h;
+        eye2head[neye] = get_eye2head(vrsys, eye);
 
         // get raw eye values (direct from OpenVR)
         raw_eye[neye] = get_raw_eye(vrsys, eye);
-
-        // build eye FOV points only if the eye FOV is rotated
-        if (xt::view(e2h, xt::all(), xt::range(0, 3)) != xt::eye<double>(3, 0)) {
-            fov_eye[neye] = get_fov(raw_eye[neye], ham_mesh[neye]);
-        }
-
-        // build head FOV points (they are eye FOV points if the views are parallel)
-        harray2d_t rot = xt::view(e2h, xt::all(), xt::range(0, 3));
-        fov_head[neye] = get_fov(raw_eye[neye], ham_mesh[neye], &rot);
     }
 
-    // calculate total FOVs and the overlap
-    auto fov_tot = get_total_fov(fov_head);
-
-    // calculate view rotation and the IPD
-    auto view_geom = get_view_geom(eye2head);
-
+    json res;
     res["rec_rts"] = rec_rts;
     res["raw_eye"] = raw_eye;
     res["eye2head"] = eye2head;
-    res["view_geom"] = view_geom;
-    res["fov_eye"] = fov_eye;
-    res["fov_head"] = fov_head;
-    res["fov_tot"] = fov_tot;
     res["ham_mesh"] = ham_mesh;
 
     return res;
-}
-
-//  functions (OpenVR init)
-//------------------------------------------------------------------------------
-//  If a HMD is not present abort (does not need IVRSystem).
-void is_hmd_present()
-{
-    if (!vr::VR_IsHmdPresent()) {
-        throw hmdq_error("No HMD detected");
-    }
-}
-
-//  Return OpenVR runtime path.
-std::string get_vr_runtime_path()
-{
-    if (vr::VR_IsRuntimeInstalled()) {
-        constexpr size_t cbuffsize = 256;
-        std::vector<char> buffer(cbuffsize);
-        uint32_t buffsize = 0;
-        bool res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
-                                         &buffsize);
-        if (!res) {
-            buffer.resize(buffsize);
-            res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
-                                        &buffsize);
-        }
-        if (res) {
-            return std::string(&buffer[0], std::strlen(&buffer[0]));
-        }
-        else {
-            throw hmdq_error("Cannot get the runtime path");
-        }
-    }
-    else {
-        throw hmdq_error("OpenVR runtime not installed");
-    }
-}
-
-//  Initialize OpenVR subsystem and return IVRSystem interace.
-vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type)
-{
-    vr::EVRInitError eError = vr::VRInitError_None;
-    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
-
-    if (eError != vr::VRInitError_None) {
-        const auto msg
-            = fmt::format("{:s}", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
-        throw hmdq_error(msg);
-    }
-    return vrsys;
 }
