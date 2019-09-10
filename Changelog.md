@@ -1,5 +1,8 @@
 # `hmdq` Change Log
 
+## 1.3.0 - September 10, 2019
+* Added `Prop_RegisteredDeviceType_String` to the default anonymized properties list. This caused a new config version (4) and thus requires the manual update of the config file.
+
 ## 1.2.5 - September 10, 2019
 * Changed  
   * All applicable fixes to `hmdq` data file (either concerning format, units, or values), are now implemented in separate module and applied in `hmdv` accordingly to the version they affect.

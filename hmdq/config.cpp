@@ -39,16 +39,21 @@ static const char* CONF_FILE = "hmdq.conf.json";
 //  v2: Added 'control' section for anonymizing setup.
 //      Removed 'use_names' option, only "names" are suppported.
 //  v3: Changed `hmdq_ver` key to `prog_ver` key.
-static constexpr int CFG_VERSION = 3;
+//  v4: Added: Prop_RegisteredDeviceType_String to anonymized props.
+static constexpr int CFG_VERSION = 4;
 
 //  control defaults
 //------------------------------------------------------------------------------
 static constexpr bool CTRL_ANONYMIZE = false;
 //  currently identified properties with serial numbers
+// clang-format off
 static const std::vector<vr::ETrackedDeviceProperty> PROPS_TO_HASH
-    = {vr::Prop_SerialNumber_String, vr::Prop_Firmware_ProgrammingTarget_String,
+    = {vr::Prop_SerialNumber_String,
+       vr::Prop_AllWirelessDongleDescriptions_String,
        vr::Prop_ConnectedWirelessDongle_String,
-       vr::Prop_AllWirelessDongleDescriptions_String};
+       vr::Prop_Firmware_ProgrammingTarget_String,
+       vr::Prop_RegisteredDeviceType_String};
+// clang-format on
 
 //  verbosity defaults
 //------------------------------------------------------------------------------
