@@ -163,7 +163,7 @@ This file is mostly useful for additional processing, comparison, and future ref
 
 **NOTE:** _The amount of the information stored in the file, **is not controlled by the verbosity level**. Every time the file is created, all the available information plus the additionally computed data are stored in the file. The reason for that is to have a well defined set of data, which is guaranteed to be present._
 
-When used with `hmdv` it basically rewrites the information from the input file to the output file. It is useful to anonymize the input file.
+When used with `hmdv` it basically rewrites the information from the input file to the output file. It is useful to anonymize the input file or to update the data content to the latest version (see the Changelog file for the details).
 
 #### `-v <level>, --verb <level>`
 Verbosity level of the output (to the console). There are five levels defined:

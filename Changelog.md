@@ -1,5 +1,10 @@
 # `hmdq` Change Log
 
+## 1.2.5 - September 10, 2019
+* Changed  
+  * All applicable fixes to `hmdq` data file (either concerning format, units, or values), are now implemented in separate module and applied in `hmdv` accordingly to the version they affect.
+  * Saving data into JSON file in `hmdv` will now save updated version and mark the file with `<file>["misc"]["hmdv_ver"]` value, indicating, which `hmdv` version was used to alter the data.
+
 ## 1.2.4 - September 8, 2019
 * Changed  
   * Total vertical FOV calculation formula. Instead of using combined minimum from both eyes it now uses arithmetic average.

@@ -11,17 +11,9 @@
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <string>
-#include <tuple>
-
-//  globals
-//------------------------------------------------------------------------------
-constexpr const char* PROG_VER_FOV_FIX = "1.2.4";
 
 //  functions
 //------------------------------------------------------------------------------
-//  Get the first number from the version string.
-std::tuple<int, size_t> first_num(const std::string& vs, size_t pos);
-
 // Compare two versions `va` and `vb`.
 // Return:
 //  -1 : va < vb

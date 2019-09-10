@@ -26,20 +26,22 @@ find_package (xtensor 0.20.8 REQUIRED)
 find_package (Catch2 REQUIRED)
 
 set (hmdq_dir ../hmdq)
+set (hmdv_dir ../hmdv)
+
 set (hmdq_test_sources
     ${hmdq_dir}/geom.cpp
     geom_test.cpp # this one defines main
     ${hmdq_dir}/optmesh.cpp
     optmesh_test.cpp
-    ${hmdq_dir}/verhlp.cpp
-    verhlp_test.cpp
     ${hmdq_dir}/xtdef.cpp
+    ${hmdv_dir}/verhlp.cpp
+    verhlp_test.cpp
     )
 
 # Add unity tests
 add_executable (hmdq_test)
 target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
-target_include_directories (hmdq_test PRIVATE ${hmdq_dir})
+target_include_directories (hmdq_test PRIVATE ${hmdq_dir} ${hmdv_dir})
 target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
 enable_testing ()
 add_test(NAME hmdq_test COMMAND hmdq_test)

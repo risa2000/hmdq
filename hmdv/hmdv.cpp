@@ -25,11 +25,11 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
+#include "hmdfix.h"
 #include "hmdview.h"
 #include "jtools.h"
 #include "misc.h"
 #include "prtdata.h"
-#include "verhlp.h"
 #include "wintools.h"
 
 #include "fifo_map_fix.h"
@@ -179,16 +179,12 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
         iprint(sf, "Warning: Input file checksum is invalid\n\n");
     }
 
+    // apply all known fixes
+    apply_all_relevant_fixes(out);
+
     // anonymize if requested
     if (anon)
         anonymize_all_props(api, out["properties"]);
-
-    // NOTE: temp fix for vertical FOV calculation in version < v1.2.4
-    const auto prog_ver = out["misc"]["hmdq_ver"].get<std::string>();
-    if (comp_ver(prog_ver, PROG_VER_FOV_FIX) < 0) {
-        const auto fov_tot = calc_total_fov(out["geometry"]["fov_head"]);
-        out["geometry"]["fov_tot"] = fov_tot;
-    }
 
     // print all the data
     print_all(mode2pmode(selected), api, out, verb, ind, ts);

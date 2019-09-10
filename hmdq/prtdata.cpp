@@ -306,11 +306,7 @@ void print_view_geom(const json& jd, int ind, int ts)
            jd["left_rot"].get<double>(), DEG);
     iprint(sf, "{:{}s}{:6.1f} {:s}\n", "right panel rotation:", s1,
            jd["right_rot"].get<double>(), DEG);
-    auto ipd = jd["ipd"].get<double>();
-    // fix the IPD in milimeters vs meters (started with log ver. 4)
-    if (ipd < 1.0) {
-        ipd *= MM_IN_METER;
-    }
+    const auto ipd = jd["ipd"].get<double>() * MM_IN_METER;
     iprint(sf, "{:{}s}{:6.1f} {:s}\n", "reported IPD:", s1, ipd, MM);
 }
 
