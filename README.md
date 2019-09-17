@@ -231,7 +231,7 @@ Defines all the different verbosity levels to which the user specified verbosity
     Defines the individual verbosity levels for listed properties. The default list is more of an example than some sophisticated choice. The number defines the minimal required verbosity level specified by the user, in order to have the property value displayed in the output.
 
 ## Theory behind the FOV calculations
-While listing the properties of (tracked) devices is a mundane task, the rendered FOV calculation is an interesting topic which deserves its own space and is in detail dissected here [VR headset rendered FOV calculation](https://risa2000.github.io/vrdocs/docs/hmd_fov_calculation/).
+While listing the properties of (tracked) devices is a mundane task, the rendered FOV calculation is an interesting topic which deserves its own space and is in detail dissected here [VR headset rendered FOV calculation](https://risa2000.github.io/vrdocs/docs/hmd_fov_calculation).
 
 ## Building the tool from the source code
 The tools are being developed as a fun project, so they are probably overdone on many levels, but should never the less be buildable. There are few external dependencies though.
