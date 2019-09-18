@@ -1,5 +1,11 @@
 # `hmdq` Change Log
 
+## 1.3.1 - September 18, 2019
+* Added OpenVR build version to the version info.
+* Updated OpenVR API JSON to OpenVR SDK 1.17.15.
+* Internal: Changed version info generation.
+* Internal: Updated all external libraries.
+
 ## 1.3.0 - September 10, 2019
 * Added `Prop_RegisteredDeviceType_String` to the default anonymized properties list. This caused a new config version (4) and thus requires the manual update of the config file.
 

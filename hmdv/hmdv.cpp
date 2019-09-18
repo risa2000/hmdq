@@ -64,18 +64,17 @@ void print_info(int ind = 0, int ts = 0)
     iprint(sf1, "{:>{}s}: {:s}\n", "date", tf1, TIMESTAMP);
     fmt::print("\n");
     iprint(sf, "using libraries:\n");
-    iprint(sf1, "{:s} ({:s})\n", "muellan/clip", "https://github.com/muellan/clipp");
-    iprint(sf1, "{:s} {:s} ({:s})\n", "nlohmann/json", NLOHMANN_JSON_VERSION,
-           "https://github.com/nlohmann/json");
-    iprint(sf1, "{:s} {:s} ({:s})\n", "QuantStack/xtl", XTL_VERSION,
-           "https://github.com/QuantStack/xtl");
-    iprint(sf1, "{:s} {:s} ({:s})\n", "QuantStack/xtensor", XTENSOR_VERSION,
-           "https://github.com/QuantStack/xtensor");
-    iprint(sf1, "{:s} {:s} ({:s})\n", "randombit/botan", Botan::short_version_string(),
-           "https://github.com/randombit/botan");
-    iprint(sf1, "{:s} {:d}.{:d}.{:d} ({:s})\n", "fmtlib/fmt", FMT_VERSION / 10000,
-           (FMT_VERSION % 10000) / 100, FMT_VERSION % 100,
-           "https://github.com/fmtlib/fmt");
+    constexpr const char* libver_nover_fmt = "{0:s} (https://github.com/{0:s})\n";
+    constexpr const char* libver_str_fmt = "{0:s} {1:s} (https://github.com/{0:s})\n";
+    constexpr const char* libver_num_fmt
+        = "{0:s} {1:d}.{2:d}.{3:d} (https://github.com/{0:s})\n";
+    iprint(sf1, libver_nover_fmt, "muellan/clip");
+    iprint(sf1, libver_str_fmt, "nlohmann/json", NLOHMANN_JSON_VERSION);
+    iprint(sf1, libver_str_fmt, "QuantStack/xtl", XTL_VERSION);
+    iprint(sf1, libver_str_fmt, "QuantStack/xtensor", XTENSOR_VERSION);
+    iprint(sf1, libver_str_fmt, "randombit/botan", Botan::short_version_string());
+    iprint(sf1, libver_num_fmt, "fmtlib/fmt", FMT_VERSION / 10000,
+           (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
 }
 
 //  wrapper for main runner to deal with domestic exceptions

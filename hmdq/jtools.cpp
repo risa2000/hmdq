@@ -18,8 +18,8 @@
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
-#include <botan/blake2b.h>
 #include <botan/filters.h>
+#include <botan/hash.h>
 #include <botan/hex.h>
 #include <botan/pipe.h>
 
@@ -143,8 +143,8 @@ void purge_errors(json& jd)
 //  The returned value is an upper case string of a binhex encoded hash.
 std::string calculate_checksum(const json& jd)
 {
-    Botan::Pipe pipe(new Botan::Hash_Filter(fmt::format("Blake2b({:d})", CHKSUM_BITSIZE)),
-                     new Botan::Hex_Encoder);
+    const auto hash_name = fmt::format("Blake2b({:d})", CHKSUM_BITSIZE);
+    Botan::Pipe pipe(new Botan::Hash_Filter(hash_name), new Botan::Hex_Encoder);
     // use the most efficient form for checksum (indent=-1)
     pipe.process_msg(jd.dump());
     return pipe.read_all_as_string();
@@ -166,9 +166,11 @@ bool verify_checksum(const json& jd)
 //  Anonymize the message in `in` to `out`
 void anonymize(std::vector<char>& out, const std::vector<char>& in)
 {
-    auto b2b = Botan::BLAKE2b(ANON_BITSIZE);
+    const auto hash_name = fmt::format("Blake2b({:d})", ANON_BITSIZE);
+    std::unique_ptr<Botan::HashFunction> b2b(
+        Botan::HashFunction::create_or_throw(hash_name));
     const std::string prefix(ANON_PREFIX);
-    b2b.update(reinterpret_cast<const uint8_t*>(&in[0]), std::strlen(&in[0]));
+    b2b->update(reinterpret_cast<const uint8_t*>(&in[0]), std::strlen(&in[0]));
     // the size in chars is cipher size in bytes * 2 for BINHEX encoding
     // plus the anon prefix plus the terminating zero
     const auto anon_size = prefix.length() + ANON_BITSIZE / 8 * 2 + 1;
@@ -176,7 +178,7 @@ void anonymize(std::vector<char>& out, const std::vector<char>& in)
         // resize out buffer to fit the hash
         out.resize(anon_size);
     }
-    const auto hash_bh = Botan::hex_encode(b2b.final());
+    const auto hash_bh = Botan::hex_encode(b2b->final());
     std::copy(prefix.begin(), prefix.end(), out.begin());
     std::copy(hash_bh.begin(), hash_bh.end(), out.begin() + prefix.length());
     out[anon_size - 1] = '\0';

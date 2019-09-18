@@ -12,6 +12,8 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <tuple>
+
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
@@ -29,6 +31,9 @@ void is_hmd_present();
 //  Return OpenVR runtime path.
 std::string get_vr_runtime_path();
 
+//  Return the version of the OpenVR API used in the build.
+std::tuple<uint32_t, uint32_t, uint32_t> get_vr_sdk_ver();
+
 //  functions (OpenVR init)
 //------------------------------------------------------------------------------
 //  Initialize OpenVR subsystem and return IVRSystem interace.
@@ -37,7 +42,7 @@ vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type);
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Return OpenVR version from the runtime.
-const char* get_openvr_ver(vr::IVRSystem* vrsys);
+const char* get_vr_runtime_ver(vr::IVRSystem* vrsys);
 
 //  functions (devices and properties)
 //------------------------------------------------------------------------------

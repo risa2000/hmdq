@@ -10,6 +10,8 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <tuple>
+
 #include <fmt/format.h>
 
 #define OPENVR_BUILD_STATIC
@@ -45,6 +47,13 @@ void is_hmd_present()
     if (!vr::VR_IsHmdPresent()) {
         throw hmdq_error("No HMD detected");
     }
+}
+
+//  Return the version of the OpenVR API used in the build.
+std::tuple<uint32_t, uint32_t, uint32_t> get_vr_sdk_ver()
+{
+    return {vr::k_nSteamVRVersionMajor, vr::k_nSteamVRVersionMinor,
+            vr::k_nSteamVRVersionBuild};
 }
 
 //  Return OpenVR runtime path.
@@ -91,7 +100,7 @@ vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type)
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Return OpenVR version from the runtime.
-const char* get_openvr_ver(vr::IVRSystem* vrsys)
+const char* get_vr_runtime_ver(vr::IVRSystem* vrsys)
 {
     return vrsys->GetRuntimeVersion();
 }
@@ -365,7 +374,7 @@ harray2d_t hmesh2np(const vr::HiddenAreaMesh_t& hmesh)
 
 //  Get hidden area mask (HAM) mesh.
 std::pair<harray2d_t, hfaces_t> get_ham_mesh_pair(vr::IVRSystem* vrsys, vr::EVREye eye,
-                                             vr::EHiddenAreaMeshType hamtype)
+                                                  vr::EHiddenAreaMeshType hamtype)
 {
     const auto hmesh = vrsys->GetHiddenAreaMesh(eye, hamtype);
     if (hmesh.unTriangleCount == 0) {
@@ -382,8 +391,7 @@ std::pair<harray2d_t, hfaces_t> get_ham_mesh_pair(vr::IVRSystem* vrsys, vr::EVRE
 }
 
 //  Return hidden area mask mesh for given eye.
-json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye,
-                      vr::EHiddenAreaMeshType hamtype)
+json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye, vr::EHiddenAreaMeshType hamtype)
 {
     const auto [verts, faces] = get_ham_mesh_pair(vrsys, eye, hamtype);
     if (faces.empty()) {
