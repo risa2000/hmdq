@@ -48,6 +48,13 @@ configure_file (
     COPYONLY
     )
 
+# copy the batch file to save the hmdq data into .json file
+configure_file (
+    "${PROJECT_SOURCE_DIR}/../res/save_data.cmd"
+    "${PROJECT_BINARY_DIR/save_data.cmd}"
+    COPYONLY
+    )
+
 # needed for version info
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set (VI_DEBUG ON)

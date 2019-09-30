@@ -55,6 +55,7 @@ endif (BUILD_TESTS)
 # ============
 install (FILES 
     ${CMAKE_SOURCE_DIR}/api/openvr_api.json
+    ${CMAKE_SOURCE_DIR}/res/save_data.cmd
     ${CMAKE_SOURCE_DIR}/README.md
     ${CMAKE_SOURCE_DIR}/Changelog.md
     ${CMAKE_SOURCE_DIR}/LICENSE
