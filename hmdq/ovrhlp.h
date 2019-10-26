@@ -22,7 +22,6 @@
 
 #include "fifo_map_fix.h"
 
-
 //  functions which do not need OpenVR initialized
 //------------------------------------------------------------------------------
 //  If a HMD is not present abort (does not need IVRSystem).
@@ -56,8 +55,7 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
 //------------------------------------------------------------------------------
 //  Get hidden area mask (HAM) mesh.
 //  Return hidden area mask mesh for given eye.
-json get_ham_mesh_opt(vr::IVRSystem* vrsys, vr::EVREye eye,
-                      vr::EHiddenAreaMeshType hamtype);
+json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye, vr::EHiddenAreaMeshType hamtype);
 
 //  Get raw projection values (LRBT) for `eye`.
 json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye);

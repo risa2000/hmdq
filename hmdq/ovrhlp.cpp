@@ -21,10 +21,9 @@
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
+#include "except.h"
 #include "fmthlp.h"
-#include "geom.h"
 #include "hmdview.h"
-#include "optmesh.h"
 #include "ovrhlp.h"
 #include "xtdef.h"
 
@@ -373,40 +372,20 @@ harray2d_t hmesh2np(const vr::HiddenAreaMesh_t& hmesh)
 }
 
 //  Get hidden area mask (HAM) mesh.
-std::pair<harray2d_t, hfaces_t> get_ham_mesh_pair(vr::IVRSystem* vrsys, vr::EVREye eye,
-                                                  vr::EHiddenAreaMeshType hamtype)
+json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye, vr::EHiddenAreaMeshType hamtype)
 {
     const auto hmesh = vrsys->GetHiddenAreaMesh(eye, hamtype);
     if (hmesh.unTriangleCount == 0) {
-        return std::make_pair(harray2d_t(), hfaces_t());
-    }
-    const auto verts = hmesh2np(hmesh);
-    hfaces_t faces;
-    // number of vertices must be divisible by 3 as each 3 defined one triangle
-    HMDQ_ASSERT(verts.shape(0) % 3 == 0);
-    for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
-        faces.push_back(hface_t({i, i + 1, i + 2}));
-    }
-    return std::make_pair(verts, faces);
-}
-
-//  Return hidden area mask mesh for given eye.
-json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye, vr::EHiddenAreaMeshType hamtype)
-{
-    const auto [verts, faces] = get_ham_mesh_pair(vrsys, eye, hamtype);
-    if (faces.empty()) {
         return json();
     }
-    const auto [n_verts, n_faces] = reduce_verts(verts, faces);
-    const auto n2_faces = reduce_faces(n_faces);
-    const auto area = area_mesh(verts);
-    json mesh;
-    mesh["ham_area"] = area;
-    mesh["verts_raw"] = verts;
-    mesh["verts_opt"] = n_verts;
-    mesh["faces_opt"] = n2_faces;
-    return mesh;
+    const auto verts = hmesh2np(hmesh);
+    // number of vertices must be divisible by 3 as each 3 defined one triangle
+    HMDQ_ASSERT(verts.shape(0) % 3 == 0);
+    json res;
+    res["verts_raw"] = verts;
+    return res;
 }
+
 //  Get raw projection values (LRBT) for `eye`.
 json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye)
 {

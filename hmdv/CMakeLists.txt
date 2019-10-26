@@ -71,6 +71,7 @@ set (hmdv_sources
     ${hmdq_dir}/hmddef.cpp
     ${hmdq_dir}/hmdview.cpp
     ${hmdq_dir}/jtools.cpp
+    ${hmdq_dir}/optmesh.cpp
     ${hmdq_dir}/prtdata.cpp
     ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp

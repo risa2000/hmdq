@@ -18,9 +18,11 @@
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
+#include "except.h"
 #include "geom.h"
 #include "hmddef.h"
 #include "hmdview.h"
+#include "optmesh.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
@@ -50,6 +52,29 @@ harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
     const auto b = raw["tan_bottom"].get<double>() * norm;
     const auto t = raw["tan_top"].get<double>() * norm;
     return harray2d_t({{l, b}, {r, b}, {r, t}, {l, t}});
+}
+
+//  Calculate optimized HAM mesh topology
+json calc_opt_ham_mesh(const json& ham_mesh)
+{
+    harray2d_t verts = ham_mesh["verts_raw"];
+    hfaces_t faces;
+    // number of vertices must be divisible by 3 as each 3 defined one triangle
+    HMDQ_ASSERT(verts.shape(0) % 3 == 0);
+    // build the trivial faces for the triangles
+    for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
+        faces.push_back(hface_t({i, i + 1, i + 2}));
+    }
+
+    const auto [n_verts, n_faces] = reduce_verts(verts, faces);
+    const auto n2_faces = reduce_faces(n_faces);
+    const auto area = area_mesh(verts);
+    json res;
+    res["ham_area"] = area;
+    res["verts_raw"] = verts;
+    res["verts_opt"] = n_verts;
+    res["faces_opt"] = n2_faces;
+    return res;
 }
 
 //  Calculate partial FOVs for the projection.
@@ -214,10 +239,10 @@ json calc_geometry(const json& jd)
 {
     json fov_eye;
     json fov_head;
+    auto ham_mesh = jd["ham_mesh"];
 
     for (const auto& [eye, neye] : EYES) {
         // get HAM mesh (if supported by the headset, otherwise 'null')
-        const auto ham_mesh = jd["ham_mesh"][neye];
 
         // get eye to head transformation matrix
         const auto e2h = jd["eye2head"][neye].get<harray2d_t>();
@@ -225,14 +250,19 @@ json calc_geometry(const json& jd)
         // get raw eye values (direct from OpenVR)
         const auto raw_eye = jd["raw_eye"][neye];
 
+        // calculate optimized HAM mesh values
+        if (!ham_mesh[neye].is_null()) {
+            ham_mesh[neye] = calc_opt_ham_mesh(ham_mesh[neye]);
+        }
+
         // build eye FOV points only if the eye FOV is rotated
         if (xt::view(e2h, xt::all(), xt::range(0, 3)) != xt::eye<double>(3, 0)) {
-            fov_eye[neye] = calc_fov(raw_eye, ham_mesh);
+            fov_eye[neye] = calc_fov(raw_eye, ham_mesh[neye]);
         }
 
         // build head FOV points (they are eye FOV points if the views are parallel)
         harray2d_t rot = xt::view(e2h, xt::all(), xt::range(0, 3));
-        fov_head[neye] = calc_fov(raw_eye, ham_mesh, &rot);
+        fov_head[neye] = calc_fov(raw_eye, ham_mesh[neye], &rot);
     }
 
     // calculate total FOVs and the overlap
@@ -250,7 +280,7 @@ json calc_geometry(const json& jd)
     res["fov_eye"] = fov_eye;
     res["fov_head"] = fov_head;
     res["fov_tot"] = fov_tot;
-    res["ham_mesh"] = jd["ham_mesh"];
+    res["ham_mesh"] = ham_mesh;
 
     return res;
 }

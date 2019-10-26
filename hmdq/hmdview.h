@@ -29,6 +29,9 @@ harray2d_t verts_uv2lrbt(const harray2d_t& verts, double l, double r, double b, 
 //  Build 2D points/vectors (depends on `bpt`) for LRBT rectangle.
 harray2d_t build_lrbt_quad_2d(const json& raw, double norm = 1.0);
 
+//  Calculate optimized HAM mesh topology
+json calc_opt_ham_mesh(const json& ham_mesh);
+
 //  Calculate partial FOVs for the projection.
 json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot = nullptr);
 
