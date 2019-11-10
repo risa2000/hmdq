@@ -34,8 +34,8 @@ set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
 # Custom files
 # ============
 configure_file (
-    "${PROJECT_RES_DIR}/misc.h.in"
-    "${PROJECT_BINARY_DIR}/misc.h"
+    ${PROJECT_RES_DIR}/misc.h.in
+    ${PROJECT_BINARY_DIR}/misc.h
     )
 
 # add output dir to the search path so "misc.h" is reachable
@@ -43,27 +43,27 @@ include_directories (${PROJECT_BINARY_DIR})
 
 # copy the OpenVR API json file so the exe can run directly from there
 configure_file (
-    "${PROJECT_SOURCE_DIR}/../api/openvr_api.json"
-    "${PROJECT_BINARY_DIR/openvr_api.json}"
+    ${PROJECT_SOURCE_DIR}/../api/openvr_api.json
+    ${PROJECT_BINARY_DIR}/openvr_api.json
     COPYONLY
     )
 
 # copy the batch file to save the hmdq data into .json file
 configure_file (
-    "${PROJECT_SOURCE_DIR}/../res/save_data.cmd"
-    "${PROJECT_BINARY_DIR/save_data.cmd}"
+    ${PROJECT_SOURCE_DIR}/../res/save_data.cmd
+    ${PROJECT_BINARY_DIR}/save_data.cmd
     COPYONLY
     )
 
 # needed for version info
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
     set (VI_DEBUG ON)
 endif()
 
 # process version info and the icon
 configure_file (
-    "${PROJECT_RES_DIR}/hmdq.rc.in"
-    "${PROJECT_BINARY_DIR}/hmdq.rc"
+    ${PROJECT_RES_DIR}/hmdq.rc.in
+    ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 
 # Targets
@@ -83,20 +83,20 @@ set (hmdq_sources
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     set (OPENVRLIB openvr_api64c)
 else()
     set (OPENVRLIB openvr_api64)
 endif()
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
-link_directories(AFTER "${CMAKE_PREFIX_PATH}/lib")
+link_directories(AFTER ${CMAKE_PREFIX_PATH}/lib)
 
 # Add sources to `hmdq` executable.
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
-target_include_directories (hmdq PRIVATE "${CMAKE_PREFIX_PATH}/include")
-target_include_directories (hmdq PRIVATE "${CMAKE_PREFIX_PATH}/include/botan-2")
+target_include_directories (hmdq PRIVATE ${CMAKE_PREFIX_PATH}/include)
+target_include_directories (hmdq PRIVATE ${CMAKE_PREFIX_PATH}/include/botan-2)
 target_link_libraries (hmdq PRIVATE version.lib
     debug ${OPENVRLIB}d debug botand.lib
     optimized ${OPENVRLIB} optimized botan.lib
