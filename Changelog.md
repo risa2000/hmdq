@@ -1,4 +1,10 @@
-# `hmdq` Change Log
+# HMDQ Tools Change Log
+
+## 1.3.3 - January 4, 2020
+* Updated OpenVR API JSON to OpenVR SDK 1.9.15
+
+## 1.3.2 - November 6, 2019
+* Updated OpenVR API JSON to OpenVR SDK 1.8.19
 
 ## 1.3.1 - September 18, 2019
 * Added OpenVR build version to the version info.
