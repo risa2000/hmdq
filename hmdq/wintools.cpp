@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <fmt/format.h>
+#include <fmt/os.h>
 
 #include <windows.h>
 #include <winver.h>

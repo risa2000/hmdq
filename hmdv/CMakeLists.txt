@@ -79,14 +79,13 @@ set (hmdv_sources
     )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
-link_directories(AFTER ${CMAKE_PREFIX_PATH}/lib)
+link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 
 # Add sources to `hmdv` executable.
 add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_sources})
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
-target_include_directories (hmdv PRIVATE ${CMAKE_PREFIX_PATH}/include)
-target_include_directories (hmdv PRIVATE ${CMAKE_PREFIX_PATH}/include/botan-2)
+target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_link_libraries (hmdv PRIVATE version.lib
     debug botand.lib
     optimized botan.lib

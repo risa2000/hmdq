@@ -90,13 +90,12 @@ else()
 endif()
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
-link_directories(AFTER ${CMAKE_PREFIX_PATH}/lib)
+link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 
 # Add sources to `hmdq` executable.
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
-target_include_directories (hmdq PRIVATE ${CMAKE_PREFIX_PATH}/include)
-target_include_directories (hmdq PRIVATE ${CMAKE_PREFIX_PATH}/include/botan-2)
+target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_link_libraries (hmdq PRIVATE version.lib
     debug ${OPENVRLIB}d debug botand.lib
     optimized ${OPENVRLIB} optimized botan.lib

@@ -29,11 +29,6 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 # CMake options
 # ============
 option(BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
-option(BUILD_STATIC "Build the executables with statically linked runtime libraries" ON)
-if (BUILD_STATIC)
-    set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    message (STATUS "Building with static CRT.")
-endif()
 
 # Project root
 # ============
