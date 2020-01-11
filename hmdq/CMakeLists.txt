@@ -89,6 +89,9 @@ else()
     set (OPENVRLIB openvr_api64)
 endif()
 
+# 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
+set (EXT_LIBS botan ${OPENVRLIB})
+
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
 link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 
@@ -96,10 +99,11 @@ link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
 target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
-target_link_libraries (hmdq PRIVATE version.lib
-    debug ${OPENVRLIB}d debug botand.lib
-    optimized ${OPENVRLIB} optimized botan.lib
-    )
+target_link_libraries (hmdq PRIVATE version.lib)
+foreach (lib IN ITEMS ${EXT_LIBS})
+    target_link_libraries (hmdq PRIVATE debug ${lib}d.lib)
+    target_link_libraries (hmdq PRIVATE optimized ${lib}.lib)
+endforeach()
 target_link_libraries (hmdq PRIVATE fmt::fmt)
 #target_link_libraries (hmdq PRIVATE fmt::fmt-header-only)
 
@@ -108,6 +112,11 @@ add_custom_command (TARGET hmdq
     POST_BUILD
     COMMAND dumpbin /headers /symbols /imports "$<TARGET_FILE:hmdq>" > "$<TARGET_FILE:hmdq>.txt"
     )
+
+# Check the CRT linkage, add DLLs if needed
+if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+    collect_dlls(hmdq ${EXT_LIBS})
+endif()
 
 # Install
 # ============

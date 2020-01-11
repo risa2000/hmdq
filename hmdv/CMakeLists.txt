@@ -78,6 +78,9 @@ set (hmdv_sources
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
 
+# 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
+set (EXT_LIBS botan)
+
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
 link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 
@@ -86,10 +89,11 @@ add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_sources})
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
 target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
-target_link_libraries (hmdv PRIVATE version.lib
-    debug botand.lib
-    optimized botan.lib
-    )
+target_link_libraries (hmdv PRIVATE version.lib)
+foreach (lib IN ITEMS ${EXT_LIBS})
+    target_link_libraries (hmdv PRIVATE debug ${lib}d.lib)
+    target_link_libraries (hmdv PRIVATE optimized ${lib}.lib)
+endforeach()
 target_link_libraries (hmdv PRIVATE fmt::fmt)
 #target_link_libraries (hmdv PRIVATE fmt::fmt-header-only)
 
@@ -99,6 +103,10 @@ add_custom_command (TARGET hmdv
     COMMAND dumpbin /headers /symbols /imports "$<TARGET_FILE:hmdv>" > "$<TARGET_FILE:hmdv>.txt"
     )
 
+# Check the CRT linkage, add DLLs if needed
+if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+    collect_dlls(hmdv ${EXT_LIBS})
+endif()
 # Install
 # ============
 install (FILES 
