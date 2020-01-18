@@ -58,43 +58,36 @@ std::tuple<uint32_t, uint32_t, uint32_t> get_vr_sdk_ver()
 //  Return OpenVR runtime path.
 std::string get_vr_runtime_path()
 {
-    if (vr::VR_IsRuntimeInstalled()) {
-        constexpr size_t cbuffsize = 256;
-        std::vector<char> buffer(cbuffsize);
-        uint32_t buffsize = 0;
-        bool res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
-                                         &buffsize);
-        if (!res) {
-            buffer.resize(buffsize);
-            res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
-                                        &buffsize);
-        }
-        if (res) {
-            return std::string(&buffer[0], std::strlen(&buffer[0]));
-        }
-        else {
-            throw hmdq_error("Cannot get the runtime path");
-        }
+    constexpr size_t cbuffsize = 256;
+    std::vector<char> buffer(cbuffsize);
+    uint32_t buffsize = 0;
+    bool res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
+                                     &buffsize);
+    if (!res) {
+        buffer.resize(buffsize);
+        res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
+                                    &buffsize);
+    }
+    if (res) {
+        return std::string(&buffer[0], std::strlen(&buffer[0]));
     }
     else {
-        throw hmdq_error("OpenVR runtime not installed");
+        return "";
     }
 }
 
 //  functions (OpenVR init)
 //------------------------------------------------------------------------------
 //  Initialize OpenVR subsystem and return IVRSystem interace.
-vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type)
+std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type)
 {
     vr::EVRInitError eError = vr::VRInitError_None;
     vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
 
     if (eError != vr::VRInitError_None) {
-        const auto msg
-            = fmt::format("{:s}", vr::VR_GetVRInitErrorAsEnglishDescription(eError));
-        throw hmdq_error(msg);
+        return {nullptr, eError};
     }
-    return vrsys;
+    return {vrsys, eError};
 }
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
@@ -354,6 +347,38 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
         }
     }
     return pvals;
+}
+
+//  Return some info about OpenVR.
+json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
+{
+    json res;
+    res["rt_path"] = get_vr_runtime_path();
+    res["rt_ver"] = get_vr_runtime_ver(vrsys);
+
+    const hdevlist_t devs = enum_devs(vrsys);
+    res["devices"] = devs;
+    // get all the properties
+    res["properties"] = get_all_props(vrsys, devs, api);
+    // get all the geometry
+    res["geometry"] = get_geometry(vrsys);
+
+    return res;
+}
+
+//  Collect and process OpenVR data.
+json process_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
+{
+    // get some data about the OpenVR system
+    json res = get_openvr(vrsys, api, anon);
+
+    // anonymize if requested
+    if (anon)
+        anonymize_all_props(api, res["properties"]);
+
+    res["geometry"] = calc_geometry(res["geometry"]);
+
+    return res;
 }
 
 //  functions (geometry)

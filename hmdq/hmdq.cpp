@@ -49,8 +49,9 @@ static constexpr unsigned int CP_UTF8 = 65001;
 //  v1: Original file format defined by the tool.
 //  v2: Added secure checksum to the end of the file.
 //  v3: Added new section 'openvr'.
-//  v4: IPD now reported in meters (was mm)
-static constexpr int LOG_VERSION = 4;
+//  v4: IPD now reported in meters (was mm).
+//  v5: OpenVR related data moved into "openvr" section.
+static constexpr int LOG_VERSION = 5;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -103,16 +104,7 @@ json get_misc()
     return res;
 }
 
-//  Return some info about OpenVR.
-json get_openvr(vr::IVRSystem* vrsys)
-{
-    json res;
-    res["rt_path"] = get_vr_runtime_path();
-    res["rt_ver"] = get_vr_runtime_ver(vrsys);
-    return res;
-}
-
-// Translate the tool selected mode into print mode.
+//  Translate the tool selected mode into print mode.
 static pmode mode2pmode(const mode selected)
 {
     switch (selected) {
@@ -133,55 +125,37 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 {
     // initialize config values
     const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
-    const auto app_type = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
+    const auto openvr_app_type
+        = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
     const auto verr = g_cfg["verbosity"]["error"].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
 
-    // make sure that OpenVR API file (default, or specified) exists
-    std::filesystem::path apath = std::filesystem::u8path(api_json);
-    if (!std::filesystem::exists(apath)) {
-        auto msg
-            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.u8string());
-        throw hmdq_error(msg);
-    }
+    // extract relevant data from OpenVR API
+    const json api = get_api(api_json);
 
-    // read JSON API def
-    std::ifstream jfa(apath);
-    json oapi;
-    jfa >> oapi;
-    jfa.close();
-
-    // parse the API file to hmdq used json (dict)
-    const json api = parse_json_oapi(oapi);
     // output
     json out;
 
     // get the miscellanous (system and app) data
     out["misc"] = get_misc();
 
-    // get OpenVR runtime path (sanity check)
-    const auto vr_rt_path = get_vr_runtime_path();
-    // check if HMD is present (sanity check)
-    is_hmd_present();
-    // initialize OpenVR runtime (IVRSystem)
-    auto vrsys = init_vrsys(app_type);
-
-    // get some data about the OpenVR system
-    out["openvr"] = get_openvr(vrsys);
-
-    // get all the properties
-    const hdevlist_t devs = enum_devs(vrsys);
-    out["devices"] = devs;
-    out["properties"] = get_all_props(vrsys, devs, api);
-    // anonymize if requested
-    if (anon)
-        anonymize_all_props(api, out["properties"]);
-
-    // get all the geometry
-    out["geometry"] = get_geometry(vrsys);
-    out["geometry"] = calc_geometry(out["geometry"]);
+    // check and initialize OpenVR runtime (IVRSystem)
+    std::string openvr_msg;
+    bool openvr_processed = false;
+    if (vr::VR_IsRuntimeInstalled()) {
+        auto [vrsys, error] = init_vrsys(openvr_app_type);
+        if (nullptr != vrsys) {
+            out["openvr"] = process_openvr(vrsys, api, anon);
+            openvr_processed = true;
+            vrsys = nullptr;
+            vr::VR_Shutdown();
+        }
+        else {
+            openvr_msg = std::string(vr::VR_GetVRInitErrorAsEnglishDescription(error));
+        }
+    }
 
     // print all collected data
     print_all(mode2pmode(selected), api, out, verb, ind, ts);
@@ -190,7 +164,9 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     if (out_json.size()) {
         // if verbosity is not high enough (verr + 1) purge errors
         if (verb <= verr) {
-            purge_errors(out["properties"]);
+            if (out.find("openvr") != out.end()) {
+                purge_errors(out["openvr"]["properties"]);
+            }
         }
         // add the checksum
         add_checksum(out);
@@ -201,7 +177,6 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
         jfo.close();
     }
 
-    vr::VR_Shutdown();
     return 0;
 }
 

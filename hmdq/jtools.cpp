@@ -10,6 +10,8 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -24,6 +26,7 @@
 #include <botan/pipe.h>
 
 #include "config.h"
+#include "except.h"
 #include "jtools.h"
 
 #include "fifo_map_fix.h"
@@ -37,6 +40,27 @@ const hproplist_t PROPS_TO_SEED
 
 //  OpenVR API loader
 //------------------------------------------------------------------------------
+//  Extract relevant data from OpenVR API
+json get_api(const std::string api_json)
+{
+    // make sure that OpenVR API file (default, or specified) exists
+    std::filesystem::path apath = std::filesystem::u8path(api_json);
+    if (!std::filesystem::exists(apath)) {
+        auto msg
+            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.u8string());
+        throw hmdq_error(msg);
+    }
+
+    // read JSON API def
+    std::ifstream jfa(apath);
+    json oapi;
+    jfa >> oapi;
+    jfa.close();
+
+    // parse the API file to hmdq used json (dict)
+    return parse_json_oapi(oapi);
+}
+
 //  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
 json parse_json_oapi(const json& jd)
 {

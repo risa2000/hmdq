@@ -37,6 +37,9 @@ constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
 
 //  OpenVR API loader
 //------------------------------------------------------------------------------
+//  Extract relevant data from OpenVR API
+json get_api(const std::string api_json);
+
 //  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
 json parse_json_oapi(const json& jd);
 

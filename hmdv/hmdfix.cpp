@@ -34,6 +34,7 @@ static constexpr auto MM_IN_METER = 1000;
 static constexpr const char* PROG_VER_DATETIME_FORMAT_FIX = "0.3.1";
 static constexpr const char* PROG_VER_IPD_FIX = "1.2.3";
 static constexpr const char* PROG_VER_FOV_FIX = "1.2.4";
+static constexpr const char* PROG_VER_OPENVR_LOCALIZED = "1.3.4";
 
 //  functions
 //------------------------------------------------------------------------------
@@ -78,6 +79,17 @@ void fix_fov_calc(json& jd)
     jd["geometry"]["fov_tot"] = fov_tot;
 }
 
+//  move openvr data into openvr section (ver < v1.3.4)
+void fix_openvr_section(json& jd)
+{
+    jd["openvr"]["devices"] = jd["devices"];
+    jd["openvr"]["properties"] = jd["properties"];
+    jd["openvr"]["geometry"] = jd["geometry"];
+    jd.erase("devices");
+    jd.erase("properties");
+    jd.erase("geometry");
+}
+
 //  Check and run all fixes (return true if there was any)
 bool apply_all_relevant_fixes(json& jd)
 {
@@ -96,6 +108,11 @@ bool apply_all_relevant_fixes(json& jd)
     // change the vertical FOV calculation formula
     if (comp_ver(hmdx_ver, PROG_VER_FOV_FIX) < 0) {
         fix_fov_calc(jd);
+        fixed = true;
+    }
+    // move all OpenVR data into "openvr" section and add "oculus" section
+    if (comp_ver(hmdx_ver, PROG_VER_OPENVR_LOCALIZED) < 0) {
+        fix_openvr_section(jd);
         fixed = true;
     }
     // add HMDQ_VER into misc, if some change was made

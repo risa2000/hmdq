@@ -36,7 +36,7 @@ std::tuple<uint32_t, uint32_t, uint32_t> get_vr_sdk_ver();
 //  functions (OpenVR init)
 //------------------------------------------------------------------------------
 //  Initialize OpenVR subsystem and return IVRSystem interace.
-vr::IVRSystem* init_vrsys(vr::EVRApplicationType app_type);
+std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type);
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
@@ -50,6 +50,14 @@ hdevlist_t enum_devs(vr::IVRSystem* vrsys);
 
 //  Return properties for all devices.
 json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api);
+
+//  higher level processing functions
+//------------------------------------------------------------------------------
+//  Return some info about OpenVR.
+json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon);
+
+//  Collect and process OpenVR data.
+json process_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon);
 
 //  functions (geometry)
 //------------------------------------------------------------------------------

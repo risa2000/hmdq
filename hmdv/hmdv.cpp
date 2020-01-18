@@ -77,42 +77,6 @@ void print_info(int ind = 0, int ts = 0)
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
 }
 
-//  wrapper for main runner to deal with domestic exceptions
-int run_verify(const std::string& in_json, int verb, int ind, int ts)
-{
-    const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-
-    // print the execution header
-    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
-    if (verb >= vdef)
-        fmt::print("\n");
-
-    // check the specified input file exists
-    std::filesystem::path inpath = std::filesystem::u8path(in_json);
-    if (!std::filesystem::exists(inpath)) {
-        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
-        throw hmdq_error(msg);
-    }
-    // read JSON data input
-    std::ifstream jin(inpath);
-    json out;
-    jin >> out;
-    jin.close();
-
-    // verify the checksum
-    auto check_ok = verify_checksum(out);
-    if (verb >= vdef) {
-        if (check_ok) {
-            iprint(sf, "Input file checksum is OK\n");
-        }
-        else {
-            iprint(sf, "Input file checksum is invalid\n");
-        }
-    }
-    return check_ok ? 0 : 1;
-}
-
 // Translate the tool selected mode into print mode.
 static pmode mode2pmode(const mode selected)
 {
@@ -126,6 +90,50 @@ static pmode mode2pmode(const mode selected)
         default:
             HMDQ_EXCEPTION(fmt::format("mode2pmode({}) is undefined", selected));
     }
+}
+
+json read_infile(const std::string& in_json)
+{
+    // check the specified input file exists
+    std::filesystem::path inpath = std::filesystem::u8path(in_json);
+    if (!std::filesystem::exists(inpath)) {
+        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
+        throw hmdq_error(msg);
+    }
+
+    // read JSON data input
+    std::ifstream jin(inpath);
+    json out;
+    jin >> out;
+    jin.close();
+    return out;
+}
+
+//  wrapper for main runner to deal with domestic exceptions
+int run_verify(const std::string& in_json, int verb, int ind, int ts)
+{
+    const auto sf = ind * ts;
+    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+
+    // print the execution header
+    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
+    if (verb >= vdef)
+        fmt::print("\n");
+
+    // read JSON data input
+    json out = read_infile(in_json);
+
+    // verify the checksum
+    auto check_ok = verify_checksum(out);
+    if (verb >= vdef) {
+        if (check_ok) {
+            iprint(sf, "Input file checksum is OK\n");
+        }
+        else {
+            iprint(sf, "Input file checksum is invalid\n");
+        }
+    }
+    return check_ok ? 0 : 1;
 }
 
 //  main runner
@@ -142,35 +150,11 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     if (verb >= vdef)
         fmt::print("\n");
 
-    // make sure that OpenVR API file (default, or specified) exists
-    std::filesystem::path apath = std::filesystem::u8path(api_json);
-    if (!std::filesystem::exists(apath)) {
-        auto msg
-            = fmt::format("OpenVR API JSON file not found: \"{:s}\"", apath.u8string());
-        throw hmdq_error(msg);
-    }
-
-    // check the specified input file exists
-    std::filesystem::path inpath = std::filesystem::u8path(in_json);
-    if (!std::filesystem::exists(inpath)) {
-        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
-        throw hmdq_error(msg);
-    }
-
-    // read JSON API def
-    std::ifstream jfa(apath);
-    json oapi;
-    jfa >> oapi;
-    jfa.close();
+    // read JSON data input
+    json out = read_infile(in_json);
 
     // parse the API file to hmdq used json (dict)
-    const json api = parse_json_oapi(oapi);
-
-    // read JSON data input
-    std::ifstream jin(inpath);
-    json out;
-    jin >> out;
-    jin.close();
+    const json api = get_api(api_json);
 
     // verify the checksum
     auto check_ok = verify_checksum(out);
