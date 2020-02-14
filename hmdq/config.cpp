@@ -193,18 +193,16 @@ static json build_config(const std::filesystem::path& cfile)
 }
 
 //  Build config file name (or use the default one)
-static std::filesystem::path build_conf_name(const std::string& argv0)
+static std::filesystem::path build_conf_name(const std::filesystem::path& argv0)
 {
-    auto relative = std::filesystem::relative(
-        std::filesystem::absolute(std::filesystem::u8path(argv0)));
-    relative.replace_extension(".conf.json");
-    return relative;
+    auto conf_name = argv0;
+    return conf_name.replace_extension(".conf.json");
 }
 
 //  exported functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(const std::string& argv0)
+bool init_config(const std::filesystem::path& argv0)
 {
     auto cfile = build_conf_name(argv0);
     g_cfg = load_config(cfile);

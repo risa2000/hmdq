@@ -14,6 +14,7 @@
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <string>
 #include <vector>
+#include <filesystem>
 
 //  Get OS version or "n/a" if the attempt fails (print error in DEBUG build)
 std::string get_os_ver();
@@ -27,3 +28,6 @@ std::vector<std::string> get_u8args();
 //  Get C-like args array from the list of strings (in a vector).
 std::tuple<std::vector<size_t>, std::vector<char>>
 get_c_argv(const std::vector<std::string>& args);
+
+//  Return the full path of the executable which created the process
+std::filesystem::path get_full_prog_path();

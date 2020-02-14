@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "fifo_map_fix.h"
 
 //  globals
@@ -20,4 +22,4 @@ extern json g_cfg;
 //  functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(const std::string& argv0);
+bool init_config(const std::filesystem::path& argv0);

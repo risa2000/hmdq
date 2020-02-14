@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
     // print_u8args(u8args);
 
     // init global config before anything else
-    const auto cfg_ok = init_config(u8args[0]);
+    const auto cfg_ok = init_config(get_full_prog_path());
     if (!cfg_ok)
         return 1;
 
@@ -239,8 +239,7 @@ int main(int argc, char* argv[])
     mode selected = mode::all;
 
     // build relative path to OPENVR_API_JSON file
-    auto api_json_path = std::filesystem::relative(
-        std::filesystem::absolute(std::filesystem::u8path(u8args[0])));
+    std::filesystem::path api_json_path = get_full_prog_path();
     api_json_path.replace_filename(OPENVR_API_JSON);
     auto api_json = api_json_path.u8string();
 

@@ -11,6 +11,7 @@
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <cassert>
+#include <filesystem>
 #include <numeric>
 #include <sstream>
 #include <string>
@@ -29,6 +30,7 @@
 static UINT l_con_cp = ::GetConsoleOutputCP();
 constexpr const char* SYS_ERROR_FMT = "System error [{:s}]";
 constexpr size_t BUFF_SIZE = 256;
+constexpr size_t MAX_BUFF_SIZE = 2048;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -77,6 +79,36 @@ std::string wstr2utf8(const wchar_t* wstr)
     buffsize = ::WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &buffer[0], buffer.size(),
                                      nullptr, nullptr);
     return std::string(&buffer[0]);
+}
+
+//  Return the full path of the module (prog image if NULL)
+std::filesystem::path get_module_path(HMODULE hMod)
+{
+    static std::vector<wchar_t> buffer(BUFF_SIZE);
+    while (true) {
+        auto nSize = ::GetModuleFileNameW(hMod, &buffer[0], buffer.size());
+        if (0 == nSize) {
+            throw sys_error(fmt::format("::GetModuleFileNameW failed on hModule = {}",
+                                        reinterpret_cast<void*>(hMod))
+                                .c_str());
+        }
+        else if (nSize == buffer.size()) {
+            if (buffer.size() * 2 <= MAX_BUFF_SIZE) {
+                buffer.resize(buffer.size() * 2);
+                continue;
+            }
+            else {
+                throw sys_error(
+                    fmt::format("::GetModuleFileNameW path too long on hModule = {}",
+                                reinterpret_cast<void*>(hMod))
+                        .c_str());
+            }
+        }
+        else {
+            break;
+        }
+    }
+    return std::filesystem::path(&buffer[0]);
 }
 
 //  Convert wstring list of args to list of UTF-8 strings.
@@ -165,4 +197,9 @@ std::string get_os_ver()
         assert(print_sys_error(fos));
     }
     return "n/a";
+}
+
+//  Return the full path of the executable which created the process
+std::filesystem::path get_full_prog_path() {
+    return get_module_path(NULL);
 }
