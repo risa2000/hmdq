@@ -10,6 +10,7 @@
  ******************************************************************************/
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <algorithm>
 #include <tuple>
 
 #include <fmt/format.h>
@@ -357,11 +358,20 @@ json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
     res["rt_ver"] = get_vr_runtime_ver(vrsys);
 
     const hdevlist_t devs = enum_devs(vrsys);
-    res["devices"] = devs;
-    // get all the properties
-    res["properties"] = get_all_props(vrsys, devs, api);
-    // get all the geometry
-    res["geometry"] = get_geometry(vrsys);
+    if (devs.size()) {
+        res["devices"] = devs;
+        // get all the properties
+        res["properties"] = get_all_props(vrsys, devs, api);
+        // record geometry only if HMD device class is present
+        // this technically should be always true, unless the user explicitly requested
+        // running OpenVR without a HMD.
+        if (devs.end() != std::find_if(devs.begin(), devs.end(), [](auto p) {
+                return p.second == vr::TrackedDeviceClass_HMD;
+            })) {
+            // get all the geometry
+            res["geometry"] = get_geometry(vrsys);
+        }
+    }
 
     return res;
 }
@@ -370,15 +380,18 @@ json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
 json process_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
 {
     // get some data about the OpenVR system
-    json res = get_openvr(vrsys, api, anon);
+    json openvr = get_openvr(vrsys, api, anon);
 
     // anonymize if requested
-    if (anon)
-        anonymize_all_props(api, res["properties"]);
-
-    res["geometry"] = calc_geometry(res["geometry"]);
-
-    return res;
+    if (anon) {
+        if (openvr.find("properties") != openvr.end()) {
+            anonymize_all_props(api, openvr["properties"]);
+        }
+    }
+    if (openvr.find("geometry") != openvr.end()) {
+        openvr["geometry"] = calc_geometry(openvr["geometry"]);
+    }
+    return openvr;
 }
 
 //  functions (geometry)

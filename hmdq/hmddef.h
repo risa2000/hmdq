@@ -22,8 +22,8 @@
 //------------------------------------------------------------------------------
 typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
 typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
-typedef std::vector<std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass>>
-    hdevlist_t;
+typedef std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass> hdevpair_t;
+typedef std::vector<hdevpair_t> hdevlist_t;
 
 //  globals
 //------------------------------------------------------------------------------
