@@ -11,6 +11,8 @@
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <tuple>
 
 #include <fmt/format.h>
@@ -25,6 +27,7 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "hmdview.h"
+#include "jtools.h"
 #include "ovrhlp.h"
 #include "xtdef.h"
 
@@ -38,6 +41,20 @@ static const int PROP_CAT_COMMON = 1;
 static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
+
+//  functions (OpenVR init)
+//------------------------------------------------------------------------------
+//  Initialize OpenVR subsystem and return IVRSystem interace.
+std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type)
+{
+    vr::EVRInitError eError = vr::VRInitError_None;
+    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
+
+    if (eError != vr::VRInitError_None) {
+        return {nullptr, eError};
+    }
+    return {vrsys, eError};
+}
 
 //  functions which do not need OpenVR initialized
 //------------------------------------------------------------------------------
@@ -77,19 +94,6 @@ std::string get_vr_runtime_path()
     }
 }
 
-//  functions (OpenVR init)
-//------------------------------------------------------------------------------
-//  Initialize OpenVR subsystem and return IVRSystem interace.
-std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type)
-{
-    vr::EVRInitError eError = vr::VRInitError_None;
-    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
-
-    if (eError != vr::VRInitError_None) {
-        return {nullptr, eError};
-    }
-    return {vrsys, eError};
-}
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Return OpenVR version from the runtime.
@@ -351,7 +355,7 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
 }
 
 //  Return some info about OpenVR.
-json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
+json get_openvr(vr::IVRSystem* vrsys, const json& api)
 {
     json res;
     res["rt_path"] = get_vr_runtime_path();
@@ -374,24 +378,6 @@ json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
     }
 
     return res;
-}
-
-//  Collect and process OpenVR data.
-json process_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon)
-{
-    // get some data about the OpenVR system
-    json openvr = get_openvr(vrsys, api, anon);
-
-    // anonymize if requested
-    if (anon) {
-        if (openvr.find("properties") != openvr.end()) {
-            anonymize_all_props(api, openvr["properties"]);
-        }
-    }
-    if (openvr.find("geometry") != openvr.end()) {
-        openvr["geometry"] = calc_geometry(openvr["geometry"]);
-    }
-    return openvr;
 }
 
 //  functions (geometry)

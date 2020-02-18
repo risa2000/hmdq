@@ -80,6 +80,8 @@ set (hmdq_sources
     ovrhlp.cpp
     prtdata.cpp
     xtdef.cpp
+    OpenVRProcessor.cpp
+    OpenVRCollector.cpp
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 

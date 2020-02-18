@@ -12,12 +12,13 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <filesystem>
 #include <tuple>
 
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
-#include "jtools.h"
+#include "hmddef.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
@@ -54,10 +55,7 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
 //  higher level processing functions
 //------------------------------------------------------------------------------
 //  Return some info about OpenVR.
-json get_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon);
-
-//  Collect and process OpenVR data.
-json process_openvr(vr::IVRSystem* vrsys, const json& api, const bool anon);
+json get_openvr(vr::IVRSystem* vrsys, const json& api);
 
 //  functions (geometry)
 //------------------------------------------------------------------------------

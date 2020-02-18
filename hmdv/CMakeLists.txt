@@ -75,6 +75,7 @@ set (hmdv_sources
     ${hmdq_dir}/prtdata.cpp
     ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp
+    ${hmdq_dir}/OpenVRProcessor.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
 

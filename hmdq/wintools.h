@@ -12,9 +12,9 @@
 #pragma once
 
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#include <filesystem>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 //  Get OS version or "n/a" if the attempt fails (print error in DEBUG build)
 std::string get_os_ver();
@@ -31,3 +31,6 @@ get_c_argv(const std::vector<std::string>& args);
 
 //  Return the full path of the executable which created the process
 std::filesystem::path get_full_prog_path();
+
+//  Print command line arguments (for debugging purposes)
+void print_u8args(std::vector<std::string> u8args);

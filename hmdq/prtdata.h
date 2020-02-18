@@ -11,12 +11,9 @@
 
 #pragma once
 
-#include "fifo_map_fix.h"
+#include "BaseVR.h"
 
-//  typedefs
-//------------------------------------------------------------------------------
-//  mode of operation
-enum class pmode { geom, props, all };
+#include "fifo_map_fix.h"
 
 //  globals
 //------------------------------------------------------------------------------
@@ -69,5 +66,5 @@ void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom,
 void print_geometry(const json& jd, int verb, int ind, int ts);
 
 //  Print the complete data file.
-void print_all(const pmode selected, const json& api, const json& out, int verb, int ind,
-               int ts);
+void print_all(const pmode selected, const json& out, const procbuff_t& processors,
+               int verb, int ind, int ts);

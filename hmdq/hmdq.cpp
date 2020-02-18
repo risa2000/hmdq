@@ -13,6 +13,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 
 #include <clipp.h>
 
@@ -21,6 +22,8 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "OpenVRCollector.h"
+#include "OpenVRProcessor.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -132,49 +135,63 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
 
-    // extract relevant data from OpenVR API
-    const json api = get_api(api_json);
-
     // output
     json out;
 
     // get the miscellanous (system and app) data
     out["misc"] = get_misc();
 
-    // check and initialize OpenVR runtime (IVRSystem)
-    std::string openvr_msg;
-    bool openvr_processed = false;
-    if (vr::VR_IsRuntimeInstalled()) {
-        auto [vrsys, error] = init_vrsys(openvr_app_type);
-        if (nullptr != vrsys) {
-            out["openvr"] = process_openvr(vrsys, api, anon);
-            openvr_processed = true;
-            vrsys = nullptr;
-            vr::VR_Shutdown();
+    // collector buffer
+    colbuff_t collectors;
+    // processor buffer
+    procbuff_t processors;
+
+    // create all VR subsystem interfaces
+    // OpenVR collector
+    collectors.push_back(std::make_unique<OpenVRCollector>(
+        std::filesystem::u8path(api_json), openvr_app_type));
+
+    for (auto& col : collectors) {
+        if (col->try_init()) {
+            col->collect();
+            if (col->get_id() == "openvr") {
+                // create corresponding processor
+                OpenVRCollector* pCol = dynamic_cast<OpenVRCollector*>(col.get());
+                processors.push_back(std::make_unique<OpenVRProcessor>(pCol->get_xapi(),
+                                                                       pCol->get_data()));
+            }
+            else {
+                // if no processor was created continue the for loop
+                continue;
+            }
+            processors.back()->init();
+            processors.back()->calculate();
+            if (anon) {
+                processors.back()->anonymize();
+            }
         }
         else {
-            openvr_msg = std::string(vr::VR_GetVRInitErrorAsEnglishDescription(error));
+            fmt::print("\n{}: {}\n\n", col->get_id(), col->get_last_error_msg());
         }
     }
 
-    // print all collected data
-    print_all(mode2pmode(selected), api, out, verb, ind, ts);
+    print_all(mode2pmode(selected), out, processors, verb, ind, ts);
+
+    // if verbosity is not high enough (verr + 1) purge the temporary data
+    for (auto& proc : processors) {
+        if (verb <= verr) {
+            proc->purge();
+        }
+        // put json data into an output json
+        out[proc->get_id()] = proc->get_data();
+    }
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
-        // if verbosity is not high enough (verr + 1) purge errors
-        if (verb <= verr) {
-            if (out.find("openvr") != out.end()) {
-                purge_errors(out["openvr"]["properties"]);
-            }
-        }
         // add the checksum
         add_checksum(out);
-        // save the JSON with indentation
-        std::filesystem::path opath = std::filesystem::u8path(out_json);
-        std::ofstream jfo(opath);
-        jfo << out.dump(json_indent);
-        jfo.close();
+        // save the JSON file with indentation
+        write_json(std::filesystem::u8path(out_json), out, json_indent);
     }
 
     return 0;
@@ -196,15 +213,6 @@ int run_wrapper(mode selected, const std::string& api_json, const std::string& o
         fmt::print(stderr, "{}\n", e.what());
     }
     return res;
-}
-
-void print_u8args(std::vector<std::string> u8args)
-{
-    fmt::print("Command line arguments:\n");
-    for (int i = 0, e = u8args.size(); i < e; ++i) {
-        fmt::print("{:d}: {}\n", i, u8args[i]);
-    }
-    fmt::print("\n");
 }
 
 int main(int argc, char* argv[])

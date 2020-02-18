@@ -22,6 +22,7 @@
 
 #include <xtensor/xjson.hpp>
 
+#include "OpenVRProcessor.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -388,8 +389,8 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
 }
 
 //  Print the complete data file.
-void print_all(const pmode selected, const json& api, const json& out, int verb, int ind,
-               int ts)
+void print_all(const pmode selected, const json& out, const procbuff_t& processors,
+               int verb, int ind, int ts)
 {
     const auto vdef = g_cfg["verbosity"]["default"].get<int>();
     const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
@@ -399,34 +400,8 @@ void print_all(const pmode selected, const json& api, const json& out, int verb,
     // print the miscellanous (system and app) data
     print_misc(out["misc"], PROG_NAME, verb, ind, ts);
 
-    // print some data about the OpenVR system (only if present)
-    if (out.find("openvr") != out.end()) {
-        const auto openvr = out["openvr"];
-        print_openvr(openvr, verb, ind, ts);
-
-        if (verb >= vdef)
-            fmt::print("\n");
-
-        // print the devices and the properties
-        auto tverb = (selected == pmode::props || selected == pmode::all) ? verb : vsil;
-        if (tverb >= vdef) {
-            if (openvr.find("devices") != openvr.end()) {
-                print_devs(api, openvr["devices"], ind, ts);
-                fmt::print("\n");
-            }
-        }
-        if (openvr.find("properties") != openvr.end()) {
-            print_all_props(api, openvr["properties"], tverb, ind, ts);
-            if (tverb >= vdef)
-                fmt::print("\n");
-        }
-
-        // print all the geometry
-        tverb = (selected == pmode::geom || selected == pmode::all) ? verb : vsil;
-        if (openvr.find("geometry") != openvr.end()) {
-            print_geometry(openvr["geometry"], tverb, ind, ts);
-            if (tverb >= vdef)
-                fmt::print("\n");
-        }
+    // create OpenVRProcessor interface
+    for (auto& proc : processors) {
+        proc->print(selected, verb, ind, ts);
     }
 }

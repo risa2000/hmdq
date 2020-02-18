@@ -21,6 +21,7 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "OpenVRProcessor.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -92,23 +93,6 @@ static pmode mode2pmode(const mode selected)
     }
 }
 
-json read_infile(const std::string& in_json)
-{
-    // check the specified input file exists
-    std::filesystem::path inpath = std::filesystem::u8path(in_json);
-    if (!std::filesystem::exists(inpath)) {
-        auto msg = fmt::format("Input file not found: \"{:s}\"", inpath.u8string());
-        throw hmdq_error(msg);
-    }
-
-    // read JSON data input
-    std::ifstream jin(inpath);
-    json out;
-    jin >> out;
-    jin.close();
-    return out;
-}
-
 //  wrapper for main runner to deal with domestic exceptions
 int run_verify(const std::string& in_json, int verb, int ind, int ts)
 {
@@ -121,7 +105,7 @@ int run_verify(const std::string& in_json, int verb, int ind, int ts)
         fmt::print("\n");
 
     // read JSON data input
-    json out = read_infile(in_json);
+    json out = read_json(in_json);
 
     // verify the checksum
     auto check_ok = verify_checksum(out);
@@ -151,10 +135,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
         fmt::print("\n");
 
     // read JSON data input
-    json out = read_infile(in_json);
-
-    // parse the API file to hmdq used json (dict)
-    const json api = get_api(api_json);
+    json out = read_json(in_json);
 
     // verify the checksum
     auto check_ok = verify_checksum(out);
@@ -165,12 +146,25 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     // apply all known fixes
     apply_all_relevant_fixes(out);
 
-    // anonymize if requested
-    if (anon)
-        anonymize_all_props(api, out["properties"]);
+    // processor buffer
+    procbuff_t processors;
 
-    // print all the data
-    print_all(mode2pmode(selected), api, out, verb, ind, ts);
+    // process all VR subsystem interfaces
+    if (out.find("openvr") != out.end()) {
+        processors.push_back(std::make_unique<OpenVRProcessor>(
+            std::filesystem::u8path(api_json), out["openvr"]));
+        processors.back()->init();
+    }
+
+    // anonymize the data if requested
+    if (anon) {
+        for (auto& proc : processors) {
+            proc->anonymize();
+        }
+    }
+
+    // print all
+    print_all(mode2pmode(selected), out, processors, verb, ind, ts);
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
@@ -179,11 +173,8 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
         if (check_ok) {
             add_checksum(out);
         }
-        // save the JSON with indentation
-        std::filesystem::path opath = std::filesystem::u8path(out_json);
-        std::ofstream jfo(opath);
-        jfo << out.dump(json_indent);
-        jfo.close();
+        // save the JSON file with indentation
+        write_json(std::filesystem::u8path(out_json), out, json_indent);
     }
     return 0;
 }
@@ -204,15 +195,6 @@ int run_wrapper(F func, Args&&... args)
         fmt::print(stderr, "{}\n", e.what());
     }
     return res;
-}
-
-void print_u8args(std::vector<std::string> u8args)
-{
-    fmt::print("Command line arguments:\n");
-    for (int i = 0, e = u8args.size(); i < e; ++i) {
-        fmt::print("{:d}: {}\n", i, u8args[i]);
-    }
-    fmt::print("\n");
 }
 
 int main(int argc, char* argv[])

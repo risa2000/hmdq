@@ -200,6 +200,17 @@ std::string get_os_ver()
 }
 
 //  Return the full path of the executable which created the process
-std::filesystem::path get_full_prog_path() {
+std::filesystem::path get_full_prog_path()
+{
     return get_module_path(NULL);
+}
+
+//  Print command line arguments (for debugging purposes)
+void print_u8args(std::vector<std::string> u8args)
+{
+    fmt::print("Command line arguments:\n");
+    for (int i = 0, e = u8args.size(); i < e; ++i) {
+        fmt::print("{:d}: {}\n", i, u8args[i]);
+    }
+    fmt::print("\n");
 }
