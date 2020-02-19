@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <string>
 #include <vector>
 
@@ -22,11 +21,10 @@
 
 #include <xtensor/xjson.hpp>
 
-#include "OpenVRProcessor.h"
+#include "calcview.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
-#include "jtools.h"
 #include "misc.h"
 #include "prtdata.h"
 #include "xtdef.h"
@@ -74,187 +72,6 @@ void print_misc(const json& jd, const char* prog_name, int verb, int ind, int ts
         for (const auto& line : msg_templ) {
             iprint(sf, "{:>{}s}: {:s}\n", line.first, maxlen, line.second);
         }
-    }
-}
-
-//  Print OpenVR info.
-void print_openvr(const json& jd, int verb, int ind, int ts)
-{
-    const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    if (verb >= vdef) {
-        iprint(sf, "OpenVR runtime: {:s}\n", jd["rt_path"].get<std::string>());
-        iprint(sf, "OpenVR version: {:s}\n", jd["rt_ver"].get<std::string>());
-    }
-}
-
-//  functions (devices and properties)
-//------------------------------------------------------------------------------
-//  Print enumerated devices.
-void print_devs(const json& api, const json& devs, int ind, int ts)
-{
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto sf = ind * ts;
-    const auto sf1 = (ind + 1) * ts;
-
-    iprint(sf, "Device enumeration:\n");
-    hdevlist_t res;
-    for (const auto [dev_id, dev_class] : devs.get<hdevlist_t>()) {
-        const auto cname = api["classes"][std::to_string(dev_class)].get<std::string>();
-        iprint(sf1, "Found dev: id={:d}, class={:d}, name={:s}\n", dev_id, dev_class,
-               cname);
-    }
-}
-
-//  Print the property name to stdout.
-inline void prop_head_out(vr::ETrackedDeviceProperty pid, const std::string& name,
-                          bool is_array, int ind, int ts)
-{
-    iprint(ind * ts, "{:>4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
-}
-
-//  Print (non-error) value of an Array type property.
-void print_array_type(const std::string& pname, const json& pval, int ind, int ts)
-{
-    const auto sf = ind * ts;
-    // parse the name to get the type
-    const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
-
-    switch (ptag) {
-        case vr::k_unFloatPropertyTag:
-            print_tensor<double, 1>(pval.get<hvector_t>(), ind, ts);
-            break;
-        case vr::k_unInt32PropertyTag:
-            print_tensor<int32_t, 1>(pval.get<xt::xtensor<int32_t, 1>>(), ind, ts);
-            break;
-        case vr::k_unUint64PropertyTag:
-            print_tensor<uint64_t, 1>(pval.get<xt::xtensor<uint64_t, 1>>(), ind, ts);
-            break;
-        case vr::k_unBoolPropertyTag:
-            print_tensor<bool, 1>(pval.get<xt::xtensor<bool, 1>>(), ind, ts);
-            break;
-        case vr::k_unHmdMatrix34PropertyTag:
-            print_tensor<double, 3>(pval.get<xt::xtensor<double, 3>>(), ind, ts);
-            break;
-        case vr::k_unHmdMatrix44PropertyTag:
-            print_tensor<double, 3>(pval.get<xt::xtensor<double, 3>>(), ind, ts);
-            break;
-        case vr::k_unHmdVector2PropertyTag:
-            print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
-            break;
-        case vr::k_unHmdVector3PropertyTag:
-            print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
-            break;
-        case vr::k_unHmdVector4PropertyTag:
-            print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
-            break;
-        default:
-            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
-            iprint(sf, ERR_MSG_FMT_JSON, msg);
-            break;
-    }
-}
-
-//  Print device properties.
-void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts)
-{
-    const auto sf = ind * ts;
-    const auto jverb = g_cfg["verbosity"];
-    const auto verr = jverb["error"].get<int>();
-
-    for (const auto& [pname, pval] : dprops.items()) {
-        const auto name2id = api["props"]["name2id"];
-        // if there is a property which is no longer supported by current openvr_api.json
-        // ignore it
-        if (name2id.find(pname) == name2id.end()) {
-            continue;
-        }
-        // convert string to the correct type
-        const auto pid = name2id[pname].get<vr::ETrackedDeviceProperty>();
-        // decode property type
-        const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
-        // property verbosity level (if defined) or max
-        int pverb;
-        // property having an error attached?
-        const auto nerr = pval.count(ERROR_PREFIX);
-
-        if (nerr) {
-            // the value is an error code, so print it out only if the verbosity
-            // is at 'error' level
-            pverb = verr;
-        }
-        else {
-            // determine the "active" verbosity level for the current property
-            const auto verb_props = jverb["props"];
-            if (verb_props.find(pname) != verb_props.end()) {
-                // explicitly defined property
-                pverb = verb_props[pname].get<int>();
-            }
-            else {
-                // otherwise set requested verbosity to vmax
-                pverb = jverb["max"].get<int>();
-            }
-        }
-        if (verb < pverb) {
-            // do not print props which require higher verbosity than the current one
-            continue;
-        }
-
-        // print the prop name
-        prop_head_out(pid, basename, is_array, ind, ts);
-        if (nerr) {
-            const auto msg = pval[ERROR_PREFIX].get<std::string>();
-            fmt::print(ERR_MSG_FMT_JSON, msg);
-        }
-        else if (is_array) {
-            fmt::print("\n");
-            print_array_type(pname, pval, ind + 1, ts);
-        }
-        else {
-            switch (ptag) {
-                case vr::k_unBoolPropertyTag:
-                    fmt::print("{}\n", pval.get<bool>());
-                    break;
-                case vr::k_unStringPropertyTag:
-                    fmt::print("\"{:s}\"\n", pval.get<std::string>());
-                    break;
-                case vr::k_unUint64PropertyTag:
-                    fmt::print("{:#x}\n", pval.get<uint64_t>());
-                    break;
-                case vr::k_unInt32PropertyTag:
-                    fmt::print("{}\n", pval.get<int32_t>());
-                    break;
-                case vr::k_unFloatPropertyTag:
-                    fmt::print("{:.6g}\n", pval.get<double>());
-                    break;
-                case vr::k_unHmdMatrix34PropertyTag: {
-                    fmt::print("\n");
-                    const harray2d_t mat34 = pval;
-                    print_harray(mat34, ind + 1, ts);
-                    break;
-                }
-                default:
-                    const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
-                    fmt::print(ERR_MSG_FMT_JSON, msg);
-            }
-        }
-    }
-}
-
-//  Print all properties for all devices.
-void print_all_props(const json& api, const json& props, int verb, int ind, int ts)
-{
-    const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-
-    for (const auto& [sdid, dprops] : props.items()) {
-        const auto dclass
-            = dprops["Prop_DeviceClass_Int32"].get<vr::ETrackedDeviceClass>();
-        const auto dcname = api["classes"][std::to_string(dclass)].get<std::string>();
-        if (verb >= vdef) {
-            iprint(sf, "[{:s}:{:s}]\n", sdid, dcname);
-        }
-        print_dev_props(api, dprops, verb, ind + 1, ts);
     }
 }
 
@@ -349,7 +166,7 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     if (verb >= vdef) {
         iprint(sf, "Recommended render target size: {}\n\n", rec_rts);
     }
-    for (const auto& [eye, neye] : EYES) {
+    for (const auto& neye : JEYES) {
 
         if (verb >= vdef) {
             iprint(sf, "{:s} eye HAM mesh:\n", neye);
@@ -388,6 +205,8 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     }
 }
 
+//  functions (all print)
+//------------------------------------------------------------------------------
 //  Print the complete data file.
 void print_all(const pmode selected, const json& out, const procbuff_t& processors,
                int verb, int ind, int ts)
@@ -400,7 +219,7 @@ void print_all(const pmode selected, const json& out, const procbuff_t& processo
     // print the miscellanous (system and app) data
     print_misc(out["misc"], PROG_NAME, verb, ind, ts);
 
-    // create OpenVRProcessor interface
+    // print all the VR from different processors
     for (auto& proc : processors) {
         proc->print(selected, verb, ind, ts);
     }

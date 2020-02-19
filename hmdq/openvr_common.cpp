@@ -9,7 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "hmddef.h"
+#define OPENVR_BUILD_STATIC
+#include <openvr/openvr.h>
+
+#include "openvr_common.h"
+
+namespace openvr {
 
 //  globals
 //------------------------------------------------------------------------------
@@ -79,3 +84,37 @@ parse_prop_name(const std::string& pname)
     const auto typ_name = pname.substr(rpos1 + 1);
     return {basename, typ_name, get_ptag_from_ptype(ptype), is_array};
 }
+
+//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
+json parse_json_oapi(const json& jd)
+{
+    json tdprops;
+    json tdcls;
+    for (const auto& e : jd["enums"]) {
+        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
+            for (const auto& v : e["values"]) {
+                const auto name = v["name"].get<std::string>();
+                // val type is actually vr::ETrackedDeviceProperty
+                const auto val = std::stoi(v["value"].get<std::string>());
+                const auto cat = static_cast<int>(val) / 1000;
+                tdprops[std::to_string(cat)][std::to_string(val)] = name;
+                tdprops["name2id"][name] = val;
+            }
+        }
+        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
+            for (const auto& v : e["values"]) {
+                auto name = v["name"].get<std::string>();
+                // val type is actually vr::ETrackedDeviceClass
+                const auto val = std::stoi(v["value"].get<std::string>());
+                const auto fs = name.find('_');
+                if (fs != std::string::npos) {
+                    name = name.substr(fs + 1, std::string::npos);
+                }
+                tdcls[std::to_string(val)] = name;
+            }
+        }
+    }
+    return json({{"classes", tdcls}, {"props", tdprops}});
+}
+
+} // namespace openvr

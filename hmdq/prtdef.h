@@ -11,29 +11,17 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <string>
-#include <vector>
+//  globals
+//------------------------------------------------------------------------------
+//  Error reporting pre-defs
+constexpr const char* ERROR_PREFIX = "error@";
+constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
 
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
+//  Error message format
+constexpr const char* ERR_MSG_FMT_JSON = "[error: {:s}]\n";
+constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
 
 //  typedefs
 //------------------------------------------------------------------------------
-typedef std::vector<std::pair<vr::EVREye, std::string>> heyes_t;
-typedef std::vector<vr::ETrackedDeviceProperty> hproplist_t;
-typedef std::pair<vr::TrackedDeviceIndex_t, vr::ETrackedDeviceClass> hdevpair_t;
-typedef std::vector<hdevpair_t> hdevlist_t;
-
-//  globals
-//------------------------------------------------------------------------------
-//  Eye nomenclature
-constexpr const char* LEYE = "Left";
-constexpr const char* REYE = "Right";
-extern const heyes_t EYES;
-
-//  generic functions
-//------------------------------------------------------------------------------
-//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
-std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
-parse_prop_name(const std::string& pname);
+//  print mode
+enum pmode { geom, props, all };

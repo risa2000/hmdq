@@ -66,16 +66,16 @@ set (hmdv_sources
     hmdv.cpp
     verhlp.cpp
     hmdfix.cpp
+    ${hmdq_dir}/calcview.cpp
     ${hmdq_dir}/config.cpp
     ${hmdq_dir}/geom.cpp
-    ${hmdq_dir}/hmddef.cpp
-    ${hmdq_dir}/hmdview.cpp
     ${hmdq_dir}/jtools.cpp
+    ${hmdq_dir}/openvr_common.cpp
+    ${hmdq_dir}/openvr_processor.cpp
     ${hmdq_dir}/optmesh.cpp
     ${hmdq_dir}/prtdata.cpp
     ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp
-    ${hmdq_dir}/OpenVRProcessor.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
 

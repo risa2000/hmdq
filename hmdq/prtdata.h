@@ -11,15 +11,10 @@
 
 #pragma once
 
-#include "BaseVR.h"
+#include "basecomp.h"
+#include "prtdef.h"
 
 #include "fifo_map_fix.h"
-
-//  globals
-//------------------------------------------------------------------------------
-//  Error message format
-constexpr const char* ERR_MSG_FMT_JSON = "[error: {:s}]\n";
-constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
@@ -29,20 +24,6 @@ void print_header(const char* prog_name, const char* prog_ver, const char* prog_
 
 //  Print miscellanous info.
 void print_misc(const json& jd, const char* prog_name, int verb, int ind, int ts);
-
-//  Print OpenVR info.
-void print_openvr(const json& jd, int verb, int ind, int ts);
-
-//  functions (devices and properties)
-//------------------------------------------------------------------------------
-//  Print enumerated devices.
-void print_devs(const json& api, const json& devs, int ind, int ts);
-
-//  Print device properties.
-void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts);
-
-//  Print all properties for all devices.
-void print_all_props(const json& api, const json& props, int verb, int ind, int ts);
 
 //  functions (geometry)
 //------------------------------------------------------------------------------
@@ -65,6 +46,8 @@ void print_ham_mesh(const json& ham_mesh, const char* neye, int verb, int vgeom,
 //  Print all the info about the view geometry, calculated FOVs, hidden area mesh, etc.
 void print_geometry(const json& jd, int verb, int ind, int ts);
 
+//  functions (all print)
+//------------------------------------------------------------------------------
 //  Print the complete data file.
 void print_all(const pmode selected, const json& out, const procbuff_t& processors,
                int verb, int ind, int ts);

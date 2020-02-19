@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -22,16 +21,14 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
-#include "OpenVRCollector.h"
-#include "OpenVRProcessor.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
-#include "hmdview.h"
 #include "jtools.h"
 #include "misc.h"
-#include "ovrhlp.h"
+#include "openvr_collector.h"
+#include "openvr_processor.h"
 #include "prtdata.h"
 #include "wintools.h"
 
@@ -87,7 +84,7 @@ void print_info(int ind = 0, int ts = 0)
     iprint(sf1, libver_str_fmt, "randombit/botan", Botan::short_version_string());
     iprint(sf1, libver_num_fmt, "fmtlib/fmt", FMT_VERSION / 10000,
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
-    const auto [vmaj, vmin, vbuild] = get_vr_sdk_ver();
+    const auto [vmaj, vmin, vbuild] = openvr::get_sdk_ver();
     iprint(sf1, libver_num_fmt, "ValveSoftware/openvr", vmaj, vmin, vbuild);
 }
 
@@ -148,7 +145,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // create all VR subsystem interfaces
     // OpenVR collector
-    collectors.push_back(std::make_unique<OpenVRCollector>(
+    collectors.push_back(std::make_unique<openvr::Collector>(
         std::filesystem::u8path(api_json), openvr_app_type));
 
     for (auto& col : collectors) {
@@ -156,9 +153,9 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
             col->collect();
             if (col->get_id() == "openvr") {
                 // create corresponding processor
-                OpenVRCollector* pCol = dynamic_cast<OpenVRCollector*>(col.get());
-                processors.push_back(std::make_unique<OpenVRProcessor>(pCol->get_xapi(),
-                                                                       pCol->get_data()));
+                openvr::Collector* pCol = dynamic_cast<openvr::Collector*>(col.get());
+                processors.push_back(std::make_unique<openvr::Processor>(
+                    pCol->get_xapi(), pCol->get_data()));
             }
             else {
                 // if no processor was created continue the for loop

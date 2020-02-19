@@ -11,9 +11,19 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
+
+//  globals
+//------------------------------------------------------------------------------
+//  Eye nomenclature
+constexpr const char* LEYE = "Left";
+constexpr const char* REYE = "Right";
+extern const std::vector<std::string> JEYES;
 
 //  functions
 //------------------------------------------------------------------------------

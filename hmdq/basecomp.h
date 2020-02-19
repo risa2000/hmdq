@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "prtdef.h"
+
 #include "fifo_map_fix.h"
 
 //  forward declarations
@@ -22,8 +24,6 @@ class BaseVRCollector;
 
 //  typedefs
 //------------------------------------------------------------------------------
-//  mode of operation
-enum pmode { geom, props, all };
 // collector buffer
 typedef std::vector<std::unique_ptr<BaseVRCollector>> colbuff_t;
 // processor buffer
@@ -33,6 +33,10 @@ typedef std::vector<std::unique_ptr<BaseVRProcessor>> procbuff_t;
 //------------------------------------------------------------------------------
 class BaseVR
 {
+  public:
+    // Use virtual destructor to ensure proper object destruction
+    virtual ~BaseVR() {}
+
   public:
     // Return VR subystem ID
     virtual std::string get_id() = 0;

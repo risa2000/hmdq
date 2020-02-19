@@ -9,16 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
 
 #include <fmt/format.h>
-
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
 
 #include <botan/filters.h>
 #include <botan/hash.h>
@@ -31,14 +27,7 @@
 
 #include "fifo_map_fix.h"
 
-//  globals
-//------------------------------------------------------------------------------
-//  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
-//  different manufacturers (in this order)
-const hproplist_t PROPS_TO_SEED
-    = {vr::Prop_ManufacturerName_String, vr::Prop_ModelNumber_String};
-
-//  functions
+//  JSON file I/O
 //------------------------------------------------------------------------------
 //  Read and parse JSON file, return json data.
 json read_json(const std::filesystem::path& inpath)
@@ -64,108 +53,8 @@ void write_json(const std::filesystem::path& outpath, const json& jdata, int ind
     jfo.close();
 }
 
-//  OpenVR API loader
+//  Crypto functions
 //------------------------------------------------------------------------------
-//  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
-json parse_json_oapi(const json& jd)
-{
-    json tdprops;
-    json tdcls;
-    for (const auto& e : jd["enums"]) {
-        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
-            for (const auto& v : e["values"]) {
-                const auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceProperty
-                const auto val = std::stoi(v["value"].get<std::string>());
-                const auto cat = static_cast<int>(val) / 1000;
-                tdprops[std::to_string(cat)][std::to_string(val)] = name;
-                tdprops["name2id"][name] = val;
-            }
-        }
-        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
-            for (const auto& v : e["values"]) {
-                auto name = v["name"].get<std::string>();
-                // val type is actually vr::ETrackedDeviceClass
-                const auto val = std::stoi(v["value"].get<std::string>());
-                const auto fs = name.find('_');
-                if (fs != std::string::npos) {
-                    name = name.substr(fs + 1, std::string::npos);
-                }
-                tdcls[std::to_string(val)] = name;
-            }
-        }
-    }
-    return json({{"classes", tdcls}, {"props", tdprops}});
-}
-
-//  Return property name and value for given property ID from device properties.
-std::tuple<std::string, std::string>
-get_prop_name_val(const json& api, const json& dprops, vr::ETrackedDeviceProperty pid)
-{
-    const auto cat = static_cast<int>(pid) / 1000;
-    const auto pname
-        = api["props"][std::to_string(cat)][std::to_string(pid)].get<std::string>();
-    auto pval = std::string();
-    // return empty string if the value does not exist or is not string (i.e. is an error)
-    if (dprops.find(pname) != dprops.end() && dprops[pname].is_string())
-        pval = dprops[pname].get<std::string>();
-    return {pname, pval};
-}
-
-//  Anonymize properties for particular tracked device.
-void anonymize_dev_props(const json& api, json& dprops)
-{
-    // get the list of properties to hash from the config file
-    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
-    const std::string anon_prefix(ANON_PREFIX);
-    for (const auto pid : props_to_hash) {
-        const auto [pname, pval] = get_prop_name_val(api, dprops, pid);
-        if (pval.size() == 0)
-            continue;
-        // hash only non-empty strings
-        const std::string prefix(pval.c_str(), anon_prefix.size());
-        if (prefix != anon_prefix) {
-            std::vector<char> msgbuff;
-            for (const auto pid2 : PROPS_TO_SEED) {
-                const auto [pname2, pval2] = get_prop_name_val(api, dprops, pid2);
-                std::copy(pval2.begin(), pval2.end(), std::back_inserter(msgbuff));
-            }
-            std::copy(pval.begin(), pval.end(), std::back_inserter(msgbuff));
-            msgbuff.push_back('\0');
-            std::vector<char> buffer;
-            anonymize(buffer, msgbuff);
-            dprops[pname] = &buffer[0];
-        }
-    }
-}
-
-//  Anonymize the properties defined in the config file. If the values are already
-//  anonymized, do nothing
-void anonymize_all_props(const json& api, json& props)
-{
-    for (auto& [sdid, dprops] : props.items()) {
-        anonymize_dev_props(api, dprops);
-    }
-}
-
-//  Remove all properties with errors reported from the dict.
-void purge_errors(json& jd)
-{
-    std::vector<std::string> to_drop;
-    for (const auto& [sdid, dprops] : jd.items()) {
-        std::vector<std::string> to_drop;
-        for (const auto& [pname, pval] : dprops.items()) {
-            if (pval.count(ERROR_PREFIX)) {
-                to_drop.push_back(pname);
-            }
-        }
-        // purge the props with errors
-        for (const auto& pname : to_drop) {
-            dprops.erase(pname);
-        }
-    }
-}
-
 //  Anonymize the message in `in` to `out`
 void anonymize(std::vector<char>& out, const std::vector<char>& in)
 {
@@ -187,8 +76,6 @@ void anonymize(std::vector<char>& out, const std::vector<char>& in)
     out[anon_size - 1] = '\0';
 }
 
-//  functions
-//------------------------------------------------------------------------------
 //  Calculate the hash over the JSON string dump using Blake2b(CHKSUM_BITSIZE).
 //  The returned value is an upper case string of a binhex encoded hash.
 std::string calculate_checksum(const json& jd)

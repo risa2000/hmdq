@@ -9,23 +9,23 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
-
 #include <xtensor/xarray.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
+#include "calcview.h"
 #include "except.h"
 #include "geom.h"
-#include "hmddef.h"
-#include "hmdview.h"
 #include "optmesh.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
+
+//  globals
+//------------------------------------------------------------------------------
+//  Eye nomenclature
+const std::vector<std::string> JEYES = {LEYE, REYE};
 
 //  functions
 //------------------------------------------------------------------------------
@@ -241,7 +241,7 @@ json calc_geometry(const json& jd)
     json fov_head;
     auto ham_mesh = jd["ham_mesh"];
 
-    for (const auto& [eye, neye] : EYES) {
+    for (const auto& neye : JEYES) {
         // get HAM mesh (if supported by the headset, otherwise 'null')
 
         // get eye to head transformation matrix

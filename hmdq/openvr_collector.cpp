@@ -2,14 +2,13 @@
  * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
- * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
+ * Copyright (c) 2020, Richard Musil. All rights reserved.                    *
  *                                                                            *
  * This source code is licensed under the BSD 3-Clause "New" or "Revised"     *
  * License found in the LICENSE file in the root directory of this project.   *
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -26,14 +25,16 @@
 
 #include "except.h"
 #include "fmthlp.h"
-#include "hmdview.h"
 #include "jtools.h"
-#include "ovrhlp.h"
+#include "openvr_collector.h"
+#include "openvr_common.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
 
-//  locals
+namespace openvr {
+
+//  local constants
 //------------------------------------------------------------------------------
 static constexpr size_t BUFFSIZE = 256;
 
@@ -42,39 +43,19 @@ static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
 
-//  functions (OpenVR init)
+//  public (exported) functions for OpenVR collector
 //------------------------------------------------------------------------------
-//  Initialize OpenVR subsystem and return IVRSystem interace.
-std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type)
-{
-    vr::EVRInitError eError = vr::VRInitError_None;
-    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
-
-    if (eError != vr::VRInitError_None) {
-        return {nullptr, eError};
-    }
-    return {vrsys, eError};
-}
-
-//  functions which do not need OpenVR initialized
-//------------------------------------------------------------------------------
-//  If a HMD is not present abort (does not need IVRSystem).
-void is_hmd_present()
-{
-    if (!vr::VR_IsHmdPresent()) {
-        throw hmdq_error("No HMD detected");
-    }
-}
-
 //  Return the version of the OpenVR API used in the build.
-std::tuple<uint32_t, uint32_t, uint32_t> get_vr_sdk_ver()
+std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver()
 {
     return {vr::k_nSteamVRVersionMajor, vr::k_nSteamVRVersionMinor,
             vr::k_nSteamVRVersionBuild};
 }
 
+//  helper (local) functions for OpenVR collector
+//------------------------------------------------------------------------------
 //  Return OpenVR runtime path.
-std::string get_vr_runtime_path()
+std::string get_runtime_path()
 {
     constexpr size_t cbuffsize = 256;
     std::vector<char> buffer(cbuffsize);
@@ -94,16 +75,24 @@ std::string get_vr_runtime_path()
     }
 }
 
-//  functions (miscellanous)
-//------------------------------------------------------------------------------
+//  Initialize OpenVR subsystem and return IVRSystem interace.
+std::tuple<vr::IVRSystem*, vr::EVRInitError> init_vrsys(vr::EVRApplicationType app_type)
+{
+    vr::EVRInitError eError = vr::VRInitError_None;
+    vr::IVRSystem* vrsys = vr::VR_Init(&eError, app_type);
+
+    if (eError != vr::VRInitError_None) {
+        return {nullptr, eError};
+    }
+    return {vrsys, eError};
+}
+
 //  Return OpenVR version from the runtime.
-const char* get_vr_runtime_ver(vr::IVRSystem* vrsys)
+const char* get_runtime_ver(vr::IVRSystem* vrsys)
 {
     return vrsys->GetRuntimeVersion();
 }
 
-//  functions (devices and properties)
-//------------------------------------------------------------------------------
 //  Enumerate the attached devices.
 hdevlist_t enum_devs(vr::IVRSystem* vrsys)
 {
@@ -354,32 +343,6 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
     return pvals;
 }
 
-//  Return some info about OpenVR.
-json get_openvr(vr::IVRSystem* vrsys, const json& api)
-{
-    json res;
-    res["rt_path"] = get_vr_runtime_path();
-    res["rt_ver"] = get_vr_runtime_ver(vrsys);
-
-    const hdevlist_t devs = enum_devs(vrsys);
-    if (devs.size()) {
-        res["devices"] = devs;
-        // get all the properties
-        res["properties"] = get_all_props(vrsys, devs, api);
-        // record geometry only if HMD device class is present
-        // this technically should be always true, unless the user explicitly requested
-        // running OpenVR without a HMD.
-        if (devs.end() != std::find_if(devs.begin(), devs.end(), [](auto p) {
-                return p.second == vr::TrackedDeviceClass_HMD;
-            })) {
-            // get all the geometry
-            res["geometry"] = get_geometry(vrsys);
-        }
-    }
-
-    return res;
-}
-
 //  functions (geometry)
 //------------------------------------------------------------------------------
 //  Convert hidden area mask mesh from OpenVR to numpy array of vertices.
@@ -468,3 +431,103 @@ json get_geometry(vr::IVRSystem* vrsys)
 
     return res;
 }
+
+//  Return some info about OpenVR.
+json get_openvr(vr::IVRSystem* vrsys, const json& api)
+{
+    json res;
+    res["rt_path"] = get_runtime_path();
+    res["rt_ver"] = get_runtime_ver(vrsys);
+
+    const hdevlist_t devs = enum_devs(vrsys);
+    if (devs.size()) {
+        res["devices"] = devs;
+        // get all the properties
+        res["properties"] = get_all_props(vrsys, devs, api);
+        // record geometry only if HMD device class is present
+        // this technically should be always true, unless the user explicitly requested
+        // running OpenVR without a HMD.
+        if (devs.end() != std::find_if(devs.begin(), devs.end(), [](auto p) {
+                return p.second == vr::TrackedDeviceClass_HMD;
+            })) {
+            // get all the geometry
+            res["geometry"] = get_geometry(vrsys);
+        }
+    }
+
+    return res;
+}
+
+//  OpenVR Collector class
+//------------------------------------------------------------------------------
+Collector::~Collector()
+{
+    shutdown();
+}
+
+// Return API extract (for printer)
+const json& Collector::get_xapi()
+{
+    return m_jApi;
+}
+
+// Shutdown the OpenVR subsystem
+void Collector::shutdown()
+{
+    if (nullptr != m_ivrSystem) {
+        vr::VR_Shutdown();
+        m_ivrSystem = nullptr;
+    }
+}
+
+// Check if the OpenVR subsystem is present and initialize it
+// Return: true if present and initialized, otherwise false
+bool Collector::try_init()
+{
+    if (!vr::VR_IsRuntimeInstalled()) {
+        m_err = vr::VRInitError_Init_InstallationNotFound;
+        return false;
+    }
+    bool res = false;
+    auto [vrsys, error] = init_vrsys(m_appType);
+    if (nullptr != vrsys) {
+        m_ivrSystem = vrsys;
+        res = true;
+        json oapi = read_json(m_apiPath);
+        m_jApi = parse_json_oapi(oapi);
+    }
+    m_err = error;
+    return res;
+}
+
+// Collect the OpenVR subsystem data
+void Collector::collect()
+{
+    m_jData = get_openvr(m_ivrSystem, m_jApi);
+}
+
+// Return OpenVR subystem ID
+std::string Collector::get_id()
+{
+    return "openvr";
+}
+
+// Return the last OpenVR subsystem error
+int Collector::get_last_error()
+{
+    return static_cast<int>(m_err);
+}
+
+// Return the last OpenVR subsystem error message
+std::string Collector::get_last_error_msg()
+{
+    return std::string(vr::VR_GetVRInitErrorAsEnglishDescription(m_err));
+}
+
+// Return OpenVR data
+json& Collector::get_data()
+{
+    return m_jData;
+}
+
+} // namespace openvr

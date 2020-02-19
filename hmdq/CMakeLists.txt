@@ -69,19 +69,18 @@ configure_file (
 # Targets
 # ============
 set (hmdq_sources
-    hmdq.cpp
+    calcview.cpp
     config.cpp
     geom.cpp
-    hmddef.cpp
-    hmdview.cpp
+    hmdq.cpp
     jtools.cpp
+    openvr_collector.cpp
+    openvr_common.cpp
+    openvr_processor.cpp
     optmesh.cpp
-    wintools.cpp
-    ovrhlp.cpp
     prtdata.cpp
+    wintools.cpp
     xtdef.cpp
-    OpenVRProcessor.cpp
-    OpenVRCollector.cpp
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 

@@ -14,23 +14,22 @@
 #include <filesystem>
 #include <string>
 
-#define BUILD_OPENVR_STATIC
-#include <openvr/openvr.h>
-
-#include "BaseVR.h"
+#include "basecomp.h"
 
 #include "fifo_map_fix.h"
 
-//  OpenVRProcessor class
+namespace openvr {
+
+//  OpenVR Processor class
 //------------------------------------------------------------------------------
 //  Printer for OpenVR subsystem
-class OpenVRProcessor : public BaseVRProcessor
+class Processor : public BaseVRProcessor
 {
   public:
-    OpenVRProcessor(const std::filesystem::path& apiPath, json& jdata)
+    Processor(const std::filesystem::path& apiPath, json& jdata)
         : m_jData(jdata), m_apiPath(apiPath)
     {}
-    OpenVRProcessor(const json& japi, json& jdata) : m_jData(jdata), m_jApi(japi) {}
+    Processor(const json& japi, json& jdata) : m_jData(jdata), m_jApi(japi) {}
 
   public:
     // Initialize the processor
@@ -60,3 +59,5 @@ class OpenVRProcessor : public BaseVRProcessor
     // OpenVR API JSON file path
     std::filesystem::path m_apiPath;
 };
+
+} // namespace openvr

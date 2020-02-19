@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -21,15 +20,14 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
-#include "OpenVRProcessor.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
 #include "hmdfix.h"
-#include "hmdview.h"
 #include "jtools.h"
 #include "misc.h"
+#include "openvr_processor.h"
 #include "prtdata.h"
 #include "wintools.h"
 
@@ -151,7 +149,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
 
     // process all VR subsystem interfaces
     if (out.find("openvr") != out.end()) {
-        processors.push_back(std::make_unique<OpenVRProcessor>(
+        processors.push_back(std::make_unique<openvr::Processor>(
             std::filesystem::u8path(api_json), out["openvr"]));
         processors.back()->init();
     }
