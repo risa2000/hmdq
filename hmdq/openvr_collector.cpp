@@ -43,15 +43,6 @@ static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
 
-//  public (exported) functions for OpenVR collector
-//------------------------------------------------------------------------------
-//  Return the version of the OpenVR API used in the build.
-std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver()
-{
-    return {vr::k_nSteamVRVersionMajor, vr::k_nSteamVRVersionMinor,
-            vr::k_nSteamVRVersionBuild};
-}
-
 //  helper (local) functions for OpenVR collector
 //------------------------------------------------------------------------------
 //  Return OpenVR runtime path.

@@ -2,27 +2,35 @@
  * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
- * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
+ * Copyright (c) 2020, Richard Musil. All rights reserved.                    *
  *                                                                            *
  * This source code is licensed under the BSD 3-Clause "New" or "Revised"     *
  * License found in the LICENSE file in the root directory of this project.   *
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#pragma once
-
-#include <filesystem>
-#include <vector>
-
 #include "basecomp.h"
 
 #include "fifo_map_fix.h"
 
-//  globals
-//------------------------------------------------------------------------------
-extern json g_cfg;
+namespace openvr {
 
-//  functions
+//  OpenVR Config class (default config)
 //------------------------------------------------------------------------------
-//  Initialize config options either from the file or from the defaults.
-bool init_config(const std::filesystem::path& argv0, const cfgbuff_t& cfgs);
+class Config : public BaseVRConfig
+{
+  public:
+    Config();
+
+  public:
+    // Return VR subystem ID
+    virtual std::string get_id() override;
+    // Return VR subystem default config
+    virtual json& get_data() override;
+
+  private:
+    // Config data
+    json m_jConfig;
+};
+
+} // namespace openvr

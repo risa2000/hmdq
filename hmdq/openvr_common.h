@@ -12,6 +12,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #define OPENVR_BUILD_STATIC
@@ -37,6 +38,9 @@ extern const heyes_t EYES;
 
 //  generic functions
 //------------------------------------------------------------------------------
+//  Return the version of the OpenVR API used in the build.
+std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver();
+
 //  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
 std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
 parse_prop_name(const std::string& pname);

@@ -74,9 +74,17 @@ void purge_errors(json& jd)
 void anonymize_dev_props(const json& api, json& dprops)
 {
     // get the list of properties to hash from the config file
-    const hproplist_t props_to_hash = g_cfg["control"]["anon_props"].get<hproplist_t>();
+    const std::vector<std::string> anon_props_names
+        = g_cfg["openvr"]["anonymize"]["properties"].get<std::vector<std::string>>();
+    const json& j_name2id = api["props"]["name2id"];
+    hproplist_t anon_props_ids;
+    for (const auto& name : anon_props_names) {
+        if (j_name2id.find(name) != j_name2id.end()) {
+            anon_props_ids.push_back(j_name2id[name].get<vr::ETrackedDeviceProperty>());
+        }
+    }
     const std::string anon_prefix(ANON_PREFIX);
-    for (const auto pid : props_to_hash) {
+    for (const auto pid : anon_props_ids) {
         const auto [pname, pval] = get_prop_name_val(api, dprops, pid);
         if (pval.size() == 0)
             continue;
@@ -191,6 +199,7 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
 {
     const auto sf = ind * ts;
     const auto jverb = g_cfg["verbosity"];
+    const auto verb_props = g_cfg["openvr"]["verbosity"]["properties"];
     const auto verr = jverb["error"].get<int>();
 
     for (const auto& [pname, pval] : dprops.items()) {
@@ -216,7 +225,6 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
         }
         else {
             // determine the "active" verbosity level for the current property
-            const auto verb_props = jverb["props"];
             if (verb_props.find(pname) != verb_props.end()) {
                 // explicitly defined property
                 pverb = verb_props[pname].get<int>();

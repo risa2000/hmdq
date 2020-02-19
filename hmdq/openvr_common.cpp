@@ -23,6 +23,13 @@ const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
 
 //  generic functions
 //------------------------------------------------------------------------------
+//  Return the version of the OpenVR API used in the build.
+std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver()
+{
+    return {vr::k_nSteamVRVersionMajor, vr::k_nSteamVRVersionMinor,
+            vr::k_nSteamVRVersionBuild};
+}
+
 //  Resolve property tag enum from the type name.
 vr::PropertyTypeTag_t get_ptag_from_ptype(const std::string& ptype)
 {

@@ -21,6 +21,7 @@
 //------------------------------------------------------------------------------
 class BaseVRProcessor;
 class BaseVRCollector;
+class BaseVRConfig;
 
 //  typedefs
 //------------------------------------------------------------------------------
@@ -28,6 +29,8 @@ class BaseVRCollector;
 typedef std::vector<std::unique_ptr<BaseVRCollector>> colbuff_t;
 // processor buffer
 typedef std::vector<std::unique_ptr<BaseVRProcessor>> procbuff_t;
+// config buffer
+typedef std::vector<std::unique_ptr<BaseVRConfig>> cfgbuff_t;
 
 //  BaseVR class
 //------------------------------------------------------------------------------
@@ -43,6 +46,11 @@ class BaseVR
     // Return VR subystem data
     virtual json& get_data() = 0;
 };
+
+//  BaseVRConfig class
+//------------------------------------------------------------------------------
+class BaseVRConfig : public BaseVR
+{};
 
 //  BaseVRProcessor class
 //------------------------------------------------------------------------------

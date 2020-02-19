@@ -13,7 +13,6 @@
 
 #include <filesystem>
 #include <string>
-#include <tuple>
 
 #define BUILD_OPENVR_STATIC
 #include <openvr/openvr.h>
@@ -23,11 +22,6 @@
 #include "fifo_map_fix.h"
 
 namespace openvr {
-
-//  public (exported) functions for OpenVR collector
-//------------------------------------------------------------------------------
-//  Return the version of the OpenVR API used in the build.
-std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver();
 
 //  OpenVR Collector class
 //------------------------------------------------------------------------------
@@ -39,7 +33,7 @@ class Collector : public BaseVRCollector
         : m_appType(appType), m_ivrSystem(nullptr), m_err(vr::VRInitError_None),
           m_apiPath(apiPath)
     {}
-    virtual ~Collector();
+    virtual ~Collector() override;
 
   public:
     // Check if the OpenVR subsystem is present and initialize it

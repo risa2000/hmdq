@@ -27,6 +27,7 @@
 #include "hmdfix.h"
 #include "jtools.h"
 #include "misc.h"
+#include "openvr_config.h"
 #include "openvr_processor.h"
 #include "prtdata.h"
 #include "wintools.h"
@@ -212,7 +213,10 @@ int main(int argc, char* argv[])
     // print_u8args(u8args);
 
     // init global config before anything else
-    const auto cfg_ok = init_config(get_full_prog_path());
+    cfgbuff_t cfgs;
+    cfgs.push_back(std::make_unique<openvr::Config>());
+
+    const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)
         return 1;
 

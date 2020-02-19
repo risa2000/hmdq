@@ -71,6 +71,7 @@ set (hmdv_sources
     ${hmdq_dir}/geom.cpp
     ${hmdq_dir}/jtools.cpp
     ${hmdq_dir}/openvr_common.cpp
+    ${hmdq_dir}/openvr_config.cpp
     ${hmdq_dir}/openvr_processor.cpp
     ${hmdq_dir}/optmesh.cpp
     ${hmdq_dir}/prtdata.cpp

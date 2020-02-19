@@ -16,9 +16,6 @@
 
 #include <fmt/format.h>
 
-#define OPENVR_BUILD_STATIC
-#include <openvr/openvr.h>
-
 #include "config.h"
 #include "misc.h"
 
@@ -39,21 +36,14 @@ static const char* CONF_FILE = "hmdq.conf.json";
 //  v2: Added 'control' section for anonymizing setup.
 //      Removed 'use_names' option, only "names" are suppported.
 //  v3: Changed `hmdq_ver` key to `prog_ver` key.
-//  v4: Added: Prop_RegisteredDeviceType_String to anonymized props.
-static constexpr int CFG_VERSION = 4;
+//  v4: Added Prop_RegisteredDeviceType_String to anonymized props.
+//  v5: Moved OpenVR settings into "openvr" section.
+static constexpr int CFG_VERSION = 5;
 
 //  control defaults
 //------------------------------------------------------------------------------
+//  anonymize sensitive data by default
 static constexpr bool CTRL_ANONYMIZE = false;
-//  currently identified properties with serial numbers
-// clang-format off
-static const std::vector<vr::ETrackedDeviceProperty> PROPS_TO_HASH
-    = {vr::Prop_SerialNumber_String,
-       vr::Prop_AllWirelessDongleDescriptions_String,
-       vr::Prop_ConnectedWirelessDongle_String,
-       vr::Prop_Firmware_ProgrammingTarget_String,
-       vr::Prop_RegisteredDeviceType_String};
-// clang-format on
 
 //  verbosity defaults
 //------------------------------------------------------------------------------
@@ -67,48 +57,6 @@ static constexpr int VERB_ERR = 4;
 //------------------------------------------------------------------------------
 static constexpr int JSON_INDENT = 2;
 static constexpr int CLI_INDENT = 4;
-
-//  OpenVR defaults
-//------------------------------------------------------------------------------
-static constexpr auto APP_TYPE = vr::VRApplication_Background;
-
-// clang-format off
-static const json VERB_PROPS = {
-    {"Prop_TrackingSystemName_String", 0},
-    {"Prop_ModelNumber_String", 0},
-    {"Prop_SerialNumber_String", 0},
-    {"Prop_RenderModelName_String", 0},
-    {"Prop_ManufacturerName_String", 0},
-    {"Prop_TrackingFirmwareVersion_String", 0},
-    {"Prop_HardwareRevision_String", 0},
-    {"Prop_ConnectedWirelessDongle_String", 2},
-    {"Prop_DeviceIsWireless_Bool", 2},
-    {"Prop_DeviceIsCharging_Bool", 2},
-    {"Prop_DeviceBatteryPercentage_Float", 0},
-    {"Prop_Firmware_UpdateAvailable_Bool", 2},
-    {"Prop_Firmware_ManualUpdate_Bool", 2},
-    {"Prop_Firmware_ManualUpdateURL_String", 2},
-    {"Prop_HardwareRevision_Uint64", 2},
-    {"Prop_FirmwareVersion_Uint64", 2},
-    {"Prop_FPGAVersion_Uint64", 2},
-    {"Prop_VRCVersion_Uint64", 2},
-    {"Prop_RadioVersion_Uint64", 2},
-    {"Prop_DongleVersion_Uint64", 2},
-    {"Prop_DeviceProvidesBatteryStatus_Bool", 2},
-    {"Prop_Firmware_ProgrammingTarget_String", 2},
-    {"Prop_RegisteredDeviceType_String", 2},
-    {"Prop_InputProfilePath_String", 2},
-    {"Prop_SecondsFromVsyncToPhotons_Float", 2},
-    {"Prop_DisplayFrequency_Float", 0},
-    {"Prop_FieldOfViewLeftDegrees_Float", 2},
-    {"Prop_FieldOfViewRightDegrees_Float", 2},
-    {"Prop_FieldOfViewTopDegrees_Float", 2},
-    {"Prop_FieldOfViewBottomDegrees_Float", 2},
-    {"Prop_TrackingRangeMinimumMeters_Float", 2},
-    {"Prop_TrackingRangeMaximumMeters_Float", 2},
-    {"Prop_ModeLabel_String", 0}
-};
-// clang-format on
 
 //  local functions
 //------------------------------------------------------------------------------
@@ -136,7 +84,6 @@ static json build_control()
 {
     json res;
     res["anonymize"] = CTRL_ANONYMIZE;
-    res["anon_props"] = PROPS_TO_HASH;
     return res;
 }
 
@@ -149,7 +96,6 @@ static json build_verbosity()
     res["geom"] = VERB_GEOM;
     res["max"] = VERB_MAX;
     res["error"] = VERB_ERR;
-    res["props"] = VERB_PROPS;
     return res;
 }
 
@@ -159,14 +105,6 @@ static json build_format()
     json res;
     res["json_indent"] = JSON_INDENT;
     res["cli_indent"] = CLI_INDENT;
-    return res;
-}
-
-//  Build default config for OpenVR settings
-static json build_openvr()
-{
-    json res;
-    res["app_type"] = APP_TYPE;
     return res;
 }
 
@@ -180,14 +118,16 @@ static json build_meta()
 }
 
 //  Build (default) config and write it into JSON file.
-static json build_config(const std::filesystem::path& cfile)
+static json build_config(const std::filesystem::path& cfile, const cfgbuff_t& cfgs)
 {
     json jd;
     jd["meta"] = build_meta();
     jd["control"] = build_control();
     jd["format"] = build_format();
-    jd["openvr"] = build_openvr();
     jd["verbosity"] = build_verbosity();
+    for (auto& cfg : cfgs) {
+        jd[cfg->get_id()] = cfg->get_data();
+    }
     write_config(cfile, jd);
     return jd;
 }
@@ -202,12 +142,12 @@ static std::filesystem::path build_conf_name(const std::filesystem::path& argv0)
 //  exported functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(const std::filesystem::path& argv0)
+bool init_config(const std::filesystem::path& argv0, const cfgbuff_t& cfgs)
 {
     auto cfile = build_conf_name(argv0);
     g_cfg = load_config(cfile);
     if (g_cfg.empty()) {
-        g_cfg = build_config(cfile);
+        g_cfg = build_config(cfile, cfgs);
     }
     else {
         const auto cfg_ver = g_cfg["meta"]["cfg_ver"].get<int>();

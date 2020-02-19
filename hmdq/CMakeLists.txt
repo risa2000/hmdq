@@ -76,6 +76,7 @@ set (hmdq_sources
     jtools.cpp
     openvr_collector.cpp
     openvr_common.cpp
+    openvr_config.cpp
     openvr_processor.cpp
     optmesh.cpp
     prtdata.cpp
