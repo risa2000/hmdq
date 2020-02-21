@@ -296,8 +296,7 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
                 const auto pval
                     = vrsys->GetMatrix34TrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
-                    const std::vector<std::size_t> shape = {3, 4};
-                    const auto mat34 = xt::adapt(&pval.m[0][0], shape);
+                    const auto mat34 = xt::adapt(&pval.m[0][0], {3, 4});
                     res[pname] = mat34;
                 }
                 break;
@@ -385,8 +384,7 @@ json get_eye2head(vr::IVRSystem* vrsys, vr::EVREye eye)
 {
     // get eye to head transformation matrix
     const auto oe2h = vrsys->GetEyeToHeadTransform(eye);
-    const std::vector<std::size_t> shape = {3, 4};
-    const auto e2h = xt::adapt(&oe2h.m[0][0], shape);
+    const auto e2h = xt::adapt(&oe2h.m[0][0], {3, 4});
     json je2h = e2h;
     return je2h;
 }
