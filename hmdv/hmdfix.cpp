@@ -16,6 +16,7 @@
 #include <fmt/format.h>
 
 #include "calcview.h"
+#include "jkeys.h"
 #include "misc.h"
 #include "verhlp.h"
 
@@ -24,8 +25,6 @@
 //  locals
 //------------------------------------------------------------------------------
 //  miscellanous section keys
-static constexpr const char* HMDV_VER = "hmdv_ver";
-static constexpr const char* HMDQ_VER = "hmdq_ver";
 static constexpr auto MM_IN_METER = 1000;
 
 //  fix identifications
@@ -40,13 +39,13 @@ static constexpr const char* PROG_VER_OPENVR_LOCALIZED = "1.3.4";
 //  Return 'hmdv_ver' if it is defined in JSON data, otherwise return 'hmdq_ver'.
 std::string get_hmdx_ver(const json& jd)
 {
-    const auto misc = jd["misc"];
+    const auto misc = jd[j_misc];
     std::string hmdx_ver;
-    if (misc.find(HMDV_VER) != misc.end()) {
-        hmdx_ver = misc[HMDV_VER].get<std::string>();
+    if (misc.find(j_hmdv_ver) != misc.end()) {
+        hmdx_ver = misc[j_hmdv_ver].get<std::string>();
     }
     else {
-        hmdx_ver = misc[HMDQ_VER].get<std::string>();
+        hmdx_ver = misc[j_hmdq_ver].get<std::string>();
     }
     return hmdx_ver;
 }
@@ -57,36 +56,36 @@ void fix_datetime_format(json& jd)
     std::istringstream stime;
     std::tm tm = {};
     // get the old format with 'T' in the middle
-    stime.str(jd["misc"]["time"].get<std::string>());
+    stime.str(jd[j_misc][j_time].get<std::string>());
     stime >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
     // put the new format without 'T'
-    jd["misc"]["time"] = fmt::format("{:%F %T}", tm);
+    jd[j_misc][j_time] = fmt::format("{:%F %T}", tm);
 }
 
 //  Fix unit for saved IPD value, mm -> meters (ver < v1.2.3)
 void fix_ipd_unit(json& jd)
 {
     // the old IPD is in milimeters, transform it to meters
-    const auto ipd = jd["geometry"]["view_geom"]["ipd"].get<double>() / MM_IN_METER;
-    jd["geometry"]["view_geom"]["ipd"] = ipd;
+    const auto ipd = jd[j_geometry][j_view_geom][j_ipd].get<double>() / MM_IN_METER;
+    jd[j_geometry][j_view_geom][j_ipd] = ipd;
 }
 
 //  Fix for vertical FOV calculation in (ver < v1.2.4)
 void fix_fov_calc(json& jd)
 {
-    const auto fov_tot = calc_total_fov(jd["geometry"]["fov_head"]);
-    jd["geometry"]["fov_tot"] = fov_tot;
+    const auto fov_tot = calc_total_fov(jd[j_geometry][j_fov_head]);
+    jd[j_geometry][j_fov_tot] = fov_tot;
 }
 
 //  move openvr data into openvr section (ver < v1.3.4)
 void fix_openvr_section(json& jd)
 {
-    jd["openvr"]["devices"] = jd["devices"];
-    jd["openvr"]["properties"] = jd["properties"];
-    jd["openvr"]["geometry"] = jd["geometry"];
-    jd.erase("devices");
-    jd.erase("properties");
-    jd.erase("geometry");
+    jd[j_openvr][j_devices] = jd[j_devices];
+    jd[j_openvr][j_properties] = jd[j_properties];
+    jd[j_openvr][j_geometry] = jd[j_geometry];
+    jd.erase(j_devices);
+    jd.erase(j_properties);
+    jd.erase(j_geometry);
 }
 
 //  Check and run all fixes (return true if there was any)
@@ -109,14 +108,14 @@ bool apply_all_relevant_fixes(json& jd)
         fix_fov_calc(jd);
         fixed = true;
     }
-    // move all OpenVR data into "openvr" section and add "oculus" section
+    // move all OpenVR data into 'openvr' section
     if (comp_ver(hmdx_ver, PROG_VER_OPENVR_LOCALIZED) < 0) {
         fix_openvr_section(jd);
         fixed = true;
     }
-    // add HMDQ_VER into misc, if some change was made
+    // add 'hmdv_ver' into misc, if some change was made
     if (fixed) {
-        jd["misc"][HMDV_VER] = PROG_VERSION;
+        jd[j_misc][j_hmdv_ver] = PROG_VERSION;
     }
     return fixed;
 }

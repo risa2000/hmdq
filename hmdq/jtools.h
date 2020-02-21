@@ -14,12 +14,13 @@
 #include <filesystem>
 #include <vector>
 
+#include "jkeys.h"
+
 #include "fifo_map_fix.h"
 
 //  globals
 //------------------------------------------------------------------------------
 //  Checksum pre-defs
-constexpr const char* CHECKSUM = "checksum";
 constexpr int CHKSUM_BITSIZE = 128;
 
 //  Anonymizing pre-defs
@@ -50,11 +51,11 @@ bool verify_checksum(const json& jd);
 inline void add_checksum(json& jd)
 {
     // just do it
-    jd[CHECKSUM] = calculate_checksum(jd);
+    jd[j_checksum] = calculate_checksum(jd);
 }
 
 //  Verify if the file has the checksum written in it
 inline bool has_checksum(const json& jd)
 {
-    return jd.count(CHECKSUM);
+    return jd.count(j_checksum);
 }

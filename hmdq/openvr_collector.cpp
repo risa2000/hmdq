@@ -25,6 +25,7 @@
 
 #include "except.h"
 #include "fmthlp.h"
+#include "jkeys.h"
 #include "jtools.h"
 #include "openvr_collector.h"
 #include "openvr_common.h"
@@ -48,7 +49,7 @@ static const int PROP_CAT_TRACKEDREF = 4;
 //  Return OpenVR runtime path.
 std::string get_runtime_path()
 {
-    constexpr size_t cbuffsize = 256;
+    constexpr size_t cbuffsize = BUFFSIZE;
     std::vector<char> buffer(cbuffsize);
     uint32_t buffsize = 0;
     bool res = vr::VR_GetRuntimePath(&buffer[0], static_cast<uint32_t>(buffer.size()),
@@ -244,7 +245,7 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
     // abuse vector as a return buffer for the String property
     std::vector<char> buffer(BUFFSIZE);
 
-    for (const auto& [spid, jname] : api["props"][scat].items()) {
+    for (const auto& [spid, jname] : api[j_properties][scat].items()) {
         // convert string to the correct type
         const auto pid = static_cast<vr::ETrackedDeviceProperty>(std::stoi(spid));
         // property name
@@ -360,7 +361,7 @@ json get_ham_mesh(vr::IVRSystem* vrsys, vr::EVREye eye, vr::EHiddenAreaMeshType 
     // number of vertices must be divisible by 3 as each 3 defined one triangle
     HMDQ_ASSERT(verts.shape(0) % 3 == 0);
     json res;
-    res["verts_raw"] = verts;
+    res[j_verts_raw] = verts;
     return res;
 }
 
@@ -371,11 +372,11 @@ json get_raw_eye(vr::IVRSystem* vrsys, vr::EVREye eye)
     // NOTE: the API doc has swapped values for top and bottom
     vrsys->GetProjectionRaw(eye, &left, &right, &bottom, &top);
     const auto aspect = (right - left) / (top - bottom);
-    json res = {{"tan_left", left},
-                {"tan_right", right},
-                {"tan_bottom", bottom},
-                {"tan_top", top},
-                {"aspect", aspect}};
+    json res = {{j_tan_left, left},
+                {j_tan_right, right},
+                {j_tan_bottom, bottom},
+                {j_tan_top, top},
+                {j_aspect, aspect}};
     return res;
 }
 
@@ -415,10 +416,10 @@ json get_geometry(vr::IVRSystem* vrsys)
     }
 
     json res;
-    res["rec_rts"] = rec_rts;
-    res["raw_eye"] = raw_eye;
-    res["eye2head"] = eye2head;
-    res["ham_mesh"] = ham_mesh;
+    res[j_rec_rts] = rec_rts;
+    res[j_raw_eye] = raw_eye;
+    res[j_eye2head] = eye2head;
+    res[j_ham_mesh] = ham_mesh;
 
     return res;
 }
@@ -427,14 +428,14 @@ json get_geometry(vr::IVRSystem* vrsys)
 json get_openvr(vr::IVRSystem* vrsys, const json& api)
 {
     json res;
-    res["rt_path"] = get_runtime_path();
-    res["rt_ver"] = get_runtime_ver(vrsys);
+    res[j_rt_path] = get_runtime_path();
+    res[j_rt_ver] = get_runtime_ver(vrsys);
 
     const hdevlist_t devs = enum_devs(vrsys);
     if (devs.size()) {
-        res["devices"] = devs;
+        res[j_devices] = devs;
         // get all the properties
-        res["properties"] = get_all_props(vrsys, devs, api);
+        res[j_properties] = get_all_props(vrsys, devs, api);
         // record geometry only if HMD device class is present
         // this technically should be always true, unless the user explicitly requested
         // running OpenVR without a HMD.
@@ -442,7 +443,7 @@ json get_openvr(vr::IVRSystem* vrsys, const json& api)
                 return p.second == vr::TrackedDeviceClass_HMD;
             })) {
             // get all the geometry
-            res["geometry"] = get_geometry(vrsys);
+            res[j_geometry] = get_geometry(vrsys);
         }
     }
 
@@ -500,7 +501,7 @@ void Collector::collect()
 // Return OpenVR subystem ID
 std::string Collector::get_id()
 {
-    return "openvr";
+    return j_openvr;
 }
 
 // Return the last OpenVR subsystem error

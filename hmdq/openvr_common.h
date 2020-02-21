@@ -32,8 +32,6 @@ typedef std::vector<hdevpair_t> hdevlist_t;
 //  globals
 //------------------------------------------------------------------------------
 //  Eye nomenclature
-constexpr const char* LEYE = "Left";
-constexpr const char* REYE = "Right";
 extern const heyes_t EYES;
 
 //  generic functions

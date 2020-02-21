@@ -12,6 +12,7 @@
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
+#include "jkeys.h"
 #include "openvr_common.h"
 
 namespace openvr {
@@ -19,7 +20,7 @@ namespace openvr {
 //  globals
 //------------------------------------------------------------------------------
 //  Eye nomenclature
-const heyes_t EYES = {{vr::Eye_Left, LEYE}, {vr::Eye_Right, REYE}};
+const heyes_t EYES = {{vr::Eye_Left, j_leye}, {vr::Eye_Right, j_reye}};
 
 //  generic functions
 //------------------------------------------------------------------------------
@@ -97,22 +98,22 @@ json parse_json_oapi(const json& jd)
 {
     json tdprops;
     json tdcls;
-    for (const auto& e : jd["enums"]) {
-        if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceProperty") {
-            for (const auto& v : e["values"]) {
-                const auto name = v["name"].get<std::string>();
+    for (const auto& e : jd[j_enums]) {
+        if (e[j_enumname].get<std::string>() == "vr::ETrackedDeviceProperty") {
+            for (const auto& v : e[j_values]) {
+                const auto name = v[j_name].get<std::string>();
                 // val type is actually vr::ETrackedDeviceProperty
-                const auto val = std::stoi(v["value"].get<std::string>());
+                const auto val = std::stoi(v[j_value].get<std::string>());
                 const auto cat = static_cast<int>(val) / 1000;
                 tdprops[std::to_string(cat)][std::to_string(val)] = name;
-                tdprops["name2id"][name] = val;
+                tdprops[j_name2id][name] = val;
             }
         }
-        else if (e["enumname"].get<std::string>() == "vr::ETrackedDeviceClass") {
-            for (const auto& v : e["values"]) {
-                auto name = v["name"].get<std::string>();
+        else if (e[j_enumname].get<std::string>() == "vr::ETrackedDeviceClass") {
+            for (const auto& v : e[j_values]) {
+                auto name = v[j_name].get<std::string>();
                 // val type is actually vr::ETrackedDeviceClass
-                const auto val = std::stoi(v["value"].get<std::string>());
+                const auto val = std::stoi(v[j_value].get<std::string>());
                 const auto fs = name.find('_');
                 if (fs != std::string::npos) {
                     name = name.substr(fs + 1, std::string::npos);
@@ -121,7 +122,7 @@ json parse_json_oapi(const json& jd)
             }
         }
     }
-    return json({{"classes", tdcls}, {"props", tdprops}});
+    return json({{j_classes, tdcls}, {j_properties, tdprops}});
 }
 
 } // namespace openvr

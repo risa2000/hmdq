@@ -25,6 +25,7 @@
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
+#include "jkeys.h"
 #include "jtools.h"
 #include "misc.h"
 #include "openvr_collector.h"
@@ -45,6 +46,7 @@ enum class mode { geom, props, all, info, help };
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
 static constexpr unsigned int CP_UTF8 = 65001;
+const auto OPENVR_API_JSON = "openvr_api.json";
 
 //  log versions
 //------------------------------------------------------------------------------
@@ -52,7 +54,7 @@ static constexpr unsigned int CP_UTF8 = 65001;
 //  v2: Added secure checksum to the end of the file.
 //  v3: Added new section 'openvr'.
 //  v4: IPD now reported in meters (was mm).
-//  v5: OpenVR related data moved into "openvr" section.
+//  v5: OpenVR related data moved into 'openvr' section.
 static constexpr int LOG_VERSION = 5;
 
 //  functions
@@ -99,10 +101,10 @@ json get_misc()
     localtime_s(&tm, &t);
 
     json res;
-    res["time"] = fmt::format("{:%F %T}", tm);
-    res["hmdq_ver"] = PROG_VERSION;
-    res["log_ver"] = LOG_VERSION;
-    res["os_ver"] = get_os_ver();
+    res[j_time] = fmt::format("{:%F %T}", tm);
+    res[j_hmdq_ver] = PROG_VERSION;
+    res[j_log_ver] = LOG_VERSION;
+    res[j_os_ver] = get_os_ver();
     return res;
 }
 
@@ -126,10 +128,8 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
         bool anon, int verb, int ind, int ts)
 {
     // initialize config values
-    const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
-    const auto openvr_app_type
-        = g_cfg["openvr"]["app_type"].get<vr::EVRApplicationType>();
-    const auto verr = g_cfg["verbosity"]["error"].get<int>();
+    const auto json_indent = g_cfg[j_format][j_json_indent].get<int>();
+    const auto verr = g_cfg[j_verbosity][j_error].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
@@ -138,7 +138,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     json out;
 
     // get the miscellanous (system and app) data
-    out["misc"] = get_misc();
+    out[j_misc] = get_misc();
 
     // collector buffer
     colbuff_t collectors;
@@ -147,13 +147,15 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // create all VR subsystem interfaces
     // OpenVR collector
+    const auto openvr_app_type
+        = g_cfg[j_openvr][j_app_type].get<vr::EVRApplicationType>();
     collectors.push_back(std::make_unique<openvr::Collector>(
         std::filesystem::u8path(api_json), openvr_app_type));
 
     for (auto& col : collectors) {
         if (col->try_init()) {
             col->collect();
-            if (col->get_id() == "openvr") {
+            if (col->get_id() == j_openvr) {
                 // create corresponding processor
                 openvr::Collector* pCol = dynamic_cast<openvr::Collector*>(col.get());
                 processors.push_back(std::make_unique<openvr::Processor>(
@@ -217,7 +219,6 @@ int run_wrapper(mode selected, const std::string& api_json, const std::string& o
 int main(int argc, char* argv[])
 {
     using namespace clipp;
-    const auto OPENVR_API_JSON = "openvr_api.json";
 
     // Set UTF-8 code page for the console if available
     // if not, print UTF-8 strings to the console anyway.
@@ -238,12 +239,12 @@ int main(int argc, char* argv[])
     if (!cfg_ok)
         return 1;
 
-    const auto ts = g_cfg["format"]["cli_indent"].get<int>();
+    const auto ts = g_cfg[j_format][j_cli_indent].get<int>();
     const auto ind = IND;
 
     // defaults for the arguments
-    auto verb = g_cfg["verbosity"]["default"].get<int>();
-    auto anon = g_cfg["control"]["anonymize"].get<bool>();
+    auto verb = g_cfg[j_verbosity][j_default].get<int>();
+    auto anon = g_cfg[j_control][j_anonymize].get<bool>();
 
     // default command is 'all'
     mode selected = mode::all;

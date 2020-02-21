@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include "except.h"
+#include "jkeys.h"
 #include "jtools.h"
 
 #include "fifo_map_fix.h"
@@ -94,8 +95,8 @@ bool verify_checksum(const json& jd)
         return false;
 
     json jcopy = jd;
-    const auto chksm = jcopy[CHECKSUM].get<std::string>();
-    jcopy.erase(CHECKSUM);
+    const auto chksm = jcopy[j_checksum].get<std::string>();
+    jcopy.erase(j_checksum);
     const auto vchksm = calculate_checksum(jcopy);
     return (chksm == vchksm);
 }

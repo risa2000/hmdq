@@ -25,6 +25,7 @@
 #include "fmthlp.h"
 #include "gitversion.h"
 #include "hmdfix.h"
+#include "jkeys.h"
 #include "jtools.h"
 #include "misc.h"
 #include "openvr_config.h"
@@ -43,6 +44,7 @@ enum class mode { geom, props, all, verify, info, help };
 //------------------------------------------------------------------------------
 static constexpr int IND = 0;
 static constexpr unsigned int CP_UTF8 = 65001;
+const auto OPENVR_API_JSON = "openvr_api.json";
 
 //  functions
 //------------------------------------------------------------------------------
@@ -96,7 +98,7 @@ static pmode mode2pmode(const mode selected)
 int run_verify(const std::string& in_json, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
@@ -125,8 +127,8 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
 {
     const auto sf = ind * ts;
     // initialize config values
-    const auto json_indent = g_cfg["format"]["json_indent"].get<int>();
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto json_indent = g_cfg[j_format][j_json_indent].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
@@ -149,9 +151,9 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     procbuff_t processors;
 
     // process all VR subsystem interfaces
-    if (out.find("openvr") != out.end()) {
+    if (out.find(j_openvr) != out.end()) {
         processors.push_back(std::make_unique<openvr::Processor>(
-            std::filesystem::u8path(api_json), out["openvr"]));
+            std::filesystem::u8path(api_json), out[j_openvr]));
         processors.back()->init();
     }
 
@@ -167,7 +169,7 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
 
     // dump the data into the optional JSON file
     if (out_json.size()) {
-        out.erase(CHECKSUM);
+        out.erase(j_checksum);
         // add the checksum only if the original file was authentic
         if (check_ok) {
             add_checksum(out);
@@ -220,12 +222,12 @@ int main(int argc, char* argv[])
     if (!cfg_ok)
         return 1;
 
-    const auto ts = g_cfg["format"]["cli_indent"].get<int>();
+    const auto ts = g_cfg[j_format][j_cli_indent].get<int>();
     const auto ind = IND;
 
     // defaults for the arguments
-    auto verb = g_cfg["verbosity"]["default"].get<int>();
-    auto anon = g_cfg["control"]["anonymize"].get<bool>();
+    auto verb = g_cfg[j_verbosity][j_default].get<int>();
+    auto anon = g_cfg[j_control][j_anonymize].get<bool>();
 
     // default command is 'all'
     mode selected = mode::all;

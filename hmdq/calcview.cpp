@@ -17,15 +17,11 @@
 #include "calcview.h"
 #include "except.h"
 #include "geom.h"
+#include "jkeys.h"
 #include "optmesh.h"
 #include "xtdef.h"
 
 #include "fifo_map_fix.h"
-
-//  globals
-//------------------------------------------------------------------------------
-//  Eye nomenclature
-const std::vector<std::string> JEYES = {LEYE, REYE};
 
 //  functions
 //------------------------------------------------------------------------------
@@ -47,17 +43,17 @@ harray2d_t verts_uv2lrbt(const harray2d_t& verts, double l, double r, double b, 
 //  Build 2D points/vectors (depends on `bpt`) for LRBT rectangle.
 harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
 {
-    const auto l = raw["tan_left"].get<double>() * norm;
-    const auto r = raw["tan_right"].get<double>() * norm;
-    const auto b = raw["tan_bottom"].get<double>() * norm;
-    const auto t = raw["tan_top"].get<double>() * norm;
+    const auto l = raw[j_tan_left].get<double>() * norm;
+    const auto r = raw[j_tan_right].get<double>() * norm;
+    const auto b = raw[j_tan_bottom].get<double>() * norm;
+    const auto t = raw[j_tan_top].get<double>() * norm;
     return harray2d_t({{l, b}, {r, b}, {r, t}, {l, t}});
 }
 
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh)
 {
-    harray2d_t verts = ham_mesh["verts_raw"];
+    harray2d_t verts = ham_mesh[j_verts_raw];
     hfaces_t faces;
     // number of vertices must be divisible by 3 as each 3 defined one triangle
     HMDQ_ASSERT(verts.shape(0) % 3 == 0);
@@ -70,10 +66,10 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     const auto n2_faces = reduce_faces(n_faces);
     const auto area = area_mesh(verts);
     json res;
-    res["ham_area"] = area;
-    res["verts_raw"] = verts;
-    res["verts_opt"] = n_verts;
-    res["faces_opt"] = n2_faces;
+    res[j_ham_area] = area;
+    res[j_verts_raw] = verts;
+    res[j_verts_opt] = n_verts;
+    res[j_faces_opt] = n2_faces;
     return res;
 }
 
@@ -84,11 +80,11 @@ json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot)
     hfaces_t mfaces;
     if (!mesh.is_null()) {
         // if there is a mesh, stretch it to LRBT quad, ortherwise use just the quad
-        const harray2d_t uvverts = mesh["verts_opt"];
-        mfaces = mesh["faces_opt"].get<hfaces_t>();
+        const harray2d_t uvverts = mesh[j_verts_opt];
+        mfaces = mesh[j_faces_opt].get<hfaces_t>();
         verts2d = verts_uv2lrbt(
-            uvverts, raw["tan_left"].get<double>(), raw["tan_right"].get<double>(),
-            raw["tan_bottom"].get<double>(), raw["tan_top"].get<double>());
+            uvverts, raw[j_tan_left].get<double>(), raw[j_tan_right].get<double>(),
+            raw[j_tan_bottom].get<double>(), raw[j_tan_top].get<double>());
         verts2d = xt::concatenate(xt::xtuple(verts2d, build_lrbt_quad_2d(raw)));
     }
     else {
@@ -166,13 +162,13 @@ json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot)
 
     json res;
     json fov_pts = pts3d;
-    res["fov_pts"] = fov_pts;
-    res["deg_left"] = -deg_pts[7];
-    res["deg_right"] = deg_pts[3];
-    res["deg_bottom"] = -deg_pts[1];
-    res["deg_top"] = deg_pts[5];
-    res["deg_hor"] = deg_pts[3] + deg_pts[7];
-    res["deg_ver"] = deg_pts[1] + deg_pts[5];
+    res[j_fov_pts] = fov_pts;
+    res[j_deg_left] = -deg_pts[7];
+    res[j_deg_right] = deg_pts[3];
+    res[j_deg_bottom] = -deg_pts[1];
+    res[j_deg_top] = deg_pts[5];
+    res[j_deg_hor] = deg_pts[3] + deg_pts[7];
+    res[j_deg_ver] = deg_pts[1] + deg_pts[5];
 
     return res;
 }
@@ -181,43 +177,43 @@ json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot)
 json calc_total_fov(const json& fov_head)
 {
     // horizontal FOV
-    const auto fov_hor = fov_head[REYE]["deg_right"].get<double>()
-        - fov_head[LEYE]["deg_left"].get<double>();
+    const auto fov_hor = fov_head[j_reye][j_deg_right].get<double>()
+        - fov_head[j_leye][j_deg_left].get<double>();
 
     // vertical FOV calculated from "straight ahead" look
-    const auto ver_right = fov_head[REYE]["deg_top"].get<double>()
-        - fov_head[REYE]["deg_bottom"].get<double>();
-    const auto ver_left = fov_head[LEYE]["deg_top"].get<double>()
-        - fov_head[LEYE]["deg_bottom"].get<double>();
+    const auto ver_right = fov_head[j_reye][j_deg_top].get<double>()
+        - fov_head[j_reye][j_deg_bottom].get<double>();
+    const auto ver_left = fov_head[j_leye][j_deg_top].get<double>()
+        - fov_head[j_leye][j_deg_bottom].get<double>();
     const auto fov_ver = (ver_left + ver_right) / 2.0;
 
     // diagonal FOV is calculated from diagonal FOV points:
     // [left_eye:left_bottom] <-> [right_eye:right_top]
     // and the other diagonal and is averaged over the two
-    const hvector_t left_bottom = fov_head[LEYE]["fov_pts"][0];
-    const hvector_t left_top = fov_head[LEYE]["fov_pts"][6];
-    const hvector_t right_top = fov_head[REYE]["fov_pts"][4];
-    const hvector_t right_bottom = fov_head[REYE]["fov_pts"][2];
+    const hvector_t left_bottom = fov_head[j_leye][j_fov_pts][0];
+    const hvector_t left_top = fov_head[j_leye][j_fov_pts][6];
+    const hvector_t right_top = fov_head[j_reye][j_fov_pts][4];
+    const hvector_t right_bottom = fov_head[j_reye][j_fov_pts][2];
     const auto diag1 = angle_deg(left_bottom, right_top);
     const auto diag2 = angle_deg(left_top, right_bottom);
     const auto fov_diag = (diag1 + diag2) / 2;
 
     // overlap
-    const auto overlap = fov_head[LEYE]["deg_right"].get<double>()
-        - fov_head[REYE]["deg_left"].get<double>();
+    const auto overlap = fov_head[j_leye][j_deg_right].get<double>()
+        - fov_head[j_reye][j_deg_left].get<double>();
 
-    return json({{"fov_hor", fov_hor},
-                 {"fov_ver", fov_ver},
-                 {"fov_diag", fov_diag},
-                 {"overlap", overlap}});
+    return json({{j_fov_hor, fov_hor},
+                 {j_fov_ver, fov_ver},
+                 {j_fov_diag, fov_diag},
+                 {j_overlap, overlap}});
 }
 
 //  Calculate the angle of the canted views and the IPD from eye to head transformation
 //  matrices.
 json calc_view_geom(const json& e2h)
 {
-    const harray2d_t left = e2h[LEYE];
-    const harray2d_t right = e2h[REYE];
+    const harray2d_t left = e2h[j_leye];
+    const harray2d_t right = e2h[j_reye];
     const auto cols = left.shape(1);
 
     // angle = acos(t dot v)/(|t|*|v|), where t = e2h * v
@@ -231,7 +227,7 @@ json calc_view_geom(const json& e2h)
     // IPD is stored in meters
     const auto ipd
         = point_dist(xt::view(left, xt::all(), 3), xt::view(right, xt::all(), 3));
-    return json({{"left_rot", left_rot}, {"right_rot", right_rot}, {"ipd", ipd}});
+    return json({{j_left_rot, left_rot}, {j_right_rot, right_rot}, {j_ipd, ipd}});
 }
 
 //  Calculate the additional data in the geometry data object (json)
@@ -239,16 +235,16 @@ json calc_geometry(const json& jd)
 {
     json fov_eye;
     json fov_head;
-    auto ham_mesh = jd["ham_mesh"];
+    auto ham_mesh = jd[j_ham_mesh];
 
-    for (const auto& neye : JEYES) {
+    for (const auto& neye : {j_leye, j_reye}) {
         // get HAM mesh (if supported by the headset, otherwise 'null')
 
         // get eye to head transformation matrix
-        const auto e2h = jd["eye2head"][neye].get<harray2d_t>();
+        const auto e2h = jd[j_eye2head][neye].get<harray2d_t>();
 
         // get raw eye values (direct from OpenVR)
-        const auto raw_eye = jd["raw_eye"][neye];
+        const auto raw_eye = jd[j_raw_eye][neye];
 
         // calculate optimized HAM mesh values
         if (!ham_mesh[neye].is_null()) {
@@ -269,18 +265,18 @@ json calc_geometry(const json& jd)
     auto fov_tot = calc_total_fov(fov_head);
 
     // calculate view rotation and the IPD
-    auto view_geom = calc_view_geom(jd["eye2head"]);
+    auto view_geom = calc_view_geom(jd[j_eye2head]);
 
     // create a new object to ensure the right order of the newly inserted objects
     json res;
-    res["rec_rts"] = jd["rec_rts"];
-    res["raw_eye"] = jd["raw_eye"];
-    res["eye2head"] = jd["eye2head"];
-    res["view_geom"] = view_geom;
-    res["fov_eye"] = fov_eye;
-    res["fov_head"] = fov_head;
-    res["fov_tot"] = fov_tot;
-    res["ham_mesh"] = ham_mesh;
+    res[j_rec_rts] = jd[j_rec_rts];
+    res[j_raw_eye] = jd[j_raw_eye];
+    res[j_eye2head] = jd[j_eye2head];
+    res[j_view_geom] = view_geom;
+    res[j_fov_eye] = fov_eye;
+    res[j_fov_head] = fov_head;
+    res[j_fov_tot] = fov_tot;
+    res[j_ham_mesh] = ham_mesh;
 
     return res;
 }

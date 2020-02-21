@@ -19,6 +19,7 @@
 #include "calcview.h"
 #include "config.h"
 #include "fmthlp.h"
+#include "jkeys.h"
 #include "jtools.h"
 #include "openvr_common.h"
 #include "openvr_processor.h"
@@ -42,7 +43,7 @@ get_prop_name_val(const json& api, const json& dprops, vr::ETrackedDevicePropert
 {
     const auto cat = static_cast<int>(pid) / 1000;
     const auto pname
-        = api["props"][std::to_string(cat)][std::to_string(pid)].get<std::string>();
+        = api[j_properties][std::to_string(cat)][std::to_string(pid)].get<std::string>();
     auto pval = std::string();
     // return empty string if the value does not exist or is not string (i.e. is an error)
     if (dprops.find(pname) != dprops.end() && dprops[pname].is_string())
@@ -75,12 +76,12 @@ void anonymize_dev_props(const json& api, json& dprops)
 {
     // get the list of properties to hash from the config file
     const std::vector<std::string> anon_props_names
-        = g_cfg["openvr"]["anonymize"]["properties"].get<std::vector<std::string>>();
-    const json& j_name2id = api["props"]["name2id"];
+        = g_cfg[j_openvr][j_anonymize][j_properties].get<std::vector<std::string>>();
+    const json& name2id = api[j_properties][j_name2id];
     hproplist_t anon_props_ids;
     for (const auto& name : anon_props_names) {
-        if (j_name2id.find(name) != j_name2id.end()) {
-            anon_props_ids.push_back(j_name2id[name].get<vr::ETrackedDeviceProperty>());
+        if (name2id.find(name) != name2id.end()) {
+            anon_props_ids.push_back(name2id[name].get<vr::ETrackedDeviceProperty>());
         }
     }
     const std::string anon_prefix(ANON_PREFIX);
@@ -120,10 +121,10 @@ void anonymize_all_props(const json& api, json& props)
 void print_openvr(const json& jd, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     if (verb >= vdef) {
-        iprint(sf, "OpenVR runtime: {:s}\n", jd["rt_path"].get<std::string>());
-        iprint(sf, "OpenVR version: {:s}\n", jd["rt_ver"].get<std::string>());
+        iprint(sf, "OpenVR runtime: {:s}\n", jd[j_rt_path].get<std::string>());
+        iprint(sf, "OpenVR version: {:s}\n", jd[j_rt_ver].get<std::string>());
     }
 }
 
@@ -181,14 +182,14 @@ void print_array_type(const std::string& pname, const json& pval, int ind, int t
 //  Print enumerated devices.
 void print_devs(const json& api, const json& devs, int ind, int ts)
 {
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto sf = ind * ts;
     const auto sf1 = (ind + 1) * ts;
 
     iprint(sf, "Device enumeration:\n");
     hdevlist_t res;
     for (const auto [dev_id, dev_class] : devs.get<hdevlist_t>()) {
-        const auto cname = api["classes"][std::to_string(dev_class)].get<std::string>();
+        const auto cname = api[j_classes][std::to_string(dev_class)].get<std::string>();
         iprint(sf1, "Found dev: id={:d}, class={:d}, name={:s}\n", dev_id, dev_class,
                cname);
     }
@@ -198,12 +199,12 @@ void print_devs(const json& api, const json& devs, int ind, int ts)
 void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
-    const auto jverb = g_cfg["verbosity"];
-    const auto verb_props = g_cfg["openvr"]["verbosity"]["properties"];
-    const auto verr = jverb["error"].get<int>();
+    const auto jverb = g_cfg[j_verbosity];
+    const auto verb_props = g_cfg[j_openvr][j_verbosity][j_properties];
+    const auto verr = jverb[j_error].get<int>();
 
     for (const auto& [pname, pval] : dprops.items()) {
-        const auto name2id = api["props"]["name2id"];
+        const auto name2id = api[j_properties][j_name2id];
         // if there is a property which is no longer supported by current openvr_api.json
         // ignore it
         if (name2id.find(pname) == name2id.end()) {
@@ -231,7 +232,7 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
             }
             else {
                 // otherwise set requested verbosity to vmax
-                pverb = jverb["max"].get<int>();
+                pverb = jverb[j_max].get<int>();
             }
         }
         if (verb < pverb) {
@@ -284,12 +285,12 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
 void print_all_props(const json& api, const json& props, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     for (const auto& [sdid, dprops] : props.items()) {
         const auto dclass
             = dprops["Prop_DeviceClass_Int32"].get<vr::ETrackedDeviceClass>();
-        const auto dcname = api["classes"][std::to_string(dclass)].get<std::string>();
+        const auto dcname = api[j_classes][std::to_string(dclass)].get<std::string>();
         if (verb >= vdef) {
             iprint(sf, "[{:s}:{:s}]\n", sdid, dcname);
         }
@@ -312,16 +313,16 @@ bool Processor::init()
 // Calculate the complementary data
 void Processor::calculate()
 {
-    if (m_jData.find("geometry") != m_jData.end()) {
-        m_jData["geometry"] = calc_geometry(m_jData["geometry"]);
+    if (m_jData.find(j_geometry) != m_jData.end()) {
+        m_jData[j_geometry] = calc_geometry(m_jData[j_geometry]);
     }
 }
 
 // Anonymize sensitive data
 void Processor::anonymize()
 {
-    if (m_jData.find("properties") != m_jData.end()) {
-        anonymize_all_props(m_jApi, m_jData["properties"]);
+    if (m_jData.find(j_properties) != m_jData.end()) {
+        anonymize_all_props(m_jApi, m_jData[j_properties]);
     }
 }
 
@@ -332,8 +333,8 @@ void Processor::anonymize()
 // ts: indent (tab) size
 void Processor::print(pmode mode, int verb, int ind, int ts)
 {
-    const auto vdef = g_cfg["verbosity"]["default"].get<int>();
-    const auto vsil = g_cfg["verbosity"]["silent"].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
+    const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
 
     print_openvr(m_jData, verb, ind, ts);
     if (verb >= vdef)
@@ -342,21 +343,21 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
     // print the devices and the properties
     auto tverb = (mode == pmode::props || mode == pmode::all) ? verb : vsil;
     if (tverb >= vdef) {
-        if (m_jData.find("devices") != m_jData.end()) {
-            print_devs(m_jApi, m_jData["devices"], ind, ts);
+        if (m_jData.find(j_devices) != m_jData.end()) {
+            print_devs(m_jApi, m_jData[j_devices], ind, ts);
             fmt::print("\n");
         }
     }
-    if (m_jData.find("properties") != m_jData.end()) {
-        print_all_props(m_jApi, m_jData["properties"], tverb, ind, ts);
+    if (m_jData.find(j_properties) != m_jData.end()) {
+        print_all_props(m_jApi, m_jData[j_properties], tverb, ind, ts);
         if (tverb >= vdef)
             fmt::print("\n");
     }
 
     // print all the geometry
     tverb = (mode == pmode::geom || mode == pmode::all) ? verb : vsil;
-    if (m_jData.find("geometry") != m_jData.end()) {
-        print_geometry(m_jData["geometry"], tverb, ind, ts);
+    if (m_jData.find(j_geometry) != m_jData.end()) {
+        print_geometry(m_jData[j_geometry], tverb, ind, ts);
         if (tverb >= vdef)
             fmt::print("\n");
     }
@@ -365,15 +366,15 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
 // Clean up the data before saving
 void Processor::purge()
 {
-    if (m_jData.find("properties") != m_jData.end()) {
-        purge_errors(m_jData["properties"]);
+    if (m_jData.find(j_properties) != m_jData.end()) {
+        purge_errors(m_jData[j_properties]);
     }
 }
 
 // Return OpenVR subystem ID
 std::string Processor::get_id()
 {
-    return "openvr";
+    return j_openvr;
 }
 
 // Return OpenVR data

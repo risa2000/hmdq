@@ -17,6 +17,7 @@
 #include <fmt/format.h>
 
 #include "config.h"
+#include "jkeys.h"
 #include "misc.h"
 
 #include "fifo_map_fix.h"
@@ -25,19 +26,14 @@
 //------------------------------------------------------------------------------
 json g_cfg;
 
-//  locals
-//------------------------------------------------------------------------------
-//  default config file name
-static const char* CONF_FILE = "hmdq.conf.json";
-
 //  config versions
 //------------------------------------------------------------------------------
 //  v1: Original file format defined by the tool.
 //  v2: Added 'control' section for anonymizing setup.
-//      Removed 'use_names' option, only "names" are suppported.
+//      Removed 'use_names' option, only names are suppported.
 //  v3: Changed `hmdq_ver` key to `prog_ver` key.
 //  v4: Added Prop_RegisteredDeviceType_String to anonymized props.
-//  v5: Moved OpenVR settings into "openvr" section.
+//  v5: Moved OpenVR settings into 'openvr' section.
 static constexpr int CFG_VERSION = 5;
 
 //  control defaults
@@ -57,6 +53,10 @@ static constexpr int VERB_ERR = 4;
 //------------------------------------------------------------------------------
 static constexpr int JSON_INDENT = 2;
 static constexpr int CLI_INDENT = 4;
+
+//  configuration file extension (the stem is the same as the prog executable)
+//------------------------------------------------------------------------------
+static constexpr const char* CONF_EXT = ".conf.json";
 
 //  local functions
 //------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ static void write_config(const std::filesystem::path& cfile, const json& jd)
 static json build_control()
 {
     json res;
-    res["anonymize"] = CTRL_ANONYMIZE;
+    res[j_anonymize] = CTRL_ANONYMIZE;
     return res;
 }
 
@@ -91,11 +91,11 @@ static json build_control()
 static json build_verbosity()
 {
     json res;
-    res["silent"] = VERB_SIL;
-    res["default"] = VERB_DEF;
-    res["geom"] = VERB_GEOM;
-    res["max"] = VERB_MAX;
-    res["error"] = VERB_ERR;
+    res[j_silent] = VERB_SIL;
+    res[j_default] = VERB_DEF;
+    res[j_geometry] = VERB_GEOM;
+    res[j_max] = VERB_MAX;
+    res[j_error] = VERB_ERR;
     return res;
 }
 
@@ -103,8 +103,8 @@ static json build_verbosity()
 static json build_format()
 {
     json res;
-    res["json_indent"] = JSON_INDENT;
-    res["cli_indent"] = CLI_INDENT;
+    res[j_json_indent] = JSON_INDENT;
+    res[j_cli_indent] = CLI_INDENT;
     return res;
 }
 
@@ -112,8 +112,8 @@ static json build_format()
 static json build_meta()
 {
     json res;
-    res["cfg_ver"] = CFG_VERSION;
-    res["prog_ver"] = PROG_VERSION;
+    res[j_cfg_ver] = CFG_VERSION;
+    res[j_prog_ver] = PROG_VERSION;
     return res;
 }
 
@@ -121,10 +121,10 @@ static json build_meta()
 static json build_config(const std::filesystem::path& cfile, const cfgbuff_t& cfgs)
 {
     json jd;
-    jd["meta"] = build_meta();
-    jd["control"] = build_control();
-    jd["format"] = build_format();
-    jd["verbosity"] = build_verbosity();
+    jd[j_meta] = build_meta();
+    jd[j_control] = build_control();
+    jd[j_format] = build_format();
+    jd[j_verbosity] = build_verbosity();
     for (auto& cfg : cfgs) {
         jd[cfg->get_id()] = cfg->get_data();
     }
@@ -136,7 +136,7 @@ static json build_config(const std::filesystem::path& cfile, const cfgbuff_t& cf
 static std::filesystem::path build_conf_name(const std::filesystem::path& argv0)
 {
     auto conf_name = argv0;
-    return conf_name.replace_extension(".conf.json");
+    return conf_name.replace_extension(CONF_EXT);
 }
 
 //  exported functions
@@ -150,7 +150,7 @@ bool init_config(const std::filesystem::path& argv0, const cfgbuff_t& cfgs)
         g_cfg = build_config(cfile, cfgs);
     }
     else {
-        const auto cfg_ver = g_cfg["meta"]["cfg_ver"].get<int>();
+        const auto cfg_ver = g_cfg[j_meta][j_cfg_ver].get<int>();
         if (cfg_ver != CFG_VERSION) {
             fmt::print(stderr,
                        "The existing configuration file (\"{:s}\") has a different "

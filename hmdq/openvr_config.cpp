@@ -12,6 +12,7 @@
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
+#include "jkeys.h"
 #include "openvr_config.h"
 
 namespace openvr {
@@ -69,29 +70,19 @@ static const json ANON_PROPS = {
 };
 // clang-format on
 
-//  Build default config for OpenVR settings
-static json build_openvr()
-{
-    json res;
-    res["app_type"] = APP_TYPE;
-    res["verbosity"]["properties"] = VERB_PROPS;
-    res["anonymize"]["properties"] = ANON_PROPS;
-    return res;
-}
-
 //  OpenVR Config class (default config)
 //------------------------------------------------------------------------------
 // Initialize the VR subsystem default config data
 Config::Config()
 {
-    m_jConfig["app_type"] = APP_TYPE;
-    m_jConfig["verbosity"]["properties"] = VERB_PROPS;
-    m_jConfig["anonymize"]["properties"] = ANON_PROPS;
+    m_jConfig[j_app_type] = APP_TYPE;
+    m_jConfig[j_verbosity][j_properties] = VERB_PROPS;
+    m_jConfig[j_anonymize][j_properties] = ANON_PROPS;
 }
 
 std::string Config::get_id()
 {
-    return "openvr";
+    return j_openvr;
 }
 
 json& Config::get_data()
