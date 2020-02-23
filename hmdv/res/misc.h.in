@@ -10,25 +10,24 @@
  ******************************************************************************/
 
 // Project details
-#define PROG_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
-#define PROG_VERSION_MINOR @PROJECT_VERSION_MINOR@
-#define PROG_VERSION_PATCH @PROJECT_VERSION_PATCH@
-#define PROG_VERSION_TWEAK @PROJECT_VERSION_TWEAK@
-#define PROG_VERSION "@PROJECT_VERSION@"
-#define PROG_DESCRIPTION "@PROJECT_DESCRIPTION@"
-#define PROG_URL "@PROJECT_HOMEPAGE_URL@"
-#define PROG_NAME "@PROJECT_NAME@"
+constexpr int PROG_VERSION_MAJOR = @PROJECT_VERSION_MAJOR@;
+constexpr int PROG_VERSION_MINOR = @PROJECT_VERSION_MINOR@;
+constexpr int PROG_VERSION_PATCH = @PROJECT_VERSION_PATCH@;
+constexpr const char* PROG_VERSION = "@PROJECT_VERSION@";
+constexpr const char* PROG_DESCRIPTION = "@PROJECT_DESCRIPTION@";
+constexpr const char* PROG_URL = "@PROJECT_HOMEPAGE_URL@";
+constexpr const char* PROG_NAME = "@PROJECT_NAME@";
 
 // Host system and toolchain ids
-#define CXX_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@"
-#define CXX_COMPILER_VERSION "@CMAKE_CXX_COMPILER_VERSION@"
-#define CXX_COMPILER_ARCHITECTURE_ID "@CMAKE_CXX_COMPILER_ARCHITECTURE_ID@"
-#define HOST_SYSTEM "@CMAKE_HOST_SYSTEM@"
-#define HOST_SYSTEM_NAME "@CMAKE_HOST_SYSTEM_NAME@"
-#define HOST_SYSTEM_PROCESSOR "@CMAKE_HOST_SYSTEM_PROCESSOR@"
-#define HOST_SYSTEM_VERSION "@CMAKE_HOST_SYSTEM_VERSION@"
+constexpr const char* CXX_COMPILER_ID = "@CMAKE_CXX_COMPILER_ID@";
+constexpr const char* CXX_COMPILER_VERSION = "@CMAKE_CXX_COMPILER_VERSION@";
+constexpr const char* CXX_COMPILER_ARCHITECTURE_ID = "@CMAKE_CXX_COMPILER_ARCHITECTURE_ID@";
+constexpr const char* HOST_SYSTEM = "@CMAKE_HOST_SYSTEM@";
+constexpr const char* HOST_SYSTEM_NAME = "@CMAKE_HOST_SYSTEM_NAME@";
+constexpr const char* HOST_SYSTEM_PROCESSOR = "@CMAKE_HOST_SYSTEM_PROCESSOR@";
+constexpr const char* HOST_SYSTEM_VERSION = "@CMAKE_HOST_SYSTEM_VERSION@";
 
 // Include libraries
-#define XTL_VERSION "@xtl_VERSION@"
-#define XTENSOR_VERSION "@xtensor_VERSION@"
-#define NLOHMANN_JSON_VERSION "@nlohmann_json_VERSION@"
+constexpr const char* XTL_VERSION = "@xtl_VERSION@";
+constexpr const char* XTENSOR_VERSION = "@xtensor_VERSION@";
+constexpr const char* NLOHMANN_JSON_VERSION = "@nlohmann_json_VERSION@";
