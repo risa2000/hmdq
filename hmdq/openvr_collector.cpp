@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <tuple>
 
 #include <fmt/format.h>
@@ -24,7 +23,6 @@
 #include <xtensor/xview.hpp>
 
 #include "except.h"
-#include "fmthlp.h"
 #include "jkeys.h"
 #include "jtools.h"
 #include "openvr_collector.h"
@@ -47,7 +45,7 @@ static const int PROP_CAT_TRACKEDREF = 4;
 //  helper (local) functions for OpenVR collector
 //------------------------------------------------------------------------------
 //  Return OpenVR runtime path.
-std::string get_runtime_path()
+std::filesystem::path get_runtime_path()
 {
     constexpr size_t cbuffsize = BUFFSIZE;
     std::vector<char> buffer(cbuffsize);
@@ -60,7 +58,7 @@ std::string get_runtime_path()
                                     &buffsize);
     }
     if (res) {
-        return std::string(&buffer[0], std::strlen(&buffer[0]));
+        return std::filesystem::u8path(&buffer[0]);
     }
     else {
         return "";
@@ -426,7 +424,7 @@ json get_geometry(vr::IVRSystem* vrsys)
 json get_openvr(vr::IVRSystem* vrsys, const json& api)
 {
     json res;
-    res[j_rt_path] = get_runtime_path();
+    res[j_rt_path] = get_runtime_path().u8string();
     res[j_rt_ver] = get_runtime_ver(vrsys);
 
     const hdevlist_t devs = enum_devs(vrsys);

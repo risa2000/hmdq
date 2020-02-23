@@ -28,6 +28,8 @@
 #include "jkeys.h"
 #include "jtools.h"
 #include "misc.h"
+#include "oculus_collector.h"
+#include "oculus_config.h"
 #include "openvr_collector.h"
 #include "openvr_common.h"
 #include "openvr_config.h"
@@ -90,6 +92,7 @@ void print_info(int ind = 0, int ts = 0)
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
     const auto [vmaj, vmin, vbuild] = openvr::get_sdk_ver();
     iprint(sf1, libver_num_fmt, "ValveSoftware/openvr", vmaj, vmin, vbuild);
+    iprint(sf1, "{0:s} {1:s}", "Oculus/LibOVR", OVR_VERSION_STRING);
 }
 
 //  Return some miscellanous info about the app and the OS.
@@ -152,6 +155,10 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     collectors.push_back(std::make_unique<openvr::Collector>(
         std::filesystem::u8path(api_json), openvr_app_type));
 
+    // Oculus VR collector
+    const auto init_flags = g_cfg[j_oculus][j_init_flags].get<ovrInitFlags>();
+    collectors.push_back(std::make_unique<oculus::Collector>(init_flags));
+
     for (auto& col : collectors) {
         if (col->try_init()) {
             col->collect();
@@ -183,8 +190,12 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
         if (verb <= verr) {
             proc->purge();
         }
-        // put json data into an output json
-        out[proc->get_id()] = proc->get_data();
+    }
+
+    // put the collected data into the output JSON
+    for (auto& col : collectors) {
+        if (!col->get_data().is_null())
+            out[col->get_id()] = col->get_data();
     }
 
     // dump the data into the optional JSON file
@@ -234,6 +245,7 @@ int main(int argc, char* argv[])
     // init global config before anything else
     cfgbuff_t cfgs;
     cfgs.push_back(std::make_unique<openvr::Config>());
+    cfgs.push_back(std::make_unique<oculus::Config>());
 
     const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)

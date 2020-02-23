@@ -74,6 +74,8 @@ set (hmdq_sources
     geom.cpp
     hmdq.cpp
     jtools.cpp
+    oculus_collector.cpp
+    oculus_config.cpp
     openvr_collector.cpp
     openvr_common.cpp
     openvr_config.cpp
@@ -85,10 +87,16 @@ set (hmdq_sources
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 
+# mangle the lib name for Clang build
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     set (OPENVRLIB openvr_api64c)
 else()
     set (OPENVRLIB openvr_api64)
+endif()
+
+# set the path to OVR_SDK
+if (NOT OVR_SDK)
+    set (OVR_SDK $ENV{OVR_SDK})
 endif()
 
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
@@ -101,7 +109,10 @@ link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
 target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
+target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
+target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/$<IF:$<CONFIG:Debug>,Debug,Release>)
 target_link_libraries (hmdq PRIVATE version.lib)
+target_link_libraries (hmdq PRIVATE LibOVR.lib)
 foreach (lib IN ITEMS ${EXT_LIBS})
     target_link_libraries (hmdq PRIVATE debug ${lib}d.lib)
     target_link_libraries (hmdq PRIVATE optimized ${lib}.lib)

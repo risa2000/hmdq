@@ -113,3 +113,6 @@ constexpr const char* j_faces_opt = "faces_opt";
 constexpr const char* j_openvr = "openvr";
 constexpr const char* j_app_type = "app_type";
 
+//  Oculus specifics
+constexpr const char* j_oculus = "oculus";
+constexpr const char* j_init_flags = "init_flags";

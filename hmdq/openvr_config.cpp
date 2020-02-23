@@ -80,11 +80,13 @@ Config::Config()
     m_jConfig[j_anonymize][j_properties] = ANON_PROPS;
 }
 
+// Return VR subystem ID
 std::string Config::get_id()
 {
     return j_openvr;
 }
 
+// Return VR subystem default config
 json& Config::get_data()
 {
     return m_jConfig;
