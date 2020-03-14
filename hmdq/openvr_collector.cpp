@@ -293,13 +293,17 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
                 }
                 break;
             }
-            case basevr::PropType::Matrix34: {
-                const auto pval
-                    = vrsys->GetMatrix34TrackedDeviceProperty(did, pid, &error);
-                if (check_tp_result(vrsys, res, pname, error)) {
-                    const auto mat34 = xt::adapt(&pval.m[0][0], {3, 4});
-                    res[pname] = mat34;
-                }
+            case basevr::PropType::Vector2:
+            case basevr::PropType::Vector3:
+            case basevr::PropType::Vector4:
+            case basevr::PropType::Matrix34:
+            case basevr::PropType::Matrix44: {
+                // get not directly supported types as an array of one item
+                get_array_type(vrsys, res, did, pid, pname);
+                // use this trick to remove surrogate "array" from the JSON if there was
+                // no error
+                if (res[pname].find(ERROR_PREFIX) == res[pname].end())
+                    res[pname] = res[pname][0];
                 break;
             }
             default: {

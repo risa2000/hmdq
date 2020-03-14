@@ -132,10 +132,15 @@ void print_openvr(const json& jd, int verb, int ind, int ts)
 //  print functions (devices and properties)
 //------------------------------------------------------------------------------
 //  Print the property name to stdout.
-inline void prop_head_out(vr::ETrackedDeviceProperty pid, const std::string& name,
-                          bool is_array, int ind, int ts)
+inline void prop_head_out(int pid, const std::string& name, bool is_array, int ind,
+                          int ts)
 {
-    iprint(ind * ts, "{:>4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
+    if (pid >= 0) {
+        iprint(ind * ts, "{:>4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
+    }
+    else {
+        iprint(ind * ts, "{:s}{:s} = ", name, is_array ? "[]" : "");
+    }
 }
 
 //  Print (non-error) value of an Array type property.
@@ -196,13 +201,93 @@ void print_devs(const json& api, const json& devs, int ind, int ts)
     }
 }
 
-//  Print device properties.
-void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts)
+//  Print one property out (do not print PID < 0)
+void print_one_prop(const std::string& pname, const json& pval, int pid,
+                    const json& verb_props, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
     const auto jverb = g_cfg[j_verbosity];
-    const auto verb_props = g_cfg[j_openvr][j_verbosity][j_properties];
     const auto verr = jverb[j_error].get<int>();
+    const auto vmax = jverb[j_max].get<int>();
+    // decode property type
+    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
+    // property verbosity level (if defined) or max
+    int pverb;
+    // property having an error attached?
+    const auto nerr = pval.count(ERROR_PREFIX);
+
+    if (nerr) {
+        // the value is an error code, so print it out only if the verbosity
+        // is at 'error' level
+        pverb = verr;
+    }
+    else {
+        // determine the "active" verbosity level for the current property
+        if (verb_props.find(pname) != verb_props.end()) {
+            // explicitly defined property
+            pverb = verb_props[pname].get<int>();
+        }
+        else {
+            // otherwise set requested verbosity to vmax
+            pverb = vmax;
+        }
+    }
+    if (verb < pverb) {
+        // do not print props which require higher verbosity than the current one
+        return;
+    }
+
+    // print the prop name
+    prop_head_out(pid, basename, is_array, ind, ts);
+    if (nerr) {
+        const auto msg = pval[ERROR_PREFIX].get<std::string>();
+        fmt::print(ERR_MSG_FMT_JSON, msg);
+    }
+    else if (is_array) {
+        fmt::print("\n");
+        print_array_type(pname, pval, ind + 1, ts);
+    }
+    else {
+        switch (ptype) {
+            case basevr::PropType::Bool:
+                fmt::print("{}\n", pval.get<bool>());
+                break;
+            case basevr::PropType::String:
+                fmt::print("\"{:s}\"\n", pval.get<std::string>());
+                break;
+            case basevr::PropType::Uint64:
+                fmt::print("{:#x}\n", pval.get<uint64_t>());
+                break;
+            case basevr::PropType::Int32:
+                fmt::print("{}\n", pval.get<int32_t>());
+                break;
+            case basevr::PropType::Float:
+                fmt::print("{:.6g}\n", pval.get<double>());
+                break;
+            case basevr::PropType::Vector2:
+            case basevr::PropType::Vector3:
+            case basevr::PropType::Vector4: {
+                fmt::print("\n");
+                print_tensor<double, 1>(pval.get<hvector_t>(), ind + 1, ts);
+                break;
+            }
+            case basevr::PropType::Matrix34:
+            case basevr::PropType::Matrix44: {
+                fmt::print("\n");
+                print_harray(pval.get<harray2d_t>(), ind + 1, ts);
+                break;
+            }
+            default:
+                const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
+                fmt::print(ERR_MSG_FMT_JSON, msg);
+        }
+    }
+}
+
+//  Print device properties.
+void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts)
+{
+    const auto verb_props = g_cfg[j_openvr][j_verbosity][j_properties];
 
     for (const auto& [pname, pval] : dprops.items()) {
         const auto name2id = api[j_properties][j_name2id];
@@ -212,74 +297,8 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
             continue;
         }
         // convert string to the correct type
-        const auto pid = name2id[pname].get<vr::ETrackedDeviceProperty>();
-        // decode property type
-        const auto [basename, ptype_name, ptype, is_array]
-            = basevr::parse_prop_name(pname);
-        // property verbosity level (if defined) or max
-        int pverb;
-        // property having an error attached?
-        const auto nerr = pval.count(ERROR_PREFIX);
-
-        if (nerr) {
-            // the value is an error code, so print it out only if the verbosity
-            // is at 'error' level
-            pverb = verr;
-        }
-        else {
-            // determine the "active" verbosity level for the current property
-            if (verb_props.find(pname) != verb_props.end()) {
-                // explicitly defined property
-                pverb = verb_props[pname].get<int>();
-            }
-            else {
-                // otherwise set requested verbosity to vmax
-                pverb = jverb[j_max].get<int>();
-            }
-        }
-        if (verb < pverb) {
-            // do not print props which require higher verbosity than the current one
-            continue;
-        }
-
-        // print the prop name
-        prop_head_out(pid, basename, is_array, ind, ts);
-        if (nerr) {
-            const auto msg = pval[ERROR_PREFIX].get<std::string>();
-            fmt::print(ERR_MSG_FMT_JSON, msg);
-        }
-        else if (is_array) {
-            fmt::print("\n");
-            print_array_type(pname, pval, ind + 1, ts);
-        }
-        else {
-            switch (ptype) {
-                case basevr::PropType::Bool:
-                    fmt::print("{}\n", pval.get<bool>());
-                    break;
-                case basevr::PropType::String:
-                    fmt::print("\"{:s}\"\n", pval.get<std::string>());
-                    break;
-                case basevr::PropType::Uint64:
-                    fmt::print("{:#x}\n", pval.get<uint64_t>());
-                    break;
-                case basevr::PropType::Int32:
-                    fmt::print("{}\n", pval.get<int32_t>());
-                    break;
-                case basevr::PropType::Float:
-                    fmt::print("{:.6g}\n", pval.get<double>());
-                    break;
-                case basevr::PropType::Matrix34: {
-                    fmt::print("\n");
-                    const harray2d_t mat34 = pval;
-                    print_harray(mat34, ind + 1, ts);
-                    break;
-                }
-                default:
-                    const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-                    fmt::print(ERR_MSG_FMT_JSON, msg);
-            }
-        }
+        const auto pid = name2id[pname].get<int>();
+        print_one_prop(pname, pval, pid, verb_props, verb, ind, ts);
     }
 }
 
