@@ -77,6 +77,7 @@ set (hmdq_sources
     base_common.cpp
     oculus_collector.cpp
     oculus_config.cpp
+    oculus_props.cpp
     openvr_collector.cpp
     openvr_common.cpp
     openvr_config.cpp

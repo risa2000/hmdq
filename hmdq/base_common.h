@@ -14,6 +14,8 @@
 #include <string>
 #include <tuple>
 
+#include "fifo_map_fix.h"
+
 namespace basevr {
 
 //  property types
@@ -41,10 +43,16 @@ enum class PropType : int {
     Quaternion = 60,
 };
 
-//  generic functions
+//  Generic functions.
 //------------------------------------------------------------------------------
 //  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
 std::tuple<std::string, std::string, PropType, bool>
 parse_prop_name(const std::string& pname);
+
+//  Print functions.
+//------------------------------------------------------------------------------
+//  Print one property out (do not print PID < 0)
+void print_one_prop(const std::string& pname, const json& pval, int pid,
+                    const json& verb_props, int verb, int ind, int ts);
 
 } // namespace basevr

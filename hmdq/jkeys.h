@@ -11,6 +11,11 @@
 
 #pragma once
 
+//  JSON constants
+//------------------------------------------------------------------------------
+constexpr const char* ANON_PREFIX = "anon@";
+constexpr const char* ERROR_PREFIX = "error@";
+
 //  JSON keys used in data and config files.
 //------------------------------------------------------------------------------
 

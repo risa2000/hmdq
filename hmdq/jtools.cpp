@@ -54,7 +54,7 @@ void write_json(const std::filesystem::path& outpath, const json& jdata, int ind
     jfo.close();
 }
 
-//  Crypto functions
+//  Anonymize functions
 //------------------------------------------------------------------------------
 //  Anonymize the message in `in` to `out`
 void anonymize(std::vector<char>& out, const std::vector<char>& in)
@@ -77,6 +77,62 @@ void anonymize(std::vector<char>& out, const std::vector<char>& in)
     out[anon_size - 1] = '\0';
 }
 
+//  Return (string) property value for given property from properties
+inline std::string get_prop_val(const json& jdprops, const std::string& pname)
+{
+    if (jdprops.find(pname) != jdprops.end() && jdprops[pname].is_string())
+        return jdprops[pname].get<std::string>();
+    else {
+        return "";
+    }
+}
+
+//  Anonymize properties in JSON list
+void anonymize_jdprops(json& jdprops, const std::vector<std::string>& anon_prop_names,
+                       const std::vector<std::string>& seed_prop_names)
+{
+    // get the list of properties to hash from the config file
+    const std::string anon_prefix(ANON_PREFIX);
+    for (const auto pname : anon_prop_names) {
+        const auto pval = get_prop_val(jdprops, pname);
+        if (pval.size() == 0)
+            continue;
+        // hash only non-empty strings
+        const std::string prefix(pval.c_str(), anon_prefix.size());
+        if (prefix != anon_prefix) {
+            std::vector<char> msgbuff;
+            for (const auto pname2 : seed_prop_names) {
+                const auto pval2 = get_prop_val(jdprops, pname2);
+                std::copy(pval2.begin(), pval2.end(), std::back_inserter(msgbuff));
+            }
+            std::copy(pval.begin(), pval.end(), std::back_inserter(msgbuff));
+            msgbuff.push_back('\0');
+            std::vector<char> buffer;
+            anonymize(buffer, msgbuff);
+            jdprops[pname] = &buffer[0];
+        }
+    }
+}
+
+//  JSON data manipulation
+//------------------------------------------------------------------------------
+//  Remove all properties with errors reported from the dict.
+void purge_jdprops_errors(json& jdprops)
+{
+    std::vector<std::string> to_drop;
+    for (const auto& [pname, pval] : jdprops.items()) {
+        if (pval.count(ERROR_PREFIX)) {
+            to_drop.push_back(pname);
+        }
+    }
+    // purge the props with errors
+    for (const auto& pname : to_drop) {
+        jdprops.erase(pname);
+    }
+}
+
+//  Checksum functions
+//------------------------------------------------------------------------------
 //  Calculate the hash over the JSON string dump using Blake2b(CHKSUM_BITSIZE).
 //  The returned value is an upper case string of a binhex encoded hash.
 std::string calculate_checksum(const json& jd)

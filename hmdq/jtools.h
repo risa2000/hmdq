@@ -25,7 +25,6 @@ constexpr int CHKSUM_BITSIZE = 128;
 
 //  Anonymizing pre-defs
 constexpr auto ANON_BITSIZE = 96;
-constexpr const char* ANON_PREFIX = "anon@";
 
 //  JSON file I/O
 //------------------------------------------------------------------------------
@@ -35,11 +34,22 @@ json read_json(const std::filesystem::path& inpath);
 // Save JSON data into file with indentation.
 void write_json(const std::filesystem::path& outpath, const json& jdata, int indent);
 
-//  Crypto functions
+//  JSON data manipulation
+//------------------------------------------------------------------------------
+//  Remove all properties with errors reported from the dict.
+void purge_jdprops_errors(json& jd);
+
+//  Anonymize functions
 //------------------------------------------------------------------------------
 //  Anonymize the message in `in` to `out`
 void anonymize(std::vector<char>& out, const std::vector<char>& in);
 
+//  Anonymize properties in JSON list
+void anonymize_jdprops(json& jdprops, const std::vector<std::string>& anon_prop_names,
+                       const std::vector<std::string>& seed_prop_names);
+
+//  Checksum functions
+//------------------------------------------------------------------------------
 //  Calculate the hash over the JSON string dump using Blake2b(CHKSUM_BITSIZE).
 //  The returned value is an upper case string of a binhex encoded hash.
 std::string calculate_checksum(const json& jd);

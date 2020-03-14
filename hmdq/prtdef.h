@@ -14,7 +14,6 @@
 //  globals
 //------------------------------------------------------------------------------
 //  Error reporting pre-defs
-constexpr const char* ERROR_PREFIX = "error@";
 constexpr const char* MSG_TYPE_NOT_IMPL = "{:s} type not implemented";
 
 //  Error message format
