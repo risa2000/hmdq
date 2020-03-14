@@ -18,6 +18,8 @@
 #define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
+#include "base_common.h"
+
 #include "fifo_map_fix.h"
 
 namespace openvr {
@@ -39,11 +41,10 @@ extern const heyes_t EYES;
 //  Return the version of the OpenVR API used in the build.
 std::tuple<uint32_t, uint32_t, uint32_t> get_sdk_ver();
 
-//  Return {<str:base_name>, <str:type_name>, <enum:type>, <bool:array>}
-std::tuple<std::string, std::string, vr::PropertyTypeTag_t, bool>
-parse_prop_name(const std::string& pname);
-
 //  Parse OpenVR JSON API definition, where jd = json.load("openvr_api.json")
 json parse_json_oapi(const json& jd);
+
+//  Convert common property types to OpenVR property types
+vr::PropertyTypeTag_t ptype_to_ptag(basevr::PropType ptype);
 
 } // namespace openvr

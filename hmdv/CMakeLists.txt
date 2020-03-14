@@ -66,6 +66,7 @@ set (hmdv_sources
     hmdv.cpp
     verhlp.cpp
     hmdfix.cpp
+    ${hmdq_dir}/base_common.cpp
     ${hmdq_dir}/calcview.cpp
     ${hmdq_dir}/config.cpp
     ${hmdq_dir}/geom.cpp

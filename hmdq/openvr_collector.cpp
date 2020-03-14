@@ -22,6 +22,7 @@
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
+#include "base_common.h"
 #include "except.h"
 #include "jkeys.h"
 #include "jtools.h"
@@ -159,14 +160,15 @@ void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did
     // abuse vector as a return buffer for an Array property
     std::vector<unsigned char> buffer(BUFFSIZE);
     // parse the name to get the type
-    const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
+    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
 
-    if (ptag == vr::k_unInvalidPropertyTag) {
-        const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+    if (ptype == basevr::PropType::Invalid) {
+        const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
         jd[pname][ERROR_PREFIX] = msg;
         return;
     }
 
+    vr::PropertyTypeTag_t ptag = ptype_to_ptag(ptype);
     size_t buffsize = vrsys->GetArrayTrackedDeviceProperty(
         did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
     if (error == vr::TrackedProp_BufferTooSmall) {
@@ -179,36 +181,36 @@ void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did
         return;
     }
 
-    switch (ptag) {
-        case vr::k_unFloatPropertyTag:
+    switch (ptype) {
+        case basevr::PropType::Float:
             set_tp_val_1d_array<float>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unInt32PropertyTag:
+        case basevr::PropType::Int32:
             set_tp_val_1d_array<int32_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unUint64PropertyTag:
+        case basevr::PropType::Uint64:
             set_tp_val_1d_array<uint64_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unBoolPropertyTag:
+        case basevr::PropType::Bool:
             set_tp_val_1d_array<bool>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unHmdMatrix34PropertyTag:
+        case basevr::PropType::Matrix34:
             set_tp_val_mat_array<vr::HmdMatrix34_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unHmdMatrix44PropertyTag:
+        case basevr::PropType::Matrix44:
             set_tp_val_mat_array<vr::HmdMatrix44_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unHmdVector2PropertyTag:
+        case basevr::PropType::Vector2:
             set_tp_val_vec_array<vr::HmdVector2_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unHmdVector3PropertyTag:
+        case basevr::PropType::Vector3:
             set_tp_val_vec_array<vr::HmdVector3_t>(jd, pname, buffer, buffsize);
             break;
-        case vr::k_unHmdVector4PropertyTag:
+        case basevr::PropType::Vector4:
             set_tp_val_vec_array<vr::HmdVector4_t>(jd, pname, buffer, buffsize);
             break;
         default:
-            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
             jd[pname][ERROR_PREFIX] = msg;
             break;
     }
@@ -249,48 +251,49 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
         // property name
         const auto pname = jname.get<std::string>();
         // parse the name to get the type
-        const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
+        const auto [basename, ptype_name, ptype, is_array]
+            = basevr::parse_prop_name(pname);
 
         if (is_array) {
             get_array_type(vrsys, res, did, pid, pname);
             continue;
         }
-        switch (ptag) {
-            case vr::k_unBoolPropertyTag: {
+        switch (ptype) {
+            case basevr::PropType::Bool: {
                 const auto pval = vrsys->GetBoolTrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
                     res[pname] = pval;
                 }
                 break;
             }
-            case vr::k_unStringPropertyTag: {
+            case basevr::PropType::String: {
                 if (get_str_tracked_prop(vrsys, res, did, pid, pname, buffer)) {
                     res[pname] = &buffer[0];
                 }
                 break;
             }
-            case vr::k_unUint64PropertyTag: {
+            case basevr::PropType::Uint64: {
                 const auto pval = vrsys->GetUint64TrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
                     res[pname] = pval;
                 }
                 break;
             }
-            case vr::k_unInt32PropertyTag: {
+            case basevr::PropType::Int32: {
                 const auto pval = vrsys->GetInt32TrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
                     res[pname] = pval;
                 }
                 break;
             }
-            case vr::k_unFloatPropertyTag: {
+            case basevr::PropType::Float: {
                 const auto pval = vrsys->GetFloatTrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
                     res[pname] = pval;
                 }
                 break;
             }
-            case vr::k_unHmdMatrix34PropertyTag: {
+            case basevr::PropType::Matrix34: {
                 const auto pval
                     = vrsys->GetMatrix34TrackedDeviceProperty(did, pid, &error);
                 if (check_tp_result(vrsys, res, pname, error)) {
@@ -300,7 +303,7 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
                 break;
             }
             default: {
-                const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+                const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
                 res[pname][ERROR_PREFIX] = msg;
                 break;
             }

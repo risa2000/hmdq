@@ -16,6 +16,7 @@
 
 #include <xtensor/xjson.hpp>
 
+#include "base_common.h"
 #include "calcview.h"
 #include "config.h"
 #include "fmthlp.h"
@@ -142,38 +143,38 @@ void print_array_type(const std::string& pname, const json& pval, int ind, int t
 {
     const auto sf = ind * ts;
     // parse the name to get the type
-    const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
+    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
 
-    switch (ptag) {
-        case vr::k_unFloatPropertyTag:
+    switch (ptype) {
+        case basevr::PropType::Float:
             print_tensor<double, 1>(pval.get<hvector_t>(), ind, ts);
             break;
-        case vr::k_unInt32PropertyTag:
+        case basevr::PropType::Int32:
             print_tensor<int32_t, 1>(pval.get<xt::xtensor<int32_t, 1>>(), ind, ts);
             break;
-        case vr::k_unUint64PropertyTag:
+        case basevr::PropType::Uint64:
             print_tensor<uint64_t, 1>(pval.get<xt::xtensor<uint64_t, 1>>(), ind, ts);
             break;
-        case vr::k_unBoolPropertyTag:
+        case basevr::PropType::Bool:
             print_tensor<bool, 1>(pval.get<xt::xtensor<bool, 1>>(), ind, ts);
             break;
-        case vr::k_unHmdMatrix34PropertyTag:
+        case basevr::PropType::Matrix34:
             print_tensor<double, 3>(pval.get<xt::xtensor<double, 3>>(), ind, ts);
             break;
-        case vr::k_unHmdMatrix44PropertyTag:
+        case basevr::PropType::Matrix44:
             print_tensor<double, 3>(pval.get<xt::xtensor<double, 3>>(), ind, ts);
             break;
-        case vr::k_unHmdVector2PropertyTag:
+        case basevr::PropType::Vector2:
             print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
             break;
-        case vr::k_unHmdVector3PropertyTag:
+        case basevr::PropType::Vector3:
             print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
             break;
-        case vr::k_unHmdVector4PropertyTag:
+        case basevr::PropType::Vector4:
             print_tensor<double, 2>(pval.get<xt::xtensor<double, 2>>(), ind, ts);
             break;
         default:
-            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
             iprint(sf, ERR_MSG_FMT_JSON, msg);
             break;
     }
@@ -213,7 +214,8 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
         // convert string to the correct type
         const auto pid = name2id[pname].get<vr::ETrackedDeviceProperty>();
         // decode property type
-        const auto [basename, ptype, ptag, is_array] = parse_prop_name(pname);
+        const auto [basename, ptype_name, ptype, is_array]
+            = basevr::parse_prop_name(pname);
         // property verbosity level (if defined) or max
         int pverb;
         // property having an error attached?
@@ -251,30 +253,30 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
             print_array_type(pname, pval, ind + 1, ts);
         }
         else {
-            switch (ptag) {
-                case vr::k_unBoolPropertyTag:
+            switch (ptype) {
+                case basevr::PropType::Bool:
                     fmt::print("{}\n", pval.get<bool>());
                     break;
-                case vr::k_unStringPropertyTag:
+                case basevr::PropType::String:
                     fmt::print("\"{:s}\"\n", pval.get<std::string>());
                     break;
-                case vr::k_unUint64PropertyTag:
+                case basevr::PropType::Uint64:
                     fmt::print("{:#x}\n", pval.get<uint64_t>());
                     break;
-                case vr::k_unInt32PropertyTag:
+                case basevr::PropType::Int32:
                     fmt::print("{}\n", pval.get<int32_t>());
                     break;
-                case vr::k_unFloatPropertyTag:
+                case basevr::PropType::Float:
                     fmt::print("{:.6g}\n", pval.get<double>());
                     break;
-                case vr::k_unHmdMatrix34PropertyTag: {
+                case basevr::PropType::Matrix34: {
                     fmt::print("\n");
                     const harray2d_t mat34 = pval;
                     print_harray(mat34, ind + 1, ts);
                     break;
                 }
                 default:
-                    const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype);
+                    const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
                     fmt::print(ERR_MSG_FMT_JSON, msg);
             }
         }

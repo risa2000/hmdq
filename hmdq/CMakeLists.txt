@@ -74,6 +74,7 @@ set (hmdq_sources
     geom.cpp
     hmdq.cpp
     jtools.cpp
+    base_common.cpp
     oculus_collector.cpp
     oculus_config.cpp
     openvr_collector.cpp

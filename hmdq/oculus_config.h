@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "basecomp.h"
+#include "base_classes.h"
 
 #include "fifo_map_fix.h"
 

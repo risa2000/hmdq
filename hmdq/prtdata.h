@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "basecomp.h"
+#include "base_classes.h"
 #include "prtdef.h"
 
 #include "fifo_map_fix.h"

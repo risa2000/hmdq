@@ -15,7 +15,7 @@
 
 #include <OVR_CAPI.h>
 
-#include "basecomp.h"
+#include "base_classes.h"
 
 #include "fifo_map_fix.h"
 
