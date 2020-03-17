@@ -24,38 +24,35 @@ namespace basevr {
 //  Resolve property tag enum from the type name.
 PropType ptype_from_ptypename(const std::string& ptype_name)
 {
-    if (ptype_name == "Float") {
-        return PropType::Float;
-    }
-    else if (ptype_name == "Int32") {
-        return PropType::Int32;
-    }
-    else if (ptype_name == "Uint64") {
-        return PropType::Uint64;
-    }
-    else if (ptype_name == "Bool") {
-        return PropType::Bool;
-    }
-    else if (ptype_name == "String") {
-        return PropType::String;
-    }
-    else if (ptype_name == "Matrix34") {
-        return PropType::Matrix34;
-    }
-    else if (ptype_name == "Matrix44") {
-        return PropType::Matrix44;
-    }
-    else if (ptype_name == "Vector2") {
-        return PropType::Vector2;
-    }
-    else if (ptype_name == "Vector3") {
-        return PropType::Vector3;
-    }
-    else if (ptype_name == "Vector4") {
-        return PropType::Vector4;
-    }
-    else if (ptype_name == "Quad") {
-        return PropType::Quad;
+    static const std::map<std::string, PropType> ptype_map = {
+        {"Float", PropType::Float},
+        {"Double", PropType::Double},
+
+        {"Int16", PropType::Int16},
+        {"Uint16", PropType::Uint16},
+        {"Int32", PropType::Int32},
+        {"Uint32", PropType::Uint32},
+        {"Int64", PropType::Int64},
+        {"Uint64", PropType::Uint64},
+
+        {"Bool", PropType::Bool},
+        {"String", PropType::String},
+
+        {"Vector2", PropType::Vector2},
+        {"Vector3", PropType::Vector3},
+        {"Vector4", PropType::Vector4},
+
+        {"Matrix33", PropType::Matrix33},
+        {"Matrix34", PropType::Matrix34},
+        {"Matrix44", PropType::Matrix44},
+
+        {"Quaternion", PropType::Quaternion},
+
+        {"Quad", PropType::Quad},
+    };
+    auto res = ptype_map.find(ptype_name);
+    if (res != ptype_map.end()) {
+        return res->second;
     }
     else {
         return PropType::Invalid;
@@ -139,6 +136,42 @@ void print_array_type(const std::string& pname, const json& pval, int ind, int t
     }
 }
 
+std::vector<std::string> format_pval(PropType ptype, const json& pval)
+{
+    switch (ptype) {
+        case PropType::Bool:
+            return {fmt::format("{}", pval.get<bool>())};
+        case PropType::String:
+            return {fmt::format("\"{:s}\"", pval.get<std::string>())};
+        case PropType::Int16:
+            return {fmt::format("{}", pval.get<int16_t>())};
+        case PropType::Uint16:
+            return {fmt::format("{:#06x}", pval.get<uint16_t>())};
+        case PropType::Int32:
+            return {fmt::format("{}", pval.get<int32_t>())};
+        case PropType::Uint32:
+            return {fmt::format("{:#010x}", pval.get<uint32_t>())};
+        case PropType::Int64:
+            return {fmt::format("{}", pval.get<int64_t>())};
+        case PropType::Uint64:
+            return {fmt::format("{:#018x}", pval.get<uint64_t>())};
+        case PropType::Float:
+        case PropType::Double:
+            return {fmt::format("{:.6g}", pval.get<double>())};
+        case PropType::Vector2:
+        case PropType::Vector3:
+        case PropType::Vector4: {
+            return format_tensor<double, 1>(pval.get<hvector_t>());
+        }
+        case PropType::Matrix34:
+        case PropType::Matrix44: {
+            return format_tensor<double, 2>(pval.get<harray2d_t>());
+        }
+        default:
+            return {};
+    }
+}
+
 //  Print one property out (do not print PID < 0)
 void print_one_prop(const std::string& pname, const json& pval, int pid,
                     const json& verb_props, int verb, int ind, int ts)
@@ -186,38 +219,17 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
         print_array_type(pname, pval, ind + 1, ts);
     }
     else {
-        switch (ptype) {
-            case PropType::Bool:
-                fmt::print("{}\n", pval.get<bool>());
-                break;
-            case PropType::String:
-                fmt::print("\"{:s}\"\n", pval.get<std::string>());
-                break;
-            case PropType::Uint64:
-                fmt::print("{:#x}\n", pval.get<uint64_t>());
-                break;
-            case PropType::Int32:
-                fmt::print("{}\n", pval.get<int32_t>());
-                break;
-            case PropType::Float:
-                fmt::print("{:.6g}\n", pval.get<double>());
-                break;
-            case PropType::Vector2:
-            case PropType::Vector3:
-            case PropType::Vector4: {
-                fmt::print("\n");
-                print_tensor<double, 1>(pval.get<hvector_t>(), ind + 1, ts);
-                break;
-            }
-            case PropType::Matrix34:
-            case PropType::Matrix44: {
-                fmt::print("\n");
-                print_harray(pval.get<harray2d_t>(), ind + 1, ts);
-                break;
-            }
-            default:
-                const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-                fmt::print(ERR_MSG_FMT_JSON, msg);
+        const auto fval = format_pval(ptype, pval);
+        if (fval.size() == 1) {
+            fmt::print("{}\n", fval[0]);
+        }
+        else if (fval.size() > 1) {
+            fmt::print("\n");
+            print_multiline(fval, ind + 1, ts);
+        }
+        else {
+            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
+            fmt::print(ERR_MSG_FMT_JSON, msg);
         }
     }
 }

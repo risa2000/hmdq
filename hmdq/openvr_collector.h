@@ -14,7 +14,6 @@
 #include <filesystem>
 #include <string>
 
-#define BUILD_OPENVR_STATIC
 #include <openvr/openvr.h>
 
 #include "base_classes.h"

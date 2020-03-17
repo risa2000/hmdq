@@ -15,7 +15,6 @@
 
 #include <fmt/format.h>
 
-#define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include <xtensor/xadapt.hpp>

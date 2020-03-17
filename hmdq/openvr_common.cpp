@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include "jkeys.h"
@@ -69,6 +68,8 @@ vr::PropertyTypeTag_t ptype_to_ptag(basevr::PropType ptype)
     switch (ptype) {
         case basevr::PropType::Float:
             return vr::k_unFloatPropertyTag;
+        case basevr::PropType::Double:
+            return vr::k_unDoublePropertyTag;
         case basevr::PropType::Int32:
             return vr::k_unInt32PropertyTag;
         case basevr::PropType::Uint64:

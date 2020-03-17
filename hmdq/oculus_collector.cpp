@@ -55,7 +55,7 @@ bool Collector::try_init()
 {
     // merge 'custom' flags into init params
     ovrInitParams initParams
-        = {ovrInit_RequestVersion | m_initFlags, OVR_MINOR_VERSION, NULL, 0, 0};
+        = {static_cast<uint32_t>(ovrInit_RequestVersion) | m_initFlags, OVR_MINOR_VERSION, NULL, 0, 0};
     m_error = ovr_Initialize(&initParams);
     if (check_failure(m_error)) {
         return false;

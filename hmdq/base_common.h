@@ -22,25 +22,32 @@ namespace basevr {
 //------------------------------------------------------------------------------
 // Use these enums to define common types used in VR subsystems
 enum class PropType : int {
-    Invalid = -1,
+    Invalid,
 
-    Float = 1,
-    Double = 2,
-    Int32 = 3,
-    Uint64 = 4,
-    Bool = 5,
-    String = 6,
+    Float,
+    Double,
 
-    Vector2 = 12,
-    Vector3 = 13,
-    Vector4 = 14,
+    Int16,
+    Uint16,
+    Int32,
+    Uint32,
+    Int64,
+    Uint64,
 
-    Matrix33 = 33,
-    Matrix34 = 34,
-    Matrix44 = 44,
+    Bool,
+    String,
 
-    Quad = 50,
-    Quaternion = 60,
+    Vector2,
+    Vector3,
+    Vector4,
+
+    Matrix33,
+    Matrix34,
+    Matrix44,
+
+    Quaternion,
+
+    Quad,
 };
 
 //  Generic functions.

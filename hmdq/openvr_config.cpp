@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include "jkeys.h"

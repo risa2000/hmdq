@@ -16,7 +16,6 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include <xtensor/xjson.hpp>

@@ -13,6 +13,7 @@
 
 #include "jkeys.h"
 #include "oculus_config.h"
+#include "oculus_props.h"
 
 namespace oculus {
 
@@ -22,26 +23,26 @@ static constexpr auto INIT_FLAGS = ovrInit_Invisible;
 
 // clang-format off
 static const json VERB_PROPS = {
-    {"HmdType", 0},
-    {"ProductName", 0},
-    {"Manufacturer", 0},
-    {"VendorId", 2},
-    {"ProductId", 2},
-    {"SerialNumber", 0},
-    {"FirmwareMajor", 2},
-    {"FirmwareMinor", 2},
-    {"AvailableHmdCaps", 2},
-    {"DefaultHmdCaps", 2},
-    {"AvailableTrackingCaps", 2},
-    {"DefaultTrackingCaps", 2},
-    {"DisplayRefreshRate", 0},
+    {Prop::HmdType, 0},
+    {Prop::ProductName, 0},
+    {Prop::Manufacturer, 0},
+    {Prop::VendorId, 2},
+    {Prop::ProductId, 2},
+    {Prop::SerialNumber, 0},
+    {Prop::FirmwareMajor, 2},
+    {Prop::FirmwareMinor, 2},
+    {Prop::AvailableHmdCaps, 2},
+    {Prop::DefaultHmdCaps, 2},
+    {Prop::AvailableTrackingCaps, 2},
+    {Prop::DefaultTrackingCaps, 2},
+    {Prop::DisplayRefreshRate, 0},
 };
 // clang-format on
 
 // clang-format off
 //  currently identified properties with serial numbers
 static const json ANON_PROPS = {
-    "SerialNumber",
+    Prop::SerialNumber,
 };
 // clang-format on
 

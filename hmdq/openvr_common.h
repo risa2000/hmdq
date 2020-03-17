@@ -15,7 +15,6 @@
 #include <tuple>
 #include <vector>
 
-#define OPENVR_BUILD_STATIC
 #include <openvr/openvr.h>
 
 #include "base_common.h"

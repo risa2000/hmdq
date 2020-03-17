@@ -42,16 +42,33 @@ harray2d_t build_array(const hveclist_t& vecs);
 
 //  Indent print xarray.
 template<typename T, int N>
-void print_tensor(const xt::xtensor<T, N>& a, int ind, int ts)
+std::vector<std::string> format_tensor(const xt::xtensor<T, N>& a)
 {
-    const auto sf = ind * ts;
     // stringstream to dump the xarray
     std::stringstream temp;
     temp << a;
 
+    std::vector<std::string> res;
     for (std::string line; getline(temp, line);) {
+        res.push_back(line);
+    }
+    return res;
+}
+
+inline void print_multiline(const std::vector<std::string>& lines, int ind, int ts)
+{
+    const auto sf = ind * ts;
+    for (const auto line : lines) {
         iprint(sf, "{}\n", line);
     }
+}
+
+//  Indent print xarray.
+template<typename T, int N>
+void print_tensor(const xt::xtensor<T, N>& a, int ind, int ts)
+{
+    const auto fval = format_tensor<T, N>(a);
+    print_multiline(fval, ind, ts);
 }
 
 inline void print_harray(const harray2d_t& a, int ind, int ts)

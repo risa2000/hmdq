@@ -77,7 +77,6 @@ set (hmdq_sources
     base_common.cpp
     oculus_collector.cpp
     oculus_config.cpp
-    oculus_props.cpp
     openvr_collector.cpp
     openvr_common.cpp
     openvr_config.cpp
@@ -131,6 +130,8 @@ add_custom_command (TARGET hmdq
 # Check the CRT linkage, add DLLs if needed
 if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     collect_dlls(hmdq ${EXT_LIBS})
+else()
+    target_compile_definitions(hmdq PRIVATE OPENVR_BUILD_STATIC)
 endif()
 
 # Install
