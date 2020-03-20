@@ -17,19 +17,19 @@ namespace oculus {
 //------------------------------------------------------------------------------
 namespace Prop {
 
-constexpr const char* HmdType = "Prop_HmdType_Uint32";
-constexpr const char* ProductName = "Prop_ProductName_String";
-constexpr const char* Manufacturer = "Prop_Manufacturer_String";
-constexpr const char* VendorId = "Prop_VendorId_Uint16";
-constexpr const char* ProductId = "Prop_ProductId_Uint16";
-constexpr const char* SerialNumber = "Prop_SerialNumber_String";
-constexpr const char* FirmwareMajor = "Prop_FirmwareMajor_Uint16";
-constexpr const char* FirmwareMinor = "Prop_FirmwareMinor_Uint16";
-constexpr const char* AvailableHmdCaps = "Prop_AvailableHmdCaps_Uint32";
-constexpr const char* DefaultHmdCaps = "Prop_DefaultHmdCaps_Uint32";
-constexpr const char* AvailableTrackingCaps = "Prop_AvailableTrackingCaps_Uint32";
-constexpr const char* DefaultTrackingCaps = "Prop_DefaultTrackingCaps_Uint32";
-constexpr const char* DisplayRefreshRate = "Prop_DisplayRefreshRate_Float";
+constexpr const char* HmdType_Uint32 = "Prop_HmdType_Uint32";
+constexpr const char* ProductName_String = "Prop_ProductName_String";
+constexpr const char* Manufacturer_String = "Prop_Manufacturer_String";
+constexpr const char* VendorId_Uint16 = "Prop_VendorId_Uint16";
+constexpr const char* ProductId_Uint16 = "Prop_ProductId_Uint16";
+constexpr const char* SerialNumber_String = "Prop_SerialNumber_String";
+constexpr const char* FirmwareMajor_Uint16 = "Prop_FirmwareMajor_Uint16";
+constexpr const char* FirmwareMinor_Uint16 = "Prop_FirmwareMinor_Uint16";
+constexpr const char* AvailableHmdCaps_Uint32 = "Prop_AvailableHmdCaps_Uint32";
+constexpr const char* DefaultHmdCaps_Uint32 = "Prop_DefaultHmdCaps_Uint32";
+constexpr const char* AvailableTrackingCaps_Uint32 = "Prop_AvailableTrackingCaps_Uint32";
+constexpr const char* DefaultTrackingCaps_Uint32 = "Prop_DefaultTrackingCaps_Uint32";
+constexpr const char* DisplayRefreshRate_Float = "Prop_DisplayRefreshRate_Float";
 
 } // namespace Prop
 

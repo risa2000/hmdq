@@ -23,26 +23,26 @@ static constexpr auto INIT_FLAGS = ovrInit_Invisible;
 
 // clang-format off
 static const json VERB_PROPS = {
-    {Prop::HmdType, 0},
-    {Prop::ProductName, 0},
-    {Prop::Manufacturer, 0},
-    {Prop::VendorId, 2},
-    {Prop::ProductId, 2},
-    {Prop::SerialNumber, 0},
-    {Prop::FirmwareMajor, 2},
-    {Prop::FirmwareMinor, 2},
-    {Prop::AvailableHmdCaps, 2},
-    {Prop::DefaultHmdCaps, 2},
-    {Prop::AvailableTrackingCaps, 2},
-    {Prop::DefaultTrackingCaps, 2},
-    {Prop::DisplayRefreshRate, 0},
+    {Prop::HmdType_Uint32, 0},
+    {Prop::ProductName_String, 0},
+    {Prop::Manufacturer_String, 0},
+    {Prop::VendorId_Uint16, 2},
+    {Prop::ProductId_Uint16, 2},
+    {Prop::SerialNumber_String, 0},
+    {Prop::FirmwareMajor_Uint16, 2},
+    {Prop::FirmwareMinor_Uint16, 2},
+    {Prop::AvailableHmdCaps_Uint32, 2},
+    {Prop::DefaultHmdCaps_Uint32, 2},
+    {Prop::AvailableTrackingCaps_Uint32, 2},
+    {Prop::DefaultTrackingCaps_Uint32, 2},
+    {Prop::DisplayRefreshRate_Float, 0},
 };
 // clang-format on
 
 // clang-format off
 //  currently identified properties with serial numbers
 static const json ANON_PROPS = {
-    Prop::SerialNumber,
+    Prop::SerialNumber_String,
 };
 // clang-format on
 
