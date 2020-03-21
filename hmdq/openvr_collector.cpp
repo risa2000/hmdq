@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <tuple>
+#include <type_traits>
 
 #include <fmt/format.h>
 
@@ -109,51 +110,92 @@ inline bool check_tp_result(vr::IVRSystem* vrsys, json& jd, const std::string& p
     return false;
 }
 
-//  Set TrackedPropertyValue (vector value) in the JSON dict.
+//  Get vector of scalar values (integral types) into a JSON dict.
 template<typename T>
-void set_tp_val_1d_array(json& jd, const std::string& pname,
-                         const std::vector<unsigned char>& buffer, size_t buffsize)
+json get_val_1d_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
-    // we got float array in buffer of buffsize / sizeof(float)
     const auto ptype = reinterpret_cast<const T*>(&buffer[0]);
     const auto size = buffsize / sizeof(T);
     const std::vector<std::size_t> shape = {size};
-    const xt::xtensor<T, 1> atype = xt::adapt(ptype, size, xt::no_ownership(), shape);
-    jd[pname] = atype;
+    return xt::adapt(ptype, size, xt::no_ownership(), shape);
 }
 
-//  Set TrackedPropertyValue (matrix array value) in the JSON dict.
+//  Get vector of vector values into a JSON dict.
+template<typename T, size_t ncount>
+json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    const auto pitem = reinterpret_cast<const T*>(&buffer[0]);
+    const auto size = buffsize / sizeof(T);
+    constexpr auto vecsize = sizeof(T) * ncount;
+    const std::vector<std::size_t> shape = {buffsize / vecsize, ncount};
+    return xt::adapt(pitem, size, xt::no_ownership(), shape);
+}
+
+//  Get vector of matrix values into a JSON dict.
+template<typename T, size_t nrows, size_t ncols>
+json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    const auto pcell = reinterpret_cast<const T*>(&buffer[0]);
+    const auto size = buffsize / sizeof(T);
+    constexpr auto matsize = sizeof(T) * nrows * ncols;
+    const std::vector<std::size_t> shape = {buffsize / matsize, nrows, ncols};
+    return xt::adapt(pcell, size, xt::no_ownership(), shape);
+}
+
+//  Get vector of vr::HmdVector*_t into a JSON dict.
+template<typename V>
+json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize)
+{
+    using scalar_t = std::remove_all_extents<decltype(V::v)>::type;
+    constexpr auto vdim = sizeof(V::v) / sizeof(scalar_t);
+    return get_val_vec_array<scalar_t, vdim>(buffer, buffsize);
+}
+
+//  Get vector of vr::HmdMatrix**_t into a JSON dict.
 template<typename M>
-void set_tp_val_mat_array(json& jd, const std::string& pname,
-                          const std::vector<unsigned char>& buffer, size_t buffsize)
+json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
-    // we got float array in buffer of buffsize / sizeof(float)
-    const auto pfloat = reinterpret_cast<const float*>(&buffer[0]);
-    const auto size = buffsize / sizeof(float);
+    using scalar_t = std::remove_all_extents<decltype(M::m)>::type;
     constexpr auto nrows = sizeof(M::m) / sizeof(M::m[0]);
-    constexpr auto ncols = sizeof(M::m[0]) / sizeof(float);
-    const std::vector<std::size_t> shape = {buffsize / sizeof(M::m), nrows, ncols};
-    const harray_t amats = xt::adapt(pfloat, size, xt::no_ownership(), shape);
-    jd[pname] = amats;
+    constexpr auto ncols = sizeof(M::m[0]) / sizeof(scalar_t);
+    return get_val_mat_array<scalar_t, nrows, ncols>(buffer, buffsize);
 }
 
-//  Set TrackedPropertyValue (vector array value) in the JSON dict.
-template<typename V, typename I = float>
-void set_tp_val_vec_array(json& jd, const std::string& pname,
-                          const std::vector<unsigned char>& buffer, size_t buffsize)
+//  Get array of <prop_name> type into a JSON dict.
+json get_prop_array(const std::string& pname, const std::vector<unsigned char>& buffer,
+                    size_t buffsize)
 {
-    // we got I type array in buffer of buffsize / sizeof(I)
-    const auto pitem = reinterpret_cast<const I*>(&buffer[0]);
-    const auto size = buffsize / sizeof(I);
-    constexpr auto vsize = sizeof(V::v) / sizeof(I);
-    const std::vector<std::size_t> shape = {buffsize / sizeof(V::v), vsize};
-    const harray_t avecs = xt::adapt(pitem, size, xt::no_ownership(), shape);
-    jd[pname] = avecs;
+    // parse the name to get the type
+    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
+
+    switch (ptype) {
+        case basevr::PropType::Float:
+            return get_val_1d_array<float>(buffer, buffsize);
+        case basevr::PropType::Int32:
+            return get_val_1d_array<int32_t>(buffer, buffsize);
+        case basevr::PropType::Uint64:
+            return get_val_1d_array<uint64_t>(buffer, buffsize);
+        case basevr::PropType::Bool:
+            return get_val_1d_array<bool>(buffer, buffsize);
+        case basevr::PropType::Matrix34:
+            return get_val_mat_array<vr::HmdMatrix34_t>(buffer, buffsize);
+        case basevr::PropType::Matrix44:
+            return get_val_mat_array<vr::HmdMatrix44_t>(buffer, buffsize);
+        case basevr::PropType::Vector2:
+            return get_val_vec_array<vr::HmdVector2_t>(buffer, buffsize);
+        case basevr::PropType::Vector3:
+            return get_val_vec_array<vr::HmdVector3_t>(buffer, buffsize);
+        case basevr::PropType::Vector4:
+            return get_val_vec_array<vr::HmdVector4_t>(buffer, buffsize);
+        default:
+            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
+            return {ERROR_PREFIX, msg};
+    }
 }
 
 //  Universal routine to get any "Array" property into the JSON dict.
-void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did,
-                    vr::ETrackedDeviceProperty pid, const std::string& pname)
+json get_array_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                         vr::ETrackedDeviceProperty pid, const std::string& pname)
 {
     vr::ETrackedPropertyError error = vr::TrackedProp_Success;
     // abuse vector as a return buffer for an Array property
@@ -163,8 +205,7 @@ void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did
 
     if (ptype == basevr::PropType::Invalid) {
         const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-        jd[pname][ERROR_PREFIX] = msg;
-        return;
+        return {ERROR_PREFIX, msg};
     }
 
     vr::PropertyTypeTag_t ptag = ptype_to_ptag(ptype);
@@ -176,43 +217,12 @@ void get_array_type(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did
         buffsize = vrsys->GetArrayTrackedDeviceProperty(
             did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
     }
-    if (!check_tp_result(vrsys, jd, pname, error)) {
-        return;
-    }
 
-    switch (ptype) {
-        case basevr::PropType::Float:
-            set_tp_val_1d_array<float>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Int32:
-            set_tp_val_1d_array<int32_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Uint64:
-            set_tp_val_1d_array<uint64_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Bool:
-            set_tp_val_1d_array<bool>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Matrix34:
-            set_tp_val_mat_array<vr::HmdMatrix34_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Matrix44:
-            set_tp_val_mat_array<vr::HmdMatrix44_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Vector2:
-            set_tp_val_vec_array<vr::HmdVector2_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Vector3:
-            set_tp_val_vec_array<vr::HmdVector3_t>(jd, pname, buffer, buffsize);
-            break;
-        case basevr::PropType::Vector4:
-            set_tp_val_vec_array<vr::HmdVector4_t>(jd, pname, buffer, buffsize);
-            break;
-        default:
-            const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-            jd[pname][ERROR_PREFIX] = msg;
-            break;
+    json jd;
+    if (!check_tp_result(vrsys, jd, pname, error)) {
+        return jd[pname];
     }
+    return get_prop_array(pname, buffer, buffsize);
 }
 
 //  Get string tracked property (this is a helper to isolate the buffer handling).
@@ -254,7 +264,7 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
             = basevr::parse_prop_name(pname);
 
         if (is_array) {
-            get_array_type(vrsys, res, did, pid, pname);
+            res[pname] = get_array_type_prop(vrsys, did, pid, pname);
             continue;
         }
         switch (ptype) {
@@ -298,11 +308,14 @@ json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
             case basevr::PropType::Matrix34:
             case basevr::PropType::Matrix44: {
                 // get not directly supported types as an array of one item
-                get_array_type(vrsys, res, did, pid, pname);
+                const auto temp = get_array_type_prop(vrsys, did, pid, pname);
                 // use this trick to remove surrogate "array" from the JSON if there was
                 // no error
-                if (res[pname].find(ERROR_PREFIX) == res[pname].end())
-                    res[pname] = res[pname][0];
+                if (temp.find(ERROR_PREFIX) == temp.end())
+                    res[pname] = temp[0];
+                else {
+                    res[pname] = temp;
+                }
                 break;
             }
             default: {
