@@ -65,9 +65,12 @@ constexpr const char* j_rt_ver = "rt_ver";
 
 //  VR subsystem devices
 constexpr const char* j_devices = "devices";
+constexpr const char* j_trackers = "trackers";
+constexpr const char* j_ctrl_types = "ctrl_types";
 
 //  VR subsystem properties
 constexpr const char* j_properties = "properties";
+constexpr const char* j_hmd = "hmd";
 
 //  Headset geometry
 constexpr const char* j_geometry = "geometry";

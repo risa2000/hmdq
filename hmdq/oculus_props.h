@@ -30,6 +30,10 @@ constexpr const char* DefaultHmdCaps_Uint32 = "Prop_DefaultHmdCaps_Uint32";
 constexpr const char* AvailableTrackingCaps_Uint32 = "Prop_AvailableTrackingCaps_Uint32";
 constexpr const char* DefaultTrackingCaps_Uint32 = "Prop_DefaultTrackingCaps_Uint32";
 constexpr const char* DisplayRefreshRate_Float = "Prop_DisplayRefreshRate_Float";
+constexpr const char* FrustumHFovInRadians_Float = "Prop_FrustumHFovInRadians_Float";
+constexpr const char* FrustumVFovInRadians_Float = "Prop_FrustumVFovInRadians_Float";
+constexpr const char* FrustumNearZInMeters_Float = "Prop_FrustumNearZInMeters_Float";
+constexpr const char* FrustumFarZInMeters_Float = "Prop_FrustumFarZInMeters_Float";
 
 } // namespace Prop
 

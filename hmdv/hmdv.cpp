@@ -28,6 +28,9 @@
 #include "jkeys.h"
 #include "jtools.h"
 #include "misc.h"
+#include "oculus_config.h"
+#include "oculus_processor.h"
+#include "openvr_common.h"
 #include "openvr_config.h"
 #include "openvr_processor.h"
 #include "prtdata.h"
@@ -148,18 +151,28 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     apply_all_relevant_fixes(out);
 
     // processor buffer
-    procbuff_t processors;
+    procmap_t processors;
+
+    // create local API json dict to be passed to OpenVR processor
+    // TODO: this should be handled differently
+    json oapi = read_json(std::filesystem::u8path(api_json));
+    json japi = openvr::parse_json_oapi(oapi);
 
     // process all VR subsystem interfaces
     if (out.find(j_openvr) != out.end()) {
-        processors.push_back(std::make_unique<openvr::Processor>(
-            std::filesystem::u8path(api_json), out[j_openvr]));
-        processors.back()->init();
+        auto openvr_processor = new openvr::Processor(japi, out[j_openvr]);
+        openvr_processor->init();
+        processors.emplace(openvr_processor->get_id(), openvr_processor);
+    }
+    if (out.find(j_oculus) != out.end()) {
+        auto oculus_processor = new oculus::Processor(out[j_oculus]);
+        oculus_processor->init();
+        processors.emplace(oculus_processor->get_id(), oculus_processor);
     }
 
     // anonymize the data if requested
     if (anon) {
-        for (auto& proc : processors) {
+        for (auto& [proc_id, proc] : processors) {
             proc->anonymize();
         }
     }
@@ -215,8 +228,11 @@ int main(int argc, char* argv[])
     // print_u8args(u8args);
 
     // init global config before anything else
-    cfgbuff_t cfgs;
-    cfgs.push_back(std::make_unique<openvr::Config>());
+    cfgmap_t cfgs;
+    auto openvr_config = new openvr::Config();
+    cfgs.emplace(openvr_config->get_id(), openvr_config);
+    auto oculus_config = new oculus::Config();
+    cfgs.emplace(oculus_config->get_id(), oculus_config);
 
     const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)

@@ -48,6 +48,7 @@ void print_header(const char* prog_name, const char* prog_ver, const char* prog_
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
     if (verb >= vsil) {
         iprint(sf, "{:s} version {:s} - {:s}\n", prog_name, prog_ver, prog_desc);
+        fmt::print("\n");
     }
 }
 
@@ -208,7 +209,7 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
 //  functions (all print)
 //------------------------------------------------------------------------------
 //  Print the complete data file.
-void print_all(const pmode selected, const json& out, const procbuff_t& processors,
+void print_all(const pmode selected, const json& out, const procmap_t& processors,
                int verb, int ind, int ts)
 {
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
@@ -217,10 +218,15 @@ void print_all(const pmode selected, const json& out, const procbuff_t& processo
     const auto log_ver = out[j_misc][j_log_ver].get<int>();
 
     // print the miscellanous (system and app) data
-    print_misc(out[j_misc], PROG_NAME, verb, ind, ts);
-
-    // print all the VR from different processors
-    for (auto& proc : processors) {
-        proc->print(selected, verb, ind, ts);
+    if (verb >= vdef) {
+        print_misc(out[j_misc], PROG_NAME, verb, ind, ts);
+        fmt::print("\n");
+        // print all the VR from different processors
+        for (const auto& [proc_id, proc] : processors) {
+            iprint(sf, "... Subsystem: {} ...\n", proc->get_id());
+            fmt::print("\n");
+            proc->print(selected, verb, ind, ts);
+            fmt::print("\n");
+        }
     }
 }

@@ -49,5 +49,5 @@ void print_geometry(const json& jd, int verb, int ind, int ts);
 //  functions (all print)
 //------------------------------------------------------------------------------
 //  Print the complete data file.
-void print_all(const pmode selected, const json& out, const procbuff_t& processors,
+void print_all(const pmode selected, const json& out, const procmap_t& processors,
                int verb, int ind, int ts);

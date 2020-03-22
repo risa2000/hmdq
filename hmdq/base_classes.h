@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 
 #include "prtdef.h"
@@ -26,11 +27,11 @@ class BaseVRConfig;
 //  typedefs
 //------------------------------------------------------------------------------
 // collector buffer
-typedef std::vector<std::unique_ptr<BaseVRCollector>> colbuff_t;
+typedef std::map<std::string, std::unique_ptr<BaseVRCollector>> colmap_t;
 // processor buffer
-typedef std::vector<std::unique_ptr<BaseVRProcessor>> procbuff_t;
+typedef std::map<std::string, std::unique_ptr<BaseVRProcessor>> procmap_t;
 // config buffer
-typedef std::vector<std::unique_ptr<BaseVRConfig>> cfgbuff_t;
+typedef std::map<std::string, std::unique_ptr<BaseVRConfig>> cfgmap_t;
 
 //  BaseVR class
 //------------------------------------------------------------------------------

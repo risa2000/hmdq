@@ -30,6 +30,7 @@
 #include "misc.h"
 #include "oculus_collector.h"
 #include "oculus_config.h"
+#include "oculus_processor.h"
 #include "openvr_collector.h"
 #include "openvr_common.h"
 #include "openvr_config.h"
@@ -144,58 +145,56 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     out[j_misc] = get_misc();
 
     // collector buffer
-    colbuff_t collectors;
+    colmap_t collectors;
     // processor buffer
-    procbuff_t processors;
+    procmap_t processors;
 
     // create all VR subsystem interfaces
     // OpenVR collector
     const auto openvr_app_type
         = g_cfg[j_openvr][j_app_type].get<vr::EVRApplicationType>();
-    collectors.push_back(std::make_unique<openvr::Collector>(
-        std::filesystem::u8path(api_json), openvr_app_type));
+    auto openvr_collector
+        = new openvr::Collector(std::filesystem::u8path(api_json), openvr_app_type);
+    auto openvr_processor = new openvr::Processor(openvr_collector->get_xapi(),
+                                                  openvr_collector->get_data());
+    collectors.emplace(openvr_collector->get_id(), openvr_collector);
+    processors.emplace(openvr_processor->get_id(), openvr_processor);
 
     // Oculus VR collector
     const auto init_flags = g_cfg[j_oculus][j_init_flags].get<ovrInitFlags>();
-    collectors.push_back(std::make_unique<oculus::Collector>(init_flags));
+    auto oculus_collector = new oculus::Collector(init_flags);
+    auto oculus_processor = new oculus::Processor(oculus_collector->get_data());
+    collectors.emplace(oculus_collector->get_id(), oculus_collector);
+    processors.emplace(oculus_processor->get_id(), oculus_processor);
 
-    for (auto& col : collectors) {
+    for (auto& [col_id, col] : collectors) {
         if (col->try_init()) {
             col->collect();
-            if (col->get_id() == j_openvr) {
-                // create corresponding processor
-                openvr::Collector* pCol = dynamic_cast<openvr::Collector*>(col.get());
-                processors.push_back(std::make_unique<openvr::Processor>(
-                    pCol->get_xapi(), pCol->get_data()));
+            // if there is a processor registered run it now
+            if (processors.find(col_id) != processors.end()) {
+                auto proc = processors[col_id].get();
+                proc->init();
+                proc->calculate();
+                if (anon) {
+                    proc->anonymize();
+                }
             }
-            else {
-                // if no processor was created continue the for loop
-                continue;
-            }
-            processors.back()->init();
-            processors.back()->calculate();
-            if (anon) {
-                processors.back()->anonymize();
-            }
-        }
-        else {
-            fmt::print("\n{}: {}\n\n", col->get_id(), col->get_last_error_msg());
         }
     }
 
     print_all(mode2pmode(selected), out, processors, verb, ind, ts);
 
     // if verbosity is not high enough (verr + 1) purge the temporary data
-    for (auto& proc : processors) {
+    for (auto& [proc_id, proc] : processors) {
         if (verb <= verr) {
             proc->purge();
         }
     }
 
     // put the collected data into the output JSON
-    for (auto& col : collectors) {
+    for (auto& [col_id, col] : collectors) {
         if (!col->get_data().is_null())
-            out[col->get_id()] = col->get_data();
+            out[col_id] = col->get_data();
     }
 
     // dump the data into the optional JSON file
@@ -243,9 +242,11 @@ int main(int argc, char* argv[])
     // print_u8args(u8args);
 
     // init global config before anything else
-    cfgbuff_t cfgs;
-    cfgs.push_back(std::make_unique<openvr::Config>());
-    cfgs.push_back(std::make_unique<oculus::Config>());
+    cfgmap_t cfgs;
+    auto openvr_config = new openvr::Config();
+    cfgs.emplace(openvr_config->get_id(), openvr_config);
+    auto oculus_config = new oculus::Config();
+    cfgs.emplace(oculus_config->get_id(), oculus_config);
 
     const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)

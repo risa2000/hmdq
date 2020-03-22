@@ -24,7 +24,6 @@ namespace openvr {
 
 //  OpenVR Collector class
 //------------------------------------------------------------------------------
-//  Collector and processor for OpenVR subsystem
 class Collector : public BaseVRCollector
 {
   public:

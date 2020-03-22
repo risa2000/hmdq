@@ -474,17 +474,21 @@ bool Collector::try_init()
 {
     if (!vr::VR_IsRuntimeInstalled()) {
         m_err = vr::VRInitError_Init_InstallationNotFound;
+        m_jData[ERROR_PREFIX] = get_last_error_msg();
         return false;
     }
     bool res = false;
     auto [vrsys, error] = init_vrsys(m_appType);
+    m_err = error;
     if (nullptr != vrsys) {
         m_ivrSystem = vrsys;
-        res = true;
         json oapi = read_json(m_apiPath);
         m_jApi = parse_json_oapi(oapi);
+        res = true;
     }
-    m_err = error;
+    else {
+        m_jData[ERROR_PREFIX] = get_last_error_msg();
+    }
     return res;
 }
 

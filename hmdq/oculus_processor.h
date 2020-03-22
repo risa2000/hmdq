@@ -18,15 +18,14 @@
 
 #include "fifo_map_fix.h"
 
-namespace openvr {
+namespace oculus {
 
-//  OpenVR Processor class
+//  OculusVR Processor class
 //------------------------------------------------------------------------------
-//  Printer for OpenVR subsystem
 class Processor : public BaseVRProcessor
 {
   public:
-    Processor(const json& japi, json& jdata) : m_jData(jdata), m_jApi(japi) {}
+    Processor(json& jdata) : m_jData(jdata) {}
 
   public:
     // Initialize the processor
@@ -49,10 +48,8 @@ class Processor : public BaseVRProcessor
     virtual json& get_data() override;
 
   private:
-    // API extract
-    const json& m_jApi;
     // Collected data
     json& m_jData;
 };
 
-} // namespace openvr
+} // namespace oculus

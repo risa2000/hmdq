@@ -74,12 +74,19 @@ set (hmdv_sources
     ${hmdq_dir}/openvr_common.cpp
     ${hmdq_dir}/openvr_config.cpp
     ${hmdq_dir}/openvr_processor.cpp
+    ${hmdq_dir}/oculus_config.cpp
+    ${hmdq_dir}/oculus_processor.cpp
     ${hmdq_dir}/optmesh.cpp
     ${hmdq_dir}/prtdata.cpp
     ${hmdq_dir}/wintools.cpp
     ${hmdq_dir}/xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
+
+# set the path to OVR_SDK
+if (NOT OVR_SDK)
+    set (OVR_SDK $ENV{OVR_SDK})
+endif()
 
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
 set (EXT_LIBS botan)
@@ -92,6 +99,7 @@ add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_sources})
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
 target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
+target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
 target_link_libraries (hmdv PRIVATE version.lib)
 foreach (lib IN ITEMS ${EXT_LIBS})
     target_link_libraries (hmdv PRIVATE debug ${lib}d.lib)

@@ -118,15 +118,15 @@ static json build_meta()
 }
 
 //  Build (default) config and write it into JSON file.
-static json build_config(const std::filesystem::path& cfile, const cfgbuff_t& cfgs)
+static json build_config(const std::filesystem::path& cfile, const cfgmap_t& cfgs)
 {
     json jd;
     jd[j_meta] = build_meta();
     jd[j_control] = build_control();
     jd[j_format] = build_format();
     jd[j_verbosity] = build_verbosity();
-    for (auto& cfg : cfgs) {
-        jd[cfg->get_id()] = cfg->get_data();
+    for (auto& [cfg_id, cfg] : cfgs) {
+        jd[cfg_id] = cfg->get_data();
     }
     write_config(cfile, jd);
     return jd;
@@ -142,7 +142,7 @@ static std::filesystem::path build_conf_name(const std::filesystem::path& argv0)
 //  exported functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(const std::filesystem::path& argv0, const cfgbuff_t& cfgs)
+bool init_config(const std::filesystem::path& argv0, const cfgmap_t& cfgs)
 {
     auto cfile = build_conf_name(argv0);
     g_cfg = load_config(cfile);

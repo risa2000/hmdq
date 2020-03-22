@@ -23,7 +23,6 @@ namespace oculus {
 
 //  OculusVR Collector class
 //------------------------------------------------------------------------------
-//  Collector and processor for OculusVR subsystem
 class Collector : public BaseVRCollector
 {
   public:

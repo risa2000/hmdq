@@ -25,4 +25,4 @@ extern json g_cfg;
 //  functions
 //------------------------------------------------------------------------------
 //  Initialize config options either from the file or from the defaults.
-bool init_config(const std::filesystem::path& argv0, const cfgbuff_t& cfgs);
+bool init_config(const std::filesystem::path& argv0, const cfgmap_t& cfgs);

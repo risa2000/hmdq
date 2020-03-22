@@ -75,11 +75,12 @@ set (hmdq_sources
     hmdq.cpp
     jtools.cpp
     base_common.cpp
-    oculus_collector.cpp
     oculus_config.cpp
-    openvr_collector.cpp
+    oculus_collector.cpp
+    oculus_processor.cpp
     openvr_common.cpp
     openvr_config.cpp
+    openvr_collector.cpp
     openvr_processor.cpp
     optmesh.cpp
     prtdata.cpp
