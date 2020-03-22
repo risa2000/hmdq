@@ -42,6 +42,11 @@ static const int PROP_CAT_COMMON = 1;
 static const int PROP_CAT_HMD = 2;
 static const int PROP_CAT_CONTROLLER = 3;
 static const int PROP_CAT_TRACKEDREF = 4;
+static const int PROP_CAT_UI = 5;
+static const int PROP_CAT_UI_MIN = vr::Prop_IconPathName_String;
+static const int PROP_CAT_UI_MAX = vr::Prop_DisplayHiddenArea_Binary_Start;
+static const int PROP_CAT_DRIVER = 6;
+static const int PROP_CAT_INTERNAL = 7;
 
 //  helper (local) functions for OpenVR collector
 //------------------------------------------------------------------------------
@@ -99,15 +104,10 @@ hdevlist_t enum_devs(vr::IVRSystem* vrsys)
 }
 
 //  Check the returned value and print out the error message if detected.
-inline bool check_tp_result(vr::IVRSystem* vrsys, json& jd, const std::string& pname,
-                            vr::ETrackedPropertyError res)
+inline json get_tp_error(vr::IVRSystem* vrsys, vr::ETrackedPropertyError err)
 {
-    if (res == vr::TrackedProp_Success) {
-        return true;
-    }
-    const auto msg = fmt::format("{:s}", vrsys->GetPropErrorNameFromEnum(res));
-    jd[pname][ERROR_PREFIX] = msg;
-    return false;
+    const auto msg = fmt::format("{:s}", vrsys->GetPropErrorNameFromEnum(err));
+    return json::object({{ERROR_PREFIX, msg}});
 }
 
 //  Get vector of scalar values (integral types) into a JSON dict.
@@ -162,53 +162,56 @@ json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize
 }
 
 //  Get array of <prop_name> type into a JSON dict.
-json get_prop_array(const std::string& pname, const std::vector<unsigned char>& buffer,
-                    size_t buffsize)
+json prop_array_to_json(const std::string& pname,
+                        const std::vector<unsigned char>& buffer)
 {
     // parse the name to get the type
     const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
 
     switch (ptype) {
-        case basevr::PropType::Float:
-            return get_val_1d_array<float>(buffer, buffsize);
-        case basevr::PropType::Int32:
-            return get_val_1d_array<int32_t>(buffer, buffsize);
-        case basevr::PropType::Uint64:
-            return get_val_1d_array<uint64_t>(buffer, buffsize);
         case basevr::PropType::Bool:
-            return get_val_1d_array<bool>(buffer, buffsize);
+            return get_val_1d_array<bool>(buffer, buffer.size());
+        case basevr::PropType::Float:
+            return get_val_1d_array<float>(buffer, buffer.size());
+        case basevr::PropType::Double:
+            return get_val_1d_array<double>(buffer, buffer.size());
+        case basevr::PropType::Int16:
+            return get_val_1d_array<int16_t>(buffer, buffer.size());
+        case basevr::PropType::Uint16:
+            return get_val_1d_array<uint16_t>(buffer, buffer.size());
+        case basevr::PropType::Int32:
+            return get_val_1d_array<int32_t>(buffer, buffer.size());
+        case basevr::PropType::Uint32:
+            return get_val_1d_array<uint32_t>(buffer, buffer.size());
+        case basevr::PropType::Int64:
+            return get_val_1d_array<int64_t>(buffer, buffer.size());
+        case basevr::PropType::Uint64:
+            return get_val_1d_array<uint64_t>(buffer, buffer.size());
         case basevr::PropType::Matrix34:
-            return get_val_mat_array<vr::HmdMatrix34_t>(buffer, buffsize);
+            return get_val_mat_array<vr::HmdMatrix34_t>(buffer, buffer.size());
         case basevr::PropType::Matrix44:
-            return get_val_mat_array<vr::HmdMatrix44_t>(buffer, buffsize);
+            return get_val_mat_array<vr::HmdMatrix44_t>(buffer, buffer.size());
         case basevr::PropType::Vector2:
-            return get_val_vec_array<vr::HmdVector2_t>(buffer, buffsize);
+            return get_val_vec_array<vr::HmdVector2_t>(buffer, buffer.size());
         case basevr::PropType::Vector3:
-            return get_val_vec_array<vr::HmdVector3_t>(buffer, buffsize);
+            return get_val_vec_array<vr::HmdVector3_t>(buffer, buffer.size());
         case basevr::PropType::Vector4:
-            return get_val_vec_array<vr::HmdVector4_t>(buffer, buffsize);
+            return get_val_vec_array<vr::HmdVector4_t>(buffer, buffer.size());
         default:
             const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-            return {ERROR_PREFIX, msg};
+            return json::object({{ERROR_PREFIX, msg}});
     }
 }
 
-//  Universal routine to get any "Array" property into the JSON dict.
-json get_array_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
-                         vr::ETrackedDeviceProperty pid, const std::string& pname)
+//  Get array tracked property, or scalar property via an array interface.
+std::vector<unsigned char>
+get_array_tracked_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                       vr::ETrackedDeviceProperty pid, vr::PropertyTypeTag_t ptag,
+                       vr::ETrackedPropertyError* pError = nullptr)
 {
-    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
     // abuse vector as a return buffer for an Array property
     std::vector<unsigned char> buffer(BUFFSIZE);
-    // parse the name to get the type
-    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
-
-    if (ptype == basevr::PropType::Invalid) {
-        const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-        return {ERROR_PREFIX, msg};
-    }
-
-    vr::PropertyTypeTag_t ptag = ptype_to_ptag(ptype);
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
     size_t buffsize = vrsys->GetArrayTrackedDeviceProperty(
         did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
     if (error == vr::TrackedProp_BufferTooSmall) {
@@ -217,115 +220,83 @@ json get_array_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
         buffsize = vrsys->GetArrayTrackedDeviceProperty(
             did, pid, ptag, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
     }
-
-    json jd;
-    if (!check_tp_result(vrsys, jd, pname, error)) {
-        return jd[pname];
+    if (nullptr != pError) {
+        *pError = error;
     }
-    return get_prop_array(pname, buffer, buffsize);
+    if (vr::TrackedProp_Success == error) {
+        buffer.resize(buffsize);
+        return buffer;
+    }
+    else {
+        return {};
+    }
 }
 
-//  Get string tracked property (this is a helper to isolate the buffer handling).
-bool get_str_tracked_prop(vr::IVRSystem* vrsys, json& jd, vr::TrackedDeviceIndex_t did,
-                          vr::ETrackedDeviceProperty pid, const std::string& pname,
-                          std::vector<char>& buffer)
+//  Universal routine to get any scalar or array property into the JSON dict.
+json get_any_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                       vr::ETrackedDeviceProperty pid, const std::string& pname)
 {
     vr::ETrackedPropertyError error = vr::TrackedProp_Success;
-    size_t buffsize = vrsys->GetStringTrackedDeviceProperty(
-        did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
-    if (error == vr::TrackedProp_BufferTooSmall) {
-        // resize buffer
-        buffer.resize(buffsize);
-        buffsize = vrsys->GetStringTrackedDeviceProperty(
-            did, pid, &buffer[0], static_cast<uint32_t>(buffer.size()), &error);
+    // parse the name to get the type
+    const auto [basename, ptype_name, ptype, is_array] = basevr::parse_prop_name(pname);
+
+    if (ptype == basevr::PropType::Invalid) {
+        const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
+        return json::object({{ERROR_PREFIX, msg}});
     }
-    return check_tp_result(vrsys, jd, pname, error);
+
+    vr::PropertyTypeTag_t ptag = ptype_to_ptag(ptype);
+    std::vector<unsigned char> aval
+        = get_array_tracked_prop(vrsys, did, pid, ptag, &error);
+
+    if (vr::TrackedProp_Success != error) {
+        return get_tp_error(vrsys, error);
+    }
+
+    if (ptype == basevr::PropType::String) {
+        // for String type interpret directly the buffer as a string
+        return reinterpret_cast<char*>(&aval[0]);
+    }
+
+    json temp = prop_array_to_json(pname, aval);
+    if (is_array) {
+        return temp;
+    }
+    else {
+        // if not dealing with an array property "remove" the array (brackets)
+        return temp[0];
+    }
+}
+
+//  Return dict of properties for device `did` in the range
+json get_dev_props_range(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
+                         vr::ETrackedDeviceClass dclass, int cat, int min_pid,
+                         int max_pid, const json& api)
+{
+    const auto scat = std::to_string(cat);
+    json res;
+
+    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+    for (const auto& [spid, jname] : api[j_properties][scat].items()) {
+        // convert string to the correct type
+        const auto pid = static_cast<vr::ETrackedDeviceProperty>(std::stoi(spid));
+        if (pid < min_pid || pid >= max_pid) {
+            continue;
+        }
+        // property name
+        const auto pname = jname.get<std::string>();
+        // use all-in-one matic function
+        res[pname] = get_any_type_prop(vrsys, did, pid, pname);
+    }
+    return res;
 }
 
 //  Return dict of properties for device `did`.
 json get_dev_props(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
                    vr::ETrackedDeviceClass dclass, int cat, const json& api)
 {
-    const auto scat = std::to_string(cat);
-
-    json res;
-
-    vr::ETrackedPropertyError error = vr::TrackedProp_Success;
-    // abuse vector as a return buffer for the String property
-    std::vector<char> buffer(BUFFSIZE);
-
-    for (const auto& [spid, jname] : api[j_properties][scat].items()) {
-        // convert string to the correct type
-        const auto pid = static_cast<vr::ETrackedDeviceProperty>(std::stoi(spid));
-        // property name
-        const auto pname = jname.get<std::string>();
-        // parse the name to get the type
-        const auto [basename, ptype_name, ptype, is_array]
-            = basevr::parse_prop_name(pname);
-
-        if (is_array) {
-            res[pname] = get_array_type_prop(vrsys, did, pid, pname);
-            continue;
-        }
-        switch (ptype) {
-            case basevr::PropType::Bool: {
-                const auto pval = vrsys->GetBoolTrackedDeviceProperty(did, pid, &error);
-                if (check_tp_result(vrsys, res, pname, error)) {
-                    res[pname] = pval;
-                }
-                break;
-            }
-            case basevr::PropType::String: {
-                if (get_str_tracked_prop(vrsys, res, did, pid, pname, buffer)) {
-                    res[pname] = &buffer[0];
-                }
-                break;
-            }
-            case basevr::PropType::Uint64: {
-                const auto pval = vrsys->GetUint64TrackedDeviceProperty(did, pid, &error);
-                if (check_tp_result(vrsys, res, pname, error)) {
-                    res[pname] = pval;
-                }
-                break;
-            }
-            case basevr::PropType::Int32: {
-                const auto pval = vrsys->GetInt32TrackedDeviceProperty(did, pid, &error);
-                if (check_tp_result(vrsys, res, pname, error)) {
-                    res[pname] = pval;
-                }
-                break;
-            }
-            case basevr::PropType::Float: {
-                const auto pval = vrsys->GetFloatTrackedDeviceProperty(did, pid, &error);
-                if (check_tp_result(vrsys, res, pname, error)) {
-                    res[pname] = pval;
-                }
-                break;
-            }
-            case basevr::PropType::Vector2:
-            case basevr::PropType::Vector3:
-            case basevr::PropType::Vector4:
-            case basevr::PropType::Matrix34:
-            case basevr::PropType::Matrix44: {
-                // get not directly supported types as an array of one item
-                const auto temp = get_array_type_prop(vrsys, did, pid, pname);
-                // use this trick to remove surrogate "array" from the JSON if there was
-                // no error
-                if (temp.find(ERROR_PREFIX) == temp.end())
-                    res[pname] = temp[0];
-                else {
-                    res[pname] = temp;
-                }
-                break;
-            }
-            default: {
-                const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-                res[pname][ERROR_PREFIX] = msg;
-                break;
-            }
-        }
-    }
-    return res;
+    return get_dev_props_range(vrsys, did, dclass, cat, cat * 1000, (cat + 1) * 1000,
+                               api);
 }
 
 //  Return properties for all devices.
@@ -338,14 +309,24 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
         pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api);
         if (dclass == vr::TrackedDeviceClass_HMD) {
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_HMD, api));
+            pvals[sdid].update(get_dev_props_range(
+                vrsys, did, dclass, PROP_CAT_UI, PROP_CAT_UI_MIN, PROP_CAT_UI_MAX, api));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_DRIVER, api));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_INTERNAL, api));
         }
         else if (dclass == vr::TrackedDeviceClass_Controller) {
             pvals[sdid].update(
                 get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api));
+            pvals[sdid].update(get_dev_props_range(
+                vrsys, did, dclass, PROP_CAT_UI, PROP_CAT_UI_MIN, PROP_CAT_UI_MAX, api));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_INTERNAL, api));
         }
         else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
             pvals[sdid].update(
                 get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api));
+            pvals[sdid].update(get_dev_props_range(
+                vrsys, did, dclass, PROP_CAT_UI, PROP_CAT_UI_MIN, PROP_CAT_UI_MAX, api));
+            pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_INTERNAL, api));
         }
     }
     return pvals;
