@@ -193,8 +193,8 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
 
     // put the collected data into the output JSON
     for (auto& [col_id, col] : collectors) {
-        if (!col->get_data().is_null())
-            out[col_id] = col->get_data();
+        if (!col->get_data()->is_null())
+            out[col_id] = *col->get_data();
     }
 
     // dump the data into the optional JSON file

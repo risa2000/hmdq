@@ -195,14 +195,14 @@ bool Collector::try_init()
            NULL, 0, 0};
     m_error = ovr_Initialize(&initParams);
     if (check_failure(m_error)) {
-        m_jData[ERROR_PREFIX] = get_last_error_msg();
+        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
         return false;
     }
     m_inited = true;
 
     m_error = ovr_Create(&m_session, &m_graphicsLuid);
     if (check_failure(m_error)) {
-        m_jData[ERROR_PREFIX] = get_last_error_msg();
+        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
         shutdown();
         return false;
     }
@@ -212,10 +212,10 @@ bool Collector::try_init()
 // Collect the OculusVR subsystem data
 void Collector::collect()
 {
-    m_jData[j_rt_ver] = ovr_GetVersionString();
-    m_jData[j_devices] = get_devices(m_session);
-    m_jData[j_properties] = get_properties(m_session);
-    // m_jData[j_geometry] = get_geometry(m_session);
+    (*m_pjData)[j_rt_ver] = ovr_GetVersionString();
+    (*m_pjData)[j_devices] = get_devices(m_session);
+    (*m_pjData)[j_properties] = get_properties(m_session);
+    // (*m_pjData)[j_geometry] = get_geometry(m_session);
 }
 
 // Return OculusVR subystem ID
@@ -237,9 +237,9 @@ std::string Collector::get_last_error_msg()
 }
 
 // Return OculusVR data
-json& Collector::get_data()
+std::shared_ptr<json> Collector::get_data()
 {
-    return m_jData;
+    return m_pjData;
 }
 
 } // namespace oculus

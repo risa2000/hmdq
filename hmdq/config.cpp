@@ -126,7 +126,7 @@ static json build_config(const std::filesystem::path& cfile, const cfgmap_t& cfg
     jd[j_format] = build_format();
     jd[j_verbosity] = build_verbosity();
     for (auto& [cfg_id, cfg] : cfgs) {
-        jd[cfg_id] = cfg->get_data();
+        jd[cfg_id] = *cfg->get_data();
     }
     write_config(cfile, jd);
     return jd;

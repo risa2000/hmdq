@@ -153,19 +153,16 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     // processor buffer
     procmap_t processors;
 
-    // create local API json dict to be passed to OpenVR processor
-    // TODO: this should be handled differently
-    json oapi = read_json(std::filesystem::u8path(api_json));
-    json japi = openvr::parse_json_oapi(oapi);
-
     // process all VR subsystem interfaces
     if (out.find(j_openvr) != out.end()) {
-        auto openvr_processor = new openvr::Processor(japi, out[j_openvr]);
+        auto openvr_processor = new openvr::Processor(
+            std::filesystem::u8path(api_json), std::make_shared<json>(out[j_openvr]));
         openvr_processor->init();
         processors.emplace(openvr_processor->get_id(), openvr_processor);
     }
     if (out.find(j_oculus) != out.end()) {
-        auto oculus_processor = new oculus::Processor(out[j_oculus]);
+        auto oculus_processor
+            = new oculus::Processor(std::make_shared<json>(out[j_oculus]));
         oculus_processor->init();
         processors.emplace(oculus_processor->get_id(), oculus_processor);
     }

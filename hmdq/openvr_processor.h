@@ -26,7 +26,12 @@ namespace openvr {
 class Processor : public BaseVRProcessor
 {
   public:
-    Processor(const json& japi, json& jdata) : m_jData(jdata), m_jApi(japi) {}
+    Processor(const std::filesystem::path& apiPath, const std::shared_ptr<json>& pjdata)
+        : m_apiPath(apiPath), m_pjData(pjdata)
+    {}
+    Processor(const std::shared_ptr<json>& pjapi, const std::shared_ptr<json>& pjdata)
+        : m_pjData(pjdata), m_pjApi(pjapi)
+    {}
 
   public:
     // Initialize the processor
@@ -46,13 +51,15 @@ class Processor : public BaseVRProcessor
     // Return OpenVR subystem ID
     virtual std::string get_id() override;
     // Return OpenVR subystem data
-    virtual json& get_data() override;
+    virtual std::shared_ptr<json> get_data() override;
 
   private:
+    // OpenVR API JSON file path
+    std::filesystem::path m_apiPath;
     // API extract
-    const json& m_jApi;
+    std::shared_ptr<json> m_pjApi;
     // Collected data
-    json& m_jData;
+    std::shared_ptr<json> m_pjData;
 };
 
 } // namespace openvr

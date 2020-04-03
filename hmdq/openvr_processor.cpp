@@ -104,24 +104,29 @@ void print_all_props(const json& api, const json& props, int verb, int ind, int 
 // Initialize the processor
 bool Processor::init()
 {
+    if (!m_pjApi) {
+        json oapi = read_json(m_apiPath);
+        m_pjApi = std::make_shared<json>(openvr::parse_json_oapi(oapi));
+    }
+
     return true;
 }
 
 // Calculate the complementary data
 void Processor::calculate()
 {
-    if (m_jData.find(j_geometry) != m_jData.end()) {
-        m_jData[j_geometry] = calc_geometry(m_jData[j_geometry]);
+    if (m_pjData->find(j_geometry) != m_pjData->end()) {
+        (*m_pjData)[j_geometry] = calc_geometry((*m_pjData)[j_geometry]);
     }
 }
 
 // Anonymize sensitive data
 void Processor::anonymize()
 {
-    if (m_jData.find(j_properties) != m_jData.end()) {
+    if (m_pjData->find(j_properties) != m_pjData->end()) {
         const std::vector<std::string> anon_props_names
             = g_cfg[j_openvr][j_anonymize][j_properties].get<std::vector<std::string>>();
-        for (auto& [sdid, jdprops] : m_jData[j_properties].items()) {
+        for (auto& [sdid, jdprops] : (*m_pjData)[j_properties].items()) {
             anonymize_jdprops(jdprops, anon_props_names, PROPS_TO_SEED);
         }
     }
@@ -138,27 +143,27 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
 
     // if there was an error and there are no data, print the error and quit
-    if (m_jData.find(ERROR_PREFIX) != m_jData.end()) {
+    if (m_pjData->find(ERROR_PREFIX) != m_pjData->end()) {
         if (verb >= vdef) {
-            iprint(ind * ts, ERR_MSG_FMT_OUT, m_jData[ERROR_PREFIX]);
+            iprint(ind * ts, ERR_MSG_FMT_OUT, (*m_pjData)[ERROR_PREFIX]);
             // fmt::print("\n");
         }
         return;
     }
 
-    print_openvr(m_jData, verb, ind, ts);
+    print_openvr((*m_pjData), verb, ind, ts);
     if (verb >= vdef)
         fmt::print("\n");
 
     // print the devices and the properties
     auto tverb = (mode == pmode::props || mode == pmode::all) ? verb : vsil;
     if (tverb >= vdef) {
-        if (m_jData.find(j_devices) != m_jData.end()) {
-            print_devs(m_jApi, m_jData[j_devices], ind, ts);
+        if (m_pjData->find(j_devices) != m_pjData->end()) {
+            print_devs(*m_pjApi, (*m_pjData)[j_devices], ind, ts);
             fmt::print("\n");
         }
-        if (m_jData.find(j_properties) != m_jData.end()) {
-            print_all_props(m_jApi, m_jData[j_properties], tverb, ind, ts);
+        if (m_pjData->find(j_properties) != m_pjData->end()) {
+            print_all_props(*m_pjApi, (*m_pjData)[j_properties], tverb, ind, ts);
             fmt::print("\n");
         }
     }
@@ -166,8 +171,8 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
     // print all the geometry
     tverb = (mode == pmode::geom || mode == pmode::all) ? verb : vsil;
     if (tverb >= vdef) {
-        if (m_jData.find(j_geometry) != m_jData.end()) {
-            print_geometry(m_jData[j_geometry], tverb, ind, ts);
+        if (m_pjData->find(j_geometry) != m_pjData->end()) {
+            print_geometry((*m_pjData)[j_geometry], tverb, ind, ts);
             // fmt::print("\n");
         }
     }
@@ -176,8 +181,8 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
 // Clean up the data before saving
 void Processor::purge()
 {
-    if (m_jData.find(j_properties) != m_jData.end()) {
-        for (auto& [sdid, dprops] : m_jData[j_properties].items()) {
+    if (m_pjData->find(j_properties) != m_pjData->end()) {
+        for (auto& [sdid, dprops] : (*m_pjData)[j_properties].items()) {
             purge_jdprops_errors(dprops);
         }
     }
@@ -190,9 +195,9 @@ std::string Processor::get_id()
 }
 
 // Return OpenVR data
-json& Processor::get_data()
+std::shared_ptr<json> Processor::get_data()
 {
-    return m_jData;
+    return m_pjData;
 }
 
 } // namespace openvr

@@ -45,7 +45,7 @@ class BaseVR
     // Return VR subystem ID
     virtual std::string get_id() = 0;
     // Return VR subystem data
-    virtual json& get_data() = 0;
+    virtual std::shared_ptr<json> get_data() = 0;
 };
 
 //  BaseVRConfig class

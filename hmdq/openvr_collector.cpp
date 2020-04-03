@@ -454,9 +454,9 @@ Collector::~Collector()
 }
 
 // Return API extract (for printer)
-const json& Collector::get_xapi()
+std::shared_ptr<json> Collector::get_xapi()
 {
-    return m_jApi;
+    return m_pjApi;
 }
 
 // Shutdown the OpenVR subsystem
@@ -474,7 +474,7 @@ bool Collector::try_init()
 {
     if (!vr::VR_IsRuntimeInstalled()) {
         m_err = vr::VRInitError_Init_InstallationNotFound;
-        m_jData[ERROR_PREFIX] = get_last_error_msg();
+        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
         return false;
     }
     bool res = false;
@@ -483,11 +483,11 @@ bool Collector::try_init()
     if (nullptr != vrsys) {
         m_ivrSystem = vrsys;
         json oapi = read_json(m_apiPath);
-        m_jApi = parse_json_oapi(oapi);
+        *m_pjApi = parse_json_oapi(oapi);
         res = true;
     }
     else {
-        m_jData[ERROR_PREFIX] = get_last_error_msg();
+        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
     }
     return res;
 }
@@ -495,7 +495,7 @@ bool Collector::try_init()
 // Collect the OpenVR subsystem data
 void Collector::collect()
 {
-    m_jData = get_openvr(m_ivrSystem, m_jApi);
+    *m_pjData = get_openvr(m_ivrSystem, *m_pjApi);
 }
 
 // Return OpenVR subystem ID
@@ -517,9 +517,9 @@ std::string Collector::get_last_error_msg()
 }
 
 // Return OpenVR data
-json& Collector::get_data()
+std::shared_ptr<json> Collector::get_data()
 {
-    return m_jData;
+    return m_pjData;
 }
 
 } // namespace openvr
