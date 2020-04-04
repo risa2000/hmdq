@@ -66,7 +66,7 @@ std::vector<std::string> bitmap_to_flags(T val, const std::map<T, S>& bmap)
 {
     std::vector<std::string> res;
     for (const auto [mask, name] : bmap) {
-        if (0 != val & mask) {
+        if (0 != (val & mask)) {
             res.push_back(name);
         }
     }
@@ -141,7 +141,7 @@ json get_properties(ovrSession session)
     }
     const auto ctrls = ovr_GetConnectedControllerTypes(session);
     for (const auto [mask, name] : g_bmControllerTypes) {
-        if (0 != ctrls & mask) {
+        if (0 != (ctrls & mask)) {
             res[name]
                 = get_controller_props(session, static_cast<ovrControllerType>(mask));
         }

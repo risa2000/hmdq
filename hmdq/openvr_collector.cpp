@@ -146,7 +146,7 @@ json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize
 template<typename V>
 json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
-    using scalar_t = std::remove_all_extents<decltype(V::v)>::type;
+    using scalar_t = typename std::remove_all_extents<decltype(V::v)>::type;
     constexpr auto vdim = sizeof(V::v) / sizeof(scalar_t);
     return get_val_vec_array<scalar_t, vdim>(buffer, buffsize);
 }
@@ -155,7 +155,7 @@ json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize
 template<typename M>
 json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
-    using scalar_t = std::remove_all_extents<decltype(M::m)>::type;
+    using scalar_t = typename std::remove_all_extents<decltype(M::m)>::type;
     constexpr auto nrows = sizeof(M::m) / sizeof(M::m[0]);
     constexpr auto ncols = sizeof(M::m[0]) / sizeof(scalar_t);
     return get_val_mat_array<scalar_t, nrows, ncols>(buffer, buffsize);
