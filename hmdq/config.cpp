@@ -9,13 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <filesystem>
 #include <fstream>
 #include <vector>
 
 #include <fmt/format.h>
 
+#include "compat.h"
 #include "config.h"
 #include "jkeys.h"
 #include "misc.h"
@@ -75,7 +75,7 @@ static json load_config(const std::filesystem::path& cfile)
 static void write_config(const std::filesystem::path& cfile, const json& jd)
 {
     std::ofstream jf(cfile);
-    fmt::print("Writing config: \"{:s}\"\n", cfile.u8string());
+    fmt::print("Writing config: \"{:s}\"\n", u8str2str(cfile.u8string()));
     jf << jd.dump(JSON_INDENT);
 }
 
@@ -156,7 +156,7 @@ bool init_config(const std::filesystem::path& argv0, const cfgmap_t& cfgs)
                        "The existing configuration file (\"{:s}\") has a different "
                        "version ({:d})\n"
                        "than what the tool supports ({:d}).\n",
-                       cfile.u8string(), cfg_ver, CFG_VERSION);
+                       u8str2str(cfile.u8string()), cfg_ver, CFG_VERSION);
             fmt::print(stderr,
                        "Please rename the old one, let the new one generate, and then "
                        "merge the changes.\n");

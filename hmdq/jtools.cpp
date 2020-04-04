@@ -21,6 +21,7 @@
 #include <botan/hex.h>
 #include <botan/pipe.h>
 
+#include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "jkeys.h"
@@ -34,7 +35,7 @@
 json read_json(const std::filesystem::path& inpath)
 {
     if (!std::filesystem::exists(inpath)) {
-        auto msg = fmt::format("File not found: \"{:s}\"", inpath.u8string());
+        auto msg = fmt::format("File not found: \"{:s}\"", u8str2str(inpath.u8string()));
         throw hmdq_error(msg);
     }
 

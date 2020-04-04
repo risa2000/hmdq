@@ -21,7 +21,7 @@ project (hmdq_test
 
 # Dependencies
 # ============
-find_package (xtensor 0.20.8 REQUIRED)
+find_package (xtensor 0.21.4 REQUIRED)
 # Use Catch2 unit test framework
 find_package (Catch2 REQUIRED)
 
@@ -41,7 +41,14 @@ set (hmdq_test_sources
 # Add unity tests
 add_executable (hmdq_test)
 target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
+
 target_include_directories (hmdq_test PRIVATE ${hmdq_dir} ${hmdv_dir})
+
+target_compile_options(hmdq_test PRIVATE /Zc:inline /Zc:__cplusplus)
+
+# turn on linker optimization back on in RelWithDebInfo config
+target_link_options (hmdq_test PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
+
 target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
 enable_testing ()
 add_test(NAME hmdq_test COMMAND hmdq_test)

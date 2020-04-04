@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <cassert>
 #include <filesystem>
 #include <numeric>
@@ -23,6 +22,7 @@
 #include <windows.h>
 #include <winver.h>
 
+#include "compat.h"
 #include "wintools.h"
 
 //  locals
@@ -127,22 +127,22 @@ std::vector<std::string> get_u8args()
 }
 
 //  Get C-like args array from the list of strings (in a vector).
-std::tuple<std::vector<size_t>, std::vector<char>>
+std::tuple<std::shared_ptr<std::vector<char*>>, std::shared_ptr<std::vector<char>>>
 get_c_argv(const std::vector<std::string>& args)
 {
-    size_t vsize = std::transform_reduce(args.cbegin(), args.cend(), size_t(0),
-                                         std::plus<size_t>(),
-                                         [](const auto& a) { return a.size() + 1; });
-    std::vector<char> buffer(vsize);
-    std::vector<size_t> ptrs;
-    auto parg = &buffer[0];
+    auto ptrs = std::make_shared<std::vector<char*>>(args.size());
+    auto buff = std::make_shared<std::vector<char>>();
+    std::vector<size_t> offsets;
 
     for (const auto& astr : args) {
-        strcpy_s(parg, vsize - (parg - &buffer[0]), astr.c_str());
-        ptrs.push_back(parg - &buffer[0]);
-        parg += astr.size() + 1;
+        offsets.push_back(buff->size());
+        std::copy(astr.begin(), astr.end(), std::back_inserter<std::vector<char>>(*buff));
+        buff->push_back(u8'\0');
     }
-    return {ptrs, buffer};
+    //  now the buffer is stable, we can calculate the absolute addresses of arguments
+    std::transform(offsets.begin(), offsets.end(), ptrs->begin(),
+                   [&buff](const auto& offset) { return &(*buff)[0] + offset; });
+    return {ptrs, buff};
 }
 
 //  Enum code page callback, should set the CP specified in `l_con_cp`.

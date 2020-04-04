@@ -21,6 +21,7 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -93,7 +94,7 @@ void print_info(int ind = 0, int ts = 0)
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
     const auto [vmaj, vmin, vbuild] = openvr::get_sdk_ver();
     iprint(sf1, libver_num_fmt, "ValveSoftware/openvr", vmaj, vmin, vbuild);
-    iprint(sf1, "{0:s} {1:s}", "Oculus/LibOVR", OVR_VERSION_STRING);
+    iprint(sf1, "{0:s} {1:s}\n", "Oculus/LibOVR", OVR_VERSION_STRING);
 }
 
 //  Return some miscellanous info about the app and the OS.
@@ -128,8 +129,8 @@ static pmode mode2pmode(const mode selected)
 }
 
 //  main runner
-int run(mode selected, const std::string& api_json, const std::string& out_json,
-        bool anon, int verb, int ind, int ts)
+int run(mode selected, const std::filesystem::path& api_json,
+        const std::filesystem::path& out_json, bool anon, int verb, int ind, int ts)
 {
     // initialize config values
     const auto json_indent = g_cfg[j_format][j_json_indent].get<int>();
@@ -153,8 +154,7 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     // OpenVR collector
     const auto openvr_app_type
         = g_cfg[j_openvr][j_app_type].get<vr::EVRApplicationType>();
-    auto openvr_collector
-        = new openvr::Collector(std::filesystem::u8path(api_json), openvr_app_type);
+    auto openvr_collector = new openvr::Collector(api_json, openvr_app_type);
     auto openvr_processor = new openvr::Processor(openvr_collector->get_xapi(),
                                                   openvr_collector->get_data());
     collectors.emplace(openvr_collector->get_id(), openvr_collector);
@@ -198,19 +198,20 @@ int run(mode selected, const std::string& api_json, const std::string& out_json,
     }
 
     // dump the data into the optional JSON file
-    if (out_json.size()) {
+    if (!out_json.empty()) {
         // add the checksum
         add_checksum(out);
         // save the JSON file with indentation
-        write_json(std::filesystem::u8path(out_json), out, json_indent);
+        write_json(out_json, out, json_indent);
     }
 
     return 0;
 }
 
 //  wrapper for main runner to deal with domestic exceptions
-int run_wrapper(mode selected, const std::string& api_json, const std::string& out_json,
-                bool anon, int verb, int ind, int ts)
+int run_wrapper(mode selected, const std::filesystem::path& api_json,
+                const std::filesystem::path& out_json, bool anon, int verb, int ind,
+                int ts)
 {
     int res = 0;
     try {
@@ -265,7 +266,7 @@ int main(int argc, char* argv[])
     // build relative path to OPENVR_API_JSON file
     std::filesystem::path api_json_path = get_full_prog_path();
     api_json_path.replace_filename(OPENVR_API_JSON);
-    auto api_json = api_json_path.u8string();
+    auto api_json = u8str2str(api_json_path.u8string());
 
     std::string out_json;
     // custom help texts
@@ -303,14 +304,9 @@ int main(int argc, char* argv[])
     const auto cli_dup = (cli_cmds | cli_nocmd);
 
     // build C-like argument array from UTF-8 arguments
-    auto [ptrs, buff] = get_c_argv(u8args);
-    std::vector<char*> cargv;
-    for (auto& p : ptrs) {
-        cargv.push_back(p + &buff[0]);
-    }
-
+    auto [cargv, buff] = get_c_argv(u8args);
     int res = 0;
-    if (parse(cargv.size(), &cargv[0], cli_dup)) {
+    if (parse(cargv->size(), &(*cargv)[0], cli_dup)) {
         switch (selected) {
             case mode::info:
                 print_info(ind, ts);
@@ -318,7 +314,8 @@ int main(int argc, char* argv[])
             case mode::geom:
             case mode::props:
             case mode::all:
-                res = run_wrapper(selected, api_json, out_json, anon, verb, ind, ts);
+                res = run_wrapper(selected, std::filesystem::path(api_json),
+                                  std::filesystem::path(out_json), anon, verb, ind, ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
@@ -327,7 +324,7 @@ int main(int argc, char* argv[])
         }
     }
     else {
-        if (parse(cargv.size(), &cargv[0], cli_nocmd)) {
+        if (parse(cargv->size(), reinterpret_cast<char**>(&(*cargv)[0]), cli_nocmd)) {
             res = run_wrapper(mode::all, api_json, out_json, anon, verb, ind, ts);
         }
         else {

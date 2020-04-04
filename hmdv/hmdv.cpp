@@ -20,6 +20,7 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -98,7 +99,7 @@ static pmode mode2pmode(const mode selected)
 }
 
 //  wrapper for main runner to deal with domestic exceptions
-int run_verify(const std::string& in_json, int verb, int ind, int ts)
+int run_verify(const std::filesystem::path& in_json, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
@@ -125,8 +126,9 @@ int run_verify(const std::string& in_json, int verb, int ind, int ts)
 }
 
 //  main runner
-int run(mode selected, const std::string& api_json, const std::string& in_json,
-        const std::string& out_json, bool anon, int verb, int ind, int ts)
+int run(mode selected, const std::filesystem::path& api_json,
+        const std::filesystem::path& in_json, const std::filesystem::path& out_json,
+        bool anon, int verb, int ind, int ts)
 {
     const auto sf = ind * ts;
     // initialize config values
@@ -155,8 +157,8 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
 
     // process all VR subsystem interfaces
     if (out.find(j_openvr) != out.end()) {
-        auto openvr_processor = new openvr::Processor(
-            std::filesystem::u8path(api_json), std::make_shared<json>(out[j_openvr]));
+        auto openvr_processor
+            = new openvr::Processor(api_json, std::make_shared<json>(out[j_openvr]));
         openvr_processor->init();
         processors.emplace(openvr_processor->get_id(), openvr_processor);
     }
@@ -178,14 +180,14 @@ int run(mode selected, const std::string& api_json, const std::string& in_json,
     print_all(mode2pmode(selected), out, processors, verb, ind, ts);
 
     // dump the data into the optional JSON file
-    if (out_json.size()) {
+    if (!out_json.empty()) {
         out.erase(j_checksum);
         // add the checksum only if the original file was authentic
         if (check_ok) {
             add_checksum(out);
         }
         // save the JSON file with indentation
-        write_json(std::filesystem::u8path(out_json), out, json_indent);
+        write_json(out_json, out, json_indent);
     }
     return 0;
 }
@@ -248,7 +250,7 @@ int main(int argc, char* argv[])
     // build relative path to OPENVR_API_JSON file
     std::filesystem::path api_json_path = get_full_prog_path();
     api_json_path.replace_filename(OPENVR_API_JSON);
-    auto api_json = api_json_path.u8string();
+    auto api_json = u8str2str(api_json_path.u8string());
 
     std::string out_json;
     std::string in_json;
@@ -291,14 +293,9 @@ int main(int argc, char* argv[])
     auto cli_dup = (cli_cmds | cli_nocmd);
 
     // build C-like argument array from UTF-8 arguments
-    auto [ptrs, buff] = get_c_argv(u8args);
-    std::vector<char*> cargv;
-    for (auto& p : ptrs) {
-        cargv.push_back(p + &buff[0]);
-    }
-
+    auto [cargv, buff] = get_c_argv(u8args);
     int res = 0;
-    if (parse(cargv.size(), &cargv[0], cli_dup)) {
+    if (parse(cargv->size(), &(*cargv)[0], cli_dup)) {
         switch (selected) {
             case mode::info:
                 print_info(ind, ts);
@@ -306,11 +303,13 @@ int main(int argc, char* argv[])
             case mode::geom:
             case mode::props:
             case mode::all:
-                res = run_wrapper(run, selected, api_json, in_json, out_json, anon, verb,
-                                  ind, ts);
+                res = run_wrapper(run, selected, std::filesystem::path(api_json),
+                                  std::filesystem::path(in_json),
+                                  std::filesystem::path(out_json), anon, verb, ind, ts);
                 break;
             case mode::verify:
-                res = run_wrapper(run_verify, in_json, verb, ind, ts);
+                res = run_wrapper(run_verify, std::filesystem::path(in_json), verb, ind,
+                                  ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",

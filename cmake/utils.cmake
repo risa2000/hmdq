@@ -67,6 +67,7 @@ function (collect_dlls tgt_name)
         set_property (TARGET ${lib}_tgt PROPERTY IMPORTED_LOCATION_DEBUG ${dllpath})
         find_dll(dllpath "${lib}.dll")
         set_property (TARGET ${lib}_tgt PROPERTY IMPORTED_LOCATION_RELEASE ${dllpath})
+        set_property (TARGET ${lib}_tgt PROPERTY IMPORTED_LOCATION_RELWITHDEBINFO ${dllpath})
         list (APPEND EXT_LIBS_DLLS "$<TARGET_FILE:${lib}_tgt>")
         install (FILES "$<TARGET_FILE:${lib}_tgt>"
             DESTINATION .

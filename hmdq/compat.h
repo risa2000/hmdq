@@ -11,26 +11,19 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <filesystem>
 #include <string>
-#include <vector>
 
-//  Get OS version or "n/a" if the attempt fails (print error in DEBUG build)
-std::string get_os_ver();
-
-//  Set console output code page, if installed
-void set_console_cp(unsigned int codepage);
-
-//  Return command line arguments as UTF-8 string list (in vector).
-std::vector<std::string> get_u8args();
-
-//  Get C-like args array from the list of strings (in a vector).
-std::tuple<std::shared_ptr<std::vector<char*>>, std::shared_ptr<std::vector<char>>>
-get_c_argv(const std::vector<std::string>& args);
-
-//  Return the full path of the executable which created the process
-std::filesystem::path get_full_prog_path();
-
-//  Print command line arguments (for debugging purposes)
-void print_u8args(std::vector<std::string> u8args);
+//  functions
+//------------------------------------------------------------------------------
+//  Make std::string out of std::u8string for the compatibilty purposes
+#if (__cplusplus <= 201703L)
+inline const std::string& u8str2str(const std::string& u8str)
+{
+    return u8str;
+}
+#else
+inline std::string u8str2str(const std::u8string& u8str)
+{
+    return std::string(reinterpret_cast<const char*>(&u8str[0]));
+}
+#endif

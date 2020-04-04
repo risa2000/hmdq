@@ -23,9 +23,9 @@ project (hmdv
 
 # Dependencies
 # ============
-find_package (xtensor 0.20.8 REQUIRED)
-find_package (nlohmann_json 3.6.1 REQUIRED)
-find_package (fmt 5.3.0 REQUIRED)
+find_package (xtensor 0.21.4 REQUIRED)
+find_package (nlohmann_json 3.7.3 REQUIRED)
+find_package (fmt 6.1.3 REQUIRED)
 
 # Project defines
 # ============
@@ -91,24 +91,32 @@ endif()
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
 set (EXT_LIBS botan)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
-link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
-
 # Add sources to `hmdv` executable.
 add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_sources})
+
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
 target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
+target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
+
+target_compile_options (hmdv PRIVATE /Zc:inline /Zc:__cplusplus)
+
+target_link_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
+
+# turn on linker optimization back on in RelWithDebInfo config
+target_link_options (hmdv PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
+
 target_link_libraries (hmdv PRIVATE version.lib)
 foreach (lib IN ITEMS ${EXT_LIBS})
     target_link_libraries (hmdv PRIVATE debug ${lib}d.lib)
     target_link_libraries (hmdv PRIVATE optimized ${lib}.lib)
 endforeach()
-target_link_libraries (hmdv PRIVATE fmt::fmt)
+# fix the problem with fmt which links to debug build in RelWithDebInfo config
+target_link_libraries(hmdv PRIVATE fmt$<$<CONFIG:Debug>:d>.lib)
 #target_link_libraries (hmdv PRIVATE fmt::fmt-header-only)
 
-# Generate a binary dump for a quick check of a CRT linakge type
+# Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdv
     POST_BUILD
     COMMAND dumpbin /headers /symbols /imports "$<TARGET_FILE:hmdv>" > "$<TARGET_FILE:hmdv>.txt"

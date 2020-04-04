@@ -72,13 +72,12 @@ static const json ANON_PROPS = {
 //  OpenVR Config class (default config)
 //------------------------------------------------------------------------------
 // Initialize the VR subsystem default config data
-Config::Config()
+Config::Config() : m_pjConfig(std::make_shared<json>())
 {
-    json cfg;
+    json& cfg = *m_pjConfig;
     cfg[j_app_type] = APP_TYPE;
     cfg[j_verbosity][j_properties] = VERB_PROPS;
     cfg[j_anonymize][j_properties] = ANON_PROPS;
-    m_pjConfig.reset(new json(cfg));
 }
 
 // Return VR subystem ID

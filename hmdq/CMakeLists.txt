@@ -23,9 +23,9 @@ project (hmdq
 
 # Dependencies
 # ============
-find_package (xtensor 0.20.8 REQUIRED)
-find_package (nlohmann_json 3.6.1 REQUIRED)
-find_package (fmt 5.3.0 REQUIRED)
+find_package (xtensor 0.21.4 REQUIRED)
+find_package (nlohmann_json 3.7.3 REQUIRED)
+find_package (fmt 6.1.3 REQUIRED)
 
 # Project defines
 # ============
@@ -104,25 +104,33 @@ endif()
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
 set (EXT_LIBS botan ${OPENVRLIB})
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline")
-link_directories(AFTER ${CMAKE_INSTALL_PREFIX}/lib)
-
 # Add sources to `hmdq` executable.
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
+
 target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
+target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
+
+target_compile_options (hmdq PRIVATE /Zc:inline /Zc:__cplusplus)
+
 target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/$<IF:$<CONFIG:Debug>,Debug,Release>)
+target_link_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
+
+# turn on linker optimization back on in RelWithDebInfo config
+target_link_options (hmdq PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
+
 target_link_libraries (hmdq PRIVATE version.lib)
 target_link_libraries (hmdq PRIVATE LibOVR.lib)
 foreach (lib IN ITEMS ${EXT_LIBS})
     target_link_libraries (hmdq PRIVATE debug ${lib}d.lib)
     target_link_libraries (hmdq PRIVATE optimized ${lib}.lib)
 endforeach()
-target_link_libraries (hmdq PRIVATE fmt::fmt)
+# fix the problem with fmt which links to debug build in RelWithDebInfo config
+target_link_libraries(hmdq PRIVATE fmt$<$<CONFIG:Debug>:d>.lib)
 #target_link_libraries (hmdq PRIVATE fmt::fmt-header-only)
 
-# Generate a binary dump for a quick check of a CRT linakge type
+# Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdq
     POST_BUILD
     COMMAND dumpbin /headers /symbols /imports "$<TARGET_FILE:hmdq>" > "$<TARGET_FILE:hmdq>.txt"
