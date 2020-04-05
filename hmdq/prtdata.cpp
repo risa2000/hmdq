@@ -163,44 +163,52 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     const auto vgeom = g_cfg[j_verbosity][j_geometry].get<int>();
     const auto sf = ind * ts;
 
-    const auto rec_rts = jd[j_rec_rts].get<std::vector<uint32_t>>();
-    if (verb >= vdef) {
+    if (verb < vdef) {
+        return;
+    }
+    if (jd.find(j_rec_rts) != jd.end()) {
+        const auto rec_rts = jd[j_rec_rts].get<std::vector<uint32_t>>();
         iprint(sf, "Recommended render target size: {}\n\n", rec_rts);
     }
     for (const auto& neye : {j_leye, j_reye}) {
 
-        if (verb >= vdef) {
+        if (jd.find(j_ham_mesh) != jd.end()) {
             iprint(sf, "{:s} eye HAM mesh:\n", neye);
             print_ham_mesh(jd[j_ham_mesh][neye], verb, vgeom, ind + 1, ts);
             fmt::print("\n");
         }
         if (verb >= vgeom) {
-            const harray2d_t e2h = jd[j_eye2head][neye];
-            iprint(sf, "{:s} eye to head transformation matrix:\n", neye);
-            print_harray(e2h, ind + 1, ts);
-            fmt::print("\n");
-
-            iprint(sf, "{:s} eye raw LRBT values:\n", neye);
-            print_raw_lrbt(jd[j_raw_eye][neye], ind + 1, ts);
-            fmt::print("\n");
-        }
-        // build eye FOV points only if eye FOV is different from head FOV
-        if (verb >= vdef) {
-            if (!jd[j_fov_eye].is_null()) {
-                iprint(sf, "{:s} eye raw FOV:\n", neye);
-                print_fov(jd[j_fov_eye][neye], ind + 1, ts);
+            if (jd.find(j_eye2head) != jd.end()) {
+                const harray2d_t e2h = jd[j_eye2head][neye];
+                iprint(sf, "{:s} eye to head transformation matrix:\n", neye);
+                print_harray(e2h, ind + 1, ts);
                 fmt::print("\n");
             }
+
+            if (jd.find(j_raw_eye) != jd.end()) {
+                iprint(sf, "{:s} eye raw LRBT values:\n", neye);
+                print_raw_lrbt(jd[j_raw_eye][neye], ind + 1, ts);
+                fmt::print("\n");
+            }
+        }
+        // print eye FOV points only if eye FOV is different from head FOV
+        if (jd.find(j_fov_eye) != jd.end() && !jd[j_fov_eye].is_null()) {
+            iprint(sf, "{:s} eye raw FOV:\n", neye);
+            print_fov(jd[j_fov_eye][neye], ind + 1, ts);
+            fmt::print("\n");
+        }
+        if (jd.find(j_fov_head) != jd.end()) {
             iprint(sf, "{:s} eye head FOV:\n", neye);
             print_fov(jd[j_fov_head][neye], ind + 1, ts);
             fmt::print("\n");
         }
     }
-    if (verb >= vdef) {
+    if (jd.find(j_fov_tot) != jd.end()) {
         iprint(sf, "Total FOV:\n");
         print_fov_total(jd[j_fov_tot], ind + 1, ts);
         fmt::print("\n");
-
+    }
+    if (jd.find(j_view_geom) != jd.end()) {
         iprint(sf, "View geometry:\n");
         print_view_geom(jd[j_view_geom], ind + 1, ts);
     }

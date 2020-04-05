@@ -124,3 +124,8 @@ constexpr const char* j_app_type = "app_type";
 //  Oculus specifics
 constexpr const char* j_oculus = "oculus";
 constexpr const char* j_init_flags = "init_flags";
+constexpr const char* j_default_fov = "default_fov";
+constexpr const char* j_max_fov = "max_fov";
+constexpr const char* j_distorted_viewport = "distorted_viewport";
+constexpr const char* j_render_desc = "render_desc";
+constexpr const char* j_pixels_per_tan = "pixels_per_tan";

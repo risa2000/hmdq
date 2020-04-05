@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <OVR_CAPI.h>
@@ -70,6 +71,8 @@ class Collector : public BaseVRCollector
     ovrErrorInfo m_errorInfo;
     // Collected data
     std::shared_ptr<json> m_pjData;
+    // ovrHmdDesc
+    std::unique_ptr<ovrHmdDesc> m_pHmdDesc;
 };
 
 } // namespace oculus

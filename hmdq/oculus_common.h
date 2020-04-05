@@ -11,7 +11,20 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <nlohmann/fifo_map.hpp>
+
+#include <OVR_CAPI.h>
+
+#include "fifo_map_fix.h"
+
+namespace oculus {
+
+//  typedefs
+//------------------------------------------------------------------------------
+typedef std::vector<std::pair<ovrEyeType, std::string>> eyes_t;
 
 //  common constants
 //------------------------------------------------------------------------------
@@ -23,3 +36,20 @@ extern const nlohmann::fifo_map<int, const char*> g_bmHmdCaps;
 extern const nlohmann::fifo_map<int, const char*> g_bmTrackingCaps;
 //  HMD types names
 extern const nlohmann::fifo_map<int, const char*> g_mHmdTypes;
+
+//  Eye nomenclature
+extern const eyes_t EYES;
+
+} // namespace oculus
+
+//  nlohmann/json serializers
+//------------------------------------------------------------------------------
+//  ovrVector2f serializers
+void to_json(json& j, const ovrVector2f& v2f);
+void from_json(const json& j, ovrVector2f& v2f);
+//  ovrFovPort serializers
+void to_json(json& j, const ovrFovPort& fovPort);
+void from_json(const json& j, ovrFovPort& fovPort);
+//  ovrRecti serializers
+void to_json(json& j, const ovrRecti& rect);
+void from_json(const json& j, ovrRecti& rect);

@@ -122,7 +122,11 @@ bool Processor::init()
 void Processor::calculate()
 {
     if (m_pjData->find(j_geometry) != m_pjData->end()) {
-        (*m_pjData)[j_geometry] = calc_geometry((*m_pjData)[j_geometry]);
+        auto& geom = (*m_pjData)[j_geometry];
+        for (auto& [fovType, fovGeom] : geom.items()) {
+            // geom[fovType] = calc_geometry(fovGeom);
+            geom[fovType] = fovGeom;
+        }
     }
 }
 
@@ -152,7 +156,6 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
     if (m_pjData->find(ERROR_PREFIX) != m_pjData->end()) {
         if (verb >= vdef) {
             iprint(ind * ts, ERR_MSG_FMT_OUT, (*m_pjData)[ERROR_PREFIX]);
-            // fmt::print("\n");
         }
         return;
     }
@@ -178,8 +181,13 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
     tverb = (mode == pmode::geom || mode == pmode::all) ? verb : vsil;
     if (tverb >= vdef) {
         if (m_pjData->find(j_geometry) != m_pjData->end()) {
-            print_geometry((*m_pjData)[j_geometry], tverb, ind, ts);
-            // fmt::print("\n");
+            auto& geom = (*m_pjData)[j_geometry];
+            const auto sf = ind * ts;
+            for (auto& [fovType, fovGeom] : geom.items()) {
+                iprint(sf, "FOV : {}\n", fovType);
+                fmt::print("\n");
+                print_geometry(fovGeom, tverb, ind + 1, ts);
+            }
         }
     }
 }
@@ -188,8 +196,9 @@ void Processor::print(pmode mode, int verb, int ind, int ts)
 void Processor::purge()
 {
     if (m_pjData->find(j_properties) != m_pjData->end()) {
-        for (auto& [sdid, dprops] : (*m_pjData)[j_properties].items()) {
-            // purge_jdprops_errors(dprops);
+        auto& props = (*m_pjData)[j_properties];
+        for (auto& [sdid, dprops] : props.items()) {
+            purge_jdprops_errors(dprops);
         }
     }
 }

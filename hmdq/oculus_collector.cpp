@@ -30,20 +30,18 @@ constexpr const char* TRACKER_FMT = "tracker{}";
 
 //  functions
 //------------------------------------------------------------------------------
-json get_devices(ovrSession session)
+json get_devices(ovrSession session, const ovrHmdDesc& hmdDesc)
 {
     json devs;
-    const ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
     devs[j_hmd] = ((ovrHmd_None != hmdDesc.Type) ? 1 : 0);
     devs[j_trackers] = ovr_GetTrackerCount(session);
     devs[j_ctrl_types] = ovr_GetConnectedControllerTypes(session);
     return devs;
 }
 
-json get_hmd_props(ovrSession session)
+json get_hmd_props(ovrSession session, const ovrHmdDesc& hmdDesc)
 {
     json res;
-    const ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
     if (ovrHmd_None != hmdDesc.Type) {
         res[Prop::HmdType_Uint32] = hmdDesc.Type;
         res[Prop::ProductName_String] = hmdDesc.ProductName;
@@ -81,10 +79,10 @@ json get_controller_props(ovrSession session, ovrControllerType ctype)
     return {};
 }
 
-json get_properties(ovrSession session)
+json get_properties(ovrSession session, const ovrHmdDesc& hmdDesc)
 {
     json res;
-    res[j_hmd] = get_hmd_props(session);
+    res[j_hmd] = get_hmd_props(session, hmdDesc);
     const auto tcount = ovr_GetTrackerCount(session);
     if (tcount > 0) {
         for (unsigned int i = 0; i < tcount; ++i) {
@@ -101,9 +99,32 @@ json get_properties(ovrSession session)
     return res;
 }
 
-json get_geometry(ovrSession session)
+json get_render_desc(const ovrEyeRenderDesc& renderDesc)
 {
-    return {};
+    json res;
+    res[j_distorted_viewport] = renderDesc.DistortedViewport;
+    res[j_pixels_per_tan] = renderDesc.PixelsPerTanAngleAtCenter;
+    return res;
+}
+
+json get_eye_fov(ovrSession session, const ovrHmdDesc& hmdDesc,
+                 const ovrFovPort (&fovPort)[ovrEye_Count])
+{
+    json res;
+    for (const auto [eyeId, eyeName] : EYES) {
+        res[j_raw_eye][eyeName] = fovPort[eyeId];
+        const auto renderDesc = ovr_GetRenderDesc(session, eyeId, fovPort[eyeId]);
+        res[j_render_desc][eyeName] = get_render_desc(renderDesc);
+    }
+    return res;
+}
+
+json get_geometry(ovrSession session, const ovrHmdDesc& hmdDesc)
+{
+    json res;
+    res[j_default_fov] = get_eye_fov(session, hmdDesc, hmdDesc.DefaultEyeFov);
+    res[j_max_fov] = get_eye_fov(session, hmdDesc, hmdDesc.MaxEyeFov);
+    return res;
 }
 
 //  OculusVR Collector class
@@ -164,10 +185,11 @@ bool Collector::try_init()
 // Collect the OculusVR subsystem data
 void Collector::collect()
 {
+    m_pHmdDesc.reset(new ovrHmdDesc(ovr_GetHmdDesc(m_session)));
     (*m_pjData)[j_rt_ver] = ovr_GetVersionString();
-    (*m_pjData)[j_devices] = get_devices(m_session);
-    (*m_pjData)[j_properties] = get_properties(m_session);
-    // (*m_pjData)[j_geometry] = get_geometry(m_session);
+    (*m_pjData)[j_devices] = get_devices(m_session, *m_pHmdDesc);
+    (*m_pjData)[j_properties] = get_properties(m_session, *m_pHmdDesc);
+    (*m_pjData)[j_geometry] = get_geometry(m_session, *m_pHmdDesc);
 }
 
 // Return OculusVR subystem ID
