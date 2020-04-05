@@ -96,11 +96,11 @@ json get_hmd_props(ovrSession session)
         res[Prop::HmdType_Uint32] = hmdDesc.Type;
         res[Prop::ProductName_String] = hmdDesc.ProductName;
         res[Prop::Manufacturer_String] = hmdDesc.Manufacturer;
-        res[Prop::VendorId_Uint16] = hmdDesc.VendorId;
-        res[Prop::ProductId_Uint16] = hmdDesc.ProductId;
+        res[Prop::VendorId_Uint16] = static_cast<uint16_t>(hmdDesc.VendorId);
+        res[Prop::ProductId_Uint16] = static_cast<uint16_t>(hmdDesc.ProductId);
         res[Prop::SerialNumber_String] = hmdDesc.SerialNumber;
-        res[Prop::FirmwareMajor_Uint16] = hmdDesc.FirmwareMajor;
-        res[Prop::FirmwareMinor_Uint16] = hmdDesc.FirmwareMinor;
+        res[Prop::FirmwareMajor_Uint16] = static_cast<uint16_t>(hmdDesc.FirmwareMajor);
+        res[Prop::FirmwareMinor_Uint16] = static_cast<uint16_t>(hmdDesc.FirmwareMinor);
         res[Prop::AvailableHmdCaps_Uint32] = hmdDesc.AvailableHmdCaps;
         res[Prop::DefaultHmdCaps_Uint32] = hmdDesc.DefaultHmdCaps;
         res[Prop::AvailableTrackingCaps_Uint32] = hmdDesc.AvailableTrackingCaps;
