@@ -74,6 +74,7 @@ set (hmdv_sources
     ${hmdq_dir}/openvr_common.cpp
     ${hmdq_dir}/openvr_config.cpp
     ${hmdq_dir}/openvr_processor.cpp
+    ${hmdq_dir}/oculus_common.cpp
     ${hmdq_dir}/oculus_config.cpp
     ${hmdq_dir}/oculus_processor.cpp
     ${hmdq_dir}/optmesh.cpp

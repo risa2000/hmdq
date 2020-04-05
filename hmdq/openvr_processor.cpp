@@ -43,8 +43,8 @@ void print_openvr(const json& jd, int verb, int ind, int ts)
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     if (verb >= vdef) {
-        iprint(sf, "OpenVR runtime: {:s}\n", jd[j_rt_path].get<std::string>());
-        iprint(sf, "OpenVR version: {:s}\n", jd[j_rt_ver].get<std::string>());
+        iprint(sf, "OpenVR runtime path: {:s}\n", jd[j_rt_path].get<std::string>());
+        iprint(sf, "OpenVR runtime version: {:s}\n", jd[j_rt_ver].get<std::string>());
     }
 }
 

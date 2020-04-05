@@ -17,6 +17,7 @@
 
 #include "jkeys.h"
 #include "oculus_collector.h"
+#include "oculus_common.h"
 #include "oculus_props.h"
 
 #include "fifo_map_fix.h"
@@ -27,64 +28,15 @@ namespace oculus {
 //------------------------------------------------------------------------------
 constexpr const char* TRACKER_FMT = "tracker{}";
 
-// clang-format off
-const std::map<int, const char*> g_bmControllerTypes = {
-    {ovrControllerType_None, "None"},
-    {ovrControllerType_LTouch, "LTouch"},
-    {ovrControllerType_RTouch, "RTouch"},
-    {ovrControllerType_Remote, "Remote"},
-    {ovrControllerType_XBox, "XBox"},
-    {ovrControllerType_Object0, "Object0"},
-    {ovrControllerType_Object1, "Object1"},
-    {ovrControllerType_Object2, "Object2"},
-    {ovrControllerType_Object3, "Object3"},
-};
-// clang-format on
-
-const std::map<int, const char*> g_bmHmdCaps = {
-    /// <B>(read only)</B> Specifies that the HMD is a virtual debug device.
-    {ovrHmdCap_DebugDevice, "DebugDevice"},
-};
-
-const std::map<int, const char*> g_bmTrackingCaps = {
-    {ovrTrackingCap_Orientation, "Orientation"},
-    {ovrTrackingCap_MagYawCorrection, "MagYawCorrection"},
-    {ovrTrackingCap_Position, "Position"},
-};
-
-const std::map<int, const char*> g_mHmdTypes = {
-    {ovrHmd_None, "None"},       {ovrHmd_DK1, "DK1"},   {ovrHmd_DKHD, "DKHD"},
-    {ovrHmd_DK2, "DK2"},         {ovrHmd_CB, "CB"},     {ovrHmd_Other, "Other"},
-    {ovrHmd_E3_2015, "E3_2015"}, {ovrHmd_ES06, "ES06"}, {ovrHmd_ES09, "ES09"},
-    {ovrHmd_ES11, "ES11"},       {ovrHmd_CV1, "CV1"},   {ovrHmd_RiftS, "RiftS"},
-};
-
 //  functions
 //------------------------------------------------------------------------------
-template<typename T, typename S>
-std::vector<std::string> bitmap_to_flags(T val, const std::map<T, S>& bmap)
-{
-    std::vector<std::string> res;
-    for (const auto [mask, name] : bmap) {
-        if (0 != (val & mask)) {
-            res.push_back(name);
-        }
-    }
-    return res;
-}
-
-std::vector<std::string> get_controller_names(int val)
-{
-    return bitmap_to_flags(val, g_bmControllerTypes);
-}
-
 json get_devices(ovrSession session)
 {
-    std::vector<std::pair<std::string, std::uint32_t>> devs;
+    json devs;
     const ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
-    devs.push_back({j_hmd, (ovrHmd_None != hmdDesc.Type ? 1 : 0)});
-    devs.push_back({j_trackers, ovr_GetTrackerCount(session)});
-    devs.push_back({j_ctrl_types, ovr_GetConnectedControllerTypes(session)});
+    devs[j_hmd] = ((ovrHmd_None != hmdDesc.Type) ? 1 : 0);
+    devs[j_trackers] = ovr_GetTrackerCount(session);
+    devs[j_ctrl_types] = ovr_GetConnectedControllerTypes(session);
     return devs;
 }
 

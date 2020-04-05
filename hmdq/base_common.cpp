@@ -86,8 +86,11 @@ parse_prop_name(const std::string& pname)
 inline void prop_head_out(int pid, const std::string& name, bool is_array, int ind,
                           int ts)
 {
-    if (pid >= 0) {
-        iprint(ind * ts, "{:>4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
+    if (pid >= 1000) {
+        iprint(ind * ts, "{:4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
+    }
+    else if (pid >= 0) {
+        iprint(ind * ts, "{:2d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
     }
     else {
         iprint(ind * ts, "{:s}{:s} = ", name, is_array ? "[]" : "");
@@ -157,7 +160,7 @@ std::vector<std::string> format_pval(PropType ptype, const json& pval)
             return {fmt::format("{:#018x}", pval.get<uint64_t>())};
         case PropType::Float:
         case PropType::Double:
-            return {fmt::format("{:.6g}", pval.get<double>())};
+            return {fmt::format("{}", pval.get<double>())};
         case PropType::Vector2:
         case PropType::Vector3:
         case PropType::Vector4: {

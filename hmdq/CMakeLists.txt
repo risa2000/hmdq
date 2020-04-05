@@ -75,6 +75,7 @@ set (hmdq_sources
     hmdq.cpp
     jtools.cpp
     base_common.cpp
+    oculus_common.cpp
     oculus_config.cpp
     oculus_collector.cpp
     oculus_processor.cpp

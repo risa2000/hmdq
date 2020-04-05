@@ -10,7 +10,6 @@
  ******************************************************************************/
 
 #include <filesystem>
-//#include <fstream>
 
 #include <fmt/format.h>
 
@@ -22,6 +21,7 @@
 #include "fmthlp.h"
 #include "jkeys.h"
 #include "jtools.h"
+#include "oculus_common.h"
 #include "oculus_processor.h"
 #include "oculus_props.h"
 #include "prtdata.h"
@@ -34,12 +34,29 @@ namespace oculus {
 //  use instead of valid property ID, makes PID not printed
 constexpr int PROP_ID_UNKNOWN = -1;
 
-//  locals
-//------------------------------------------------------------------------------
 //  properties to hash for PROPS_TO_HASH to "seed" (differentiate) same S/N from
 //  different manufacturers (in this order)
 const std::vector<std::string> PROPS_TO_SEED
     = {Prop::Manufacturer_String, Prop::ProductName_String};
+
+//  helper functions
+//------------------------------------------------------------------------------
+template<typename T, typename S>
+std::vector<std::string> bitmap_to_flags(T val, const nlohmann::fifo_map<T, S>& bmap)
+{
+    std::vector<std::string> res;
+    for (const auto [mask, name] : bmap) {
+        if (0 != (val & mask)) {
+            res.push_back(name);
+        }
+    }
+    return res;
+}
+
+std::vector<std::string> get_controller_names(int val)
+{
+    return bitmap_to_flags(val, g_bmControllerTypes);
+}
 
 //  print functions (miscellanous)
 //------------------------------------------------------------------------------
@@ -48,36 +65,34 @@ void print_oculus(const json& jd, int verb, int ind, int ts)
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     if (verb >= vdef) {
-        //        iprint(sf, "Oculus runtime: {:s}\n", jd[j_rt_path].get<std::string>());
-        iprint(sf, "Oculus version: {:s}\n", jd[j_rt_ver].get<std::string>());
+        iprint(sf, "Oculus runtime version: {:s}\n", jd[j_rt_ver].get<std::string>());
     }
 }
 
 //  Print enumerated devices.
 void print_devs(const json& devs, int ind, int ts)
 {
-    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto sf = ind * ts;
     const auto sf1 = (ind + 1) * ts;
 
     iprint(sf, "Device enumeration:\n");
-    /*
-    hdevlist_t res;
-    for (const auto [dev_id, dev_class] : devs.get<hdevlist_t>()) {
-        const auto cname = api[j_classes][std::to_string(dev_class)].get<std::string>();
-        iprint(sf1, "Found dev: id={:d}, class={:d}, name={:s}\n", dev_id, dev_class,
-               cname);
-    }
-    */
+    iprint(sf1, "HMD: {}\n", devs.at(j_hmd).get<uint32_t>() ? "present" : "absent");
+    iprint(sf1, "Tracker count: {}\n", devs.at(j_trackers).get<uint32_t>());
+    auto ctrl_types = devs.at(j_ctrl_types).get<uint32_t>();
+    const auto ctrl_names = get_controller_names(ctrl_types);
+    const auto ctrl_list
+        = fmt::format("{}", fmt::join(ctrl_names.cbegin(), ctrl_names.cend(), ", "));
+    iprint(sf1, "Controller types: {:#010x}, [{}]\n", ctrl_types, ctrl_list);
 }
 
 //  Print device properties.
-void print_dev_props(const json& api, const json& dprops, int verb, int ind, int ts)
+void print_dev_props(const json& dprops, int verb, int ind, int ts)
 {
     const auto verb_props = g_cfg[j_oculus][j_verbosity][j_properties];
 
+    int propId = 1;
     for (const auto& [pname, pval] : dprops.items()) {
-        basevr::print_one_prop(pname, pval, PROP_ID_UNKNOWN, verb_props, verb, ind, ts);
+        basevr::print_one_prop(pname, pval, propId++, verb_props, verb, ind, ts);
     }
 }
 
@@ -87,17 +102,12 @@ void print_all_props(const json& props, int verb, int ind, int ts)
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
-    /*
-    for (const auto& [sdid, dprops] : props.items()) {
-        const auto dclass
-            = dprops["Prop_DeviceClass_Int32"].get<vr::ETrackedDeviceClass>();
-        const auto dcname = api[j_classes][std::to_string(dclass)].get<std::string>();
+    for (const auto& [sdev, dprops] : props.items()) {
         if (verb >= vdef) {
-            iprint(sf, "[{:s}:{:s}]\n", sdid, dcname);
+            iprint(sf, "[{:s}]\n", sdev);
         }
-        print_dev_props(api, dprops, verb, ind + 1, ts);
+        print_dev_props(dprops, verb, ind + 1, ts);
     }
-    */
 }
 
 //  OculusVR Processor class
@@ -122,7 +132,7 @@ void Processor::anonymize()
     if (m_pjData->find(j_properties) != m_pjData->end()) {
         const std::vector<std::string> anon_props_names
             = g_cfg[j_oculus][j_anonymize][j_properties].get<std::vector<std::string>>();
-        for (auto& [dev, jdprops] : (*m_pjData)[j_properties].items()) {
+        for (auto& [sdev, jdprops] : (*m_pjData)[j_properties].items()) {
             anonymize_jdprops(jdprops, anon_props_names, PROPS_TO_SEED);
         }
     }

@@ -70,7 +70,7 @@ constexpr const char* j_ctrl_types = "ctrl_types";
 
 //  VR subsystem properties
 constexpr const char* j_properties = "properties";
-constexpr const char* j_hmd = "hmd";
+constexpr const char* j_hmd = "HMD";
 
 //  Headset geometry
 constexpr const char* j_geometry = "geometry";
