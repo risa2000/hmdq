@@ -11,13 +11,20 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <filesystem>
 #include <string>
 #include <vector>
 
+
+//  Print system error message for ::GetLastError to stderr, add `message` as contextual
+//  info.
+bool print_sys_error(const char* message);
+
 //  Get OS version or "n/a" if the attempt fails (print error in DEBUG build)
 std::string get_os_ver();
+
+//  Init console output code page
+void init_console_cp();
 
 //  Set console output code page, if installed
 void set_console_cp(unsigned int codepage);

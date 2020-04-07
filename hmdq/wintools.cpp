@@ -27,7 +27,7 @@
 
 //  locals
 //------------------------------------------------------------------------------
-static UINT l_con_cp = ::GetConsoleOutputCP();
+static UINT l_con_cp;
 constexpr const char* SYS_ERROR_FMT = "System error [{:s}]";
 constexpr size_t BUFF_SIZE = 256;
 constexpr size_t MAX_BUFF_SIZE = 2048;
@@ -153,6 +153,12 @@ BOOL CALLBACK EnumCodePagesProcA(_In_ LPSTR lpCodePageString)
         return FALSE;
     }
     return TRUE;
+}
+
+//  Init console output code page
+void init_console_cp()
+{
+    l_con_cp = ::GetConsoleOutputCP();
 }
 
 //  Set console output code page, if installed.

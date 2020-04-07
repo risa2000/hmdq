@@ -217,6 +217,7 @@ int main(int argc, char* argv[])
 
     // Set UTF-8 code page for the console if available
     // if not, print UTF-8 strings to the console anyway.
+    init_console_cp();
     set_console_cp(CP_UTF8);
 
     // get command line args in Windows Unicode and in UTF-8

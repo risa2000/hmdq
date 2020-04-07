@@ -424,7 +424,7 @@ json get_geometry(vr::IVRSystem* vrsys)
 json get_openvr(vr::IVRSystem* vrsys, const json& api)
 {
     json res;
-    res[j_rt_path] = get_runtime_path().u8string();
+    res[j_rt_path] = get_runtime_path().string();
     res[j_rt_ver] = get_runtime_ver(vrsys);
 
     const hdevlist_t devs = enum_devs(vrsys);
