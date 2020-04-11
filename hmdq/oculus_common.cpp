@@ -9,8 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#pragma once
-
 #include <OVR_CAPI.h>
 
 #include "jkeys.h"

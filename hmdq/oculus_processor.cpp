@@ -147,7 +147,7 @@ void Processor::anonymize()
 // verb: verbosity
 // ind: indentation
 // ts: indent (tab) size
-void Processor::print(pmode mode, int verb, int ind, int ts)
+void Processor::print(pmode mode, int verb, int ind, int ts) const
 {
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
@@ -201,18 +201,6 @@ void Processor::purge()
             purge_jdprops_errors(dprops);
         }
     }
-}
-
-// Return OculusVR subystem ID
-std::string Processor::get_id()
-{
-    return j_oculus;
-}
-
-// Return OculusVR data
-std::shared_ptr<json> Processor::get_data()
-{
-    return m_pjData;
 }
 
 } // namespace oculus

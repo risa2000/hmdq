@@ -214,6 +214,17 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     }
 }
 
+bool have_sensible_data(const json& jd)
+{
+    if (jd.empty() || jd.is_null()) {
+        return false;
+    }
+    if (jd.find(ERROR_PREFIX) != jd.cend()) {
+        return false;
+    }
+    return true;
+}
+
 //  functions (all print)
 //------------------------------------------------------------------------------
 //  Print the complete data file.
@@ -222,6 +233,7 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
 {
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
+    const auto verr = g_cfg[j_verbosity][j_error].get<int>();
     const auto sf = ind * ts;
     const auto log_ver = out[j_misc][j_log_ver].get<int>();
 
@@ -231,10 +243,13 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
         fmt::print("\n");
         // print all the VR from different processors
         for (const auto& [proc_id, proc] : processors) {
-            iprint(sf, "... Subsystem: {} ...\n", proc->get_id());
-            fmt::print("\n");
-            proc->print(selected, verb, ind, ts);
-            fmt::print("\n");
+            auto pjdata = proc->get_data();
+            if (have_sensible_data(*pjdata) || verb >= verr) {
+                iprint(sf, "... Subsystem: {} ...\n", proc->get_id());
+                fmt::print("\n");
+                proc->print(selected, verb, ind, ts);
+                fmt::print("\n");
+            }
         }
     }
 }

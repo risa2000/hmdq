@@ -21,16 +21,6 @@ class Config : public BaseVRConfig
 {
   public:
     Config();
-
-  public:
-    // Return VR subystem ID
-    virtual std::string get_id() override;
-    // Return VR subystem default config
-    virtual std::shared_ptr<json> get_data() override;
-
-  private:
-    // Config data
-    std::shared_ptr<json> m_pjConfig;
 };
 
 } // namespace oculus

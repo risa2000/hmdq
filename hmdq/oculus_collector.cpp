@@ -192,28 +192,16 @@ void Collector::collect()
     (*m_pjData)[j_geometry] = get_geometry(m_session, *m_pHmdDesc);
 }
 
-// Return OculusVR subystem ID
-std::string Collector::get_id()
-{
-    return j_oculus;
-}
-
 // Return the last OculusVR subsystem error
-int Collector::get_last_error()
+int Collector::get_last_error() const
 {
     return static_cast<int>(m_error);
 }
 
 // Return the last OculusVR subsystem error message
-std::string Collector::get_last_error_msg()
+std::string Collector::get_last_error_msg() const
 {
     return std::string(m_errorInfo.ErrorString);
-}
-
-// Return OculusVR data
-std::shared_ptr<json> Collector::get_data()
-{
-    return m_pjData;
 }
 
 } // namespace oculus

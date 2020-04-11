@@ -498,28 +498,16 @@ void Collector::collect()
     *m_pjData = get_openvr(m_ivrSystem, *m_pjApi);
 }
 
-// Return OpenVR subystem ID
-std::string Collector::get_id()
-{
-    return j_openvr;
-}
-
 // Return the last OpenVR subsystem error
-int Collector::get_last_error()
+int Collector::get_last_error() const
 {
     return static_cast<int>(m_err);
 }
 
 // Return the last OpenVR subsystem error message
-std::string Collector::get_last_error_msg()
+std::string Collector::get_last_error_msg() const
 {
     return std::string(vr::VR_GetVRInitErrorAsEnglishDescription(m_err));
-}
-
-// Return OpenVR data
-std::shared_ptr<json> Collector::get_data()
-{
-    return m_pjData;
 }
 
 } // namespace openvr

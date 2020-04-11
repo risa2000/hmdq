@@ -25,7 +25,7 @@ namespace oculus {
 class Processor : public BaseVRProcessor
 {
   public:
-    Processor(const std::shared_ptr<json>& pjdata) : m_pjData(pjdata) {}
+    Processor(const std::shared_ptr<json>& pjdata) : BaseVRProcessor(j_oculus, pjdata) {}
 
   public:
     // Initialize the processor
@@ -39,17 +39,9 @@ class Processor : public BaseVRProcessor
     // verb: verbosity
     // ind: indentation
     // ts: indent (tab) size
-    virtual void print(pmode mode, int verb, int ind, int ts) override;
+    virtual void print(pmode mode, int verb, int ind, int ts) const override;
     // Clean up the data before saving
     virtual void purge() override;
-    // Return OpenVR subystem ID
-    virtual std::string get_id() override;
-    // Return OpenVR subystem data
-    virtual std::shared_ptr<json> get_data() override;
-
-  private:
-    // Collected data
-    std::shared_ptr<json> m_pjData;
 };
 
 } // namespace oculus

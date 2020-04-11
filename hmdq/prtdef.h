@@ -23,4 +23,4 @@ constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
 //  typedefs
 //------------------------------------------------------------------------------
 //  print mode
-enum pmode { geom, props, all };
+enum class pmode { geom, props, all };

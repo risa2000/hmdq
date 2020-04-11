@@ -28,8 +28,8 @@ class Collector : public BaseVRCollector
 {
   public:
     Collector(ovrInitFlags initFlags)
-        : m_initFlags(initFlags), m_session(nullptr), m_inited(false),
-          m_pjData(std::make_shared<json>())
+        : BaseVRCollector(j_oculus, std::make_shared<json>()), m_initFlags(initFlags),
+          m_session(nullptr), m_inited(false)
     {}
     virtual ~Collector() override;
 
@@ -39,14 +39,10 @@ class Collector : public BaseVRCollector
     virtual bool try_init() override;
     // Collect the OculusVR subsystem data
     virtual void collect() override;
-    // Return OculusVR subystem ID
-    virtual std::string get_id() override;
-    // Return OculusVR subystem data
-    virtual std::shared_ptr<json> get_data() override;
     // Return the last OculusVR subsystem error
-    virtual int get_last_error() override;
+    virtual int get_last_error() const override;
     // Return the last OculusVR subsystem error message
-    virtual std::string get_last_error_msg() override;
+    virtual std::string get_last_error_msg() const override;
 
   public:
     // Shutdown the OculusVR subsystem
@@ -69,8 +65,6 @@ class Collector : public BaseVRCollector
     ovrResult m_error;
     // Error info corresponding to the last error
     ovrErrorInfo m_errorInfo;
-    // Collected data
-    std::shared_ptr<json> m_pjData;
     // ovrHmdDesc
     std::unique_ptr<ovrHmdDesc> m_pHmdDesc;
 };

@@ -28,9 +28,9 @@ class Collector : public BaseVRCollector
 {
   public:
     Collector(const std::filesystem::path& apiPath, vr::EVRApplicationType appType)
-        : m_appType(appType), m_ivrSystem(nullptr), m_err(vr::VRInitError_None),
-          m_apiPath(apiPath), m_pjApi(std::make_shared<json>()),
-          m_pjData(std::make_shared<json>())
+        : BaseVRCollector(j_openvr, std::make_shared<json>()), m_appType(appType),
+          m_ivrSystem(nullptr), m_err(vr::VRInitError_None), m_apiPath(apiPath),
+          m_pjApi(std::make_shared<json>())
     {}
     virtual ~Collector() override;
 
@@ -40,14 +40,10 @@ class Collector : public BaseVRCollector
     virtual bool try_init() override;
     // Collect the OpenVR subsystem data
     virtual void collect() override;
-    // Return OpenVR subystem ID
-    virtual std::string get_id() override;
-    // Return OpenVR subystem data
-    virtual std::shared_ptr<json> get_data() override;
     // Return the last OpenVR subsystem error
-    virtual int get_last_error() override;
+    virtual int get_last_error() const override;
     // Return the last OpenVR subsystem error message
-    virtual std::string get_last_error_msg() override;
+    virtual std::string get_last_error_msg() const override;
 
   public:
     // Return OpenVR API extract (for printer)
@@ -66,8 +62,6 @@ class Collector : public BaseVRCollector
     std::filesystem::path m_apiPath;
     // API extract
     std::shared_ptr<json> m_pjApi;
-    // Collected data
-    std::shared_ptr<json> m_pjData;
 };
 
 } // namespace openvr
