@@ -242,6 +242,7 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
         print_misc(out[j_misc], PROG_NAME, verb, ind, ts);
         fmt::print("\n");
         // print all the VR from different processors
+        bool printed = false;
         for (const auto& [proc_id, proc] : processors) {
             auto pjdata = proc->get_data();
             if (have_sensible_data(*pjdata) || verb >= verr) {
@@ -249,7 +250,11 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
                 fmt::print("\n");
                 proc->print(selected, verb, ind, ts);
                 fmt::print("\n");
+                printed = true;
             }
+        }
+        if (!printed) {
+            iprint(sf, "... No active VR subsystem found ...\n");
         }
     }
 }
