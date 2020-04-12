@@ -53,21 +53,48 @@ harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh)
 {
-    harray2d_t verts = ham_mesh[j_verts_raw];
-    hfaces_t faces;
-    // number of vertices must be divisible by 3 as each 3 defined one triangle
-    HMDQ_ASSERT(verts.shape(0) % 3 == 0);
-    // build the trivial faces for the triangles
-    for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
-        faces.push_back(hface_t({i, i + 1, i + 2}));
+    harray2d_t n_verts;
+    hfaces_t n_faces;
+    double area;
+
+    // if there are already indexed vertices (Oculus) skip their creation
+    if (ham_mesh.find(j_verts_idx) == ham_mesh.cend()) {
+        harray2d_t verts = ham_mesh[j_verts_raw];
+        hfaces_t faces;
+        // number of vertices must be divisible by 3 as each 3 defined one triangle
+        HMDQ_ASSERT(verts.shape(0) % 3 == 0);
+        // build the trivial faces for the triangles
+        for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
+            faces.push_back(hface_t({i, i + 1, i + 2}));
+        }
+
+        std::tie(n_verts, n_faces) = reduce_verts(verts, faces);
+        area = area_mesh_raw(verts);
+        auto area2 = area_mesh_tris_idx(n_verts, n_faces);
+        // sanity check that the optimized vertices do not differ (much)
+        HMDQ_ASSERT(std::abs(area - area2) < EPS_100)
+    }
+    else {
+        n_verts = ham_mesh[j_verts_idx];
+        n_faces = ham_mesh[j_tris_idx].get<hfaces_t>();
+        area = area_mesh_tris_idx(n_verts, n_faces);
     }
 
-    const auto [n_verts, n_faces] = reduce_verts(verts, faces);
-    const auto n2_faces = reduce_faces(n_faces);
-    const auto area = area_mesh(verts);
+    hfaces_t n2_faces;
+    if (ham_mesh.find(j_verts_idx) != ham_mesh.cend()) {
+        // this is temporary workaround to not optimize Oculus vertices as this bugs out
+        n2_faces = n_faces;
+    }
+    else {
+        n2_faces = reduce_faces(n_faces);
+    }
+
     json res;
     res[j_ham_area] = area;
-    res[j_verts_raw] = verts;
+    //  copy raw or indexed vertices
+    for (const auto& [oid, oprops] : ham_mesh.items()) {
+        res[oid] = oprops;
+    }
     res[j_verts_opt] = n_verts;
     res[j_faces_opt] = n2_faces;
     return res;
@@ -235,10 +262,16 @@ json calc_geometry(const json& jd)
 {
     json fov_eye;
     json fov_head;
-    auto ham_mesh = jd[j_ham_mesh];
+    json ham_mesh;
+
+    if (jd.find(j_ham_mesh) != jd.cend()) {
+        ham_mesh = jd[j_ham_mesh];
+    }
+    else {
+        ham_mesh = json::object({{j_leye, json()}, {j_reye, json()}});
+    }
 
     for (const auto& neye : {j_leye, j_reye}) {
-        // get HAM mesh (if supported by the headset, otherwise 'null')
 
         // get eye to head transformation matrix
         const auto e2h = jd[j_eye2head][neye].get<harray2d_t>();
@@ -269,9 +302,13 @@ json calc_geometry(const json& jd)
 
     // create a new object to ensure the right order of the newly inserted objects
     json res;
-    res[j_rec_rts] = jd[j_rec_rts];
-    res[j_raw_eye] = jd[j_raw_eye];
-    res[j_eye2head] = jd[j_eye2head];
+    // copy first only certain properties and only if they exist.
+    // At the moment, it only concerns Oculus specific j_render_desc.
+    for (const auto& name : {j_rec_rts, j_raw_eye, j_eye2head, j_render_desc}) {
+        if (jd.find(name) != jd.cend()) {
+            res[name] = jd[name];
+        }
+    }
     res[j_view_geom] = view_geom;
     res[j_fov_eye] = fov_eye;
     res[j_fov_head] = fov_head;

@@ -139,21 +139,55 @@ void print_ham_mesh(const json& ham_mesh, int verb, int vgeom, int ind, int ts)
         iprint(sf, "No mesh defined by the headset\n");
         return;
     }
-    const auto nverts = ham_mesh[j_verts_raw].size();
-    // just a safety check that the data are authentic
-    HMDQ_ASSERT(nverts % 3 == 0);
-    const auto nfaces = nverts / 3;
+
+    if (verb >= vgeom) {
+        // show raw vertices only if reported by the headset
+        if (ham_mesh.find(j_verts_raw) != ham_mesh.end()) {
+            const auto nverts = ham_mesh[j_verts_raw].size();
+            // just a safety check that the data are authentic
+            HMDQ_ASSERT(nverts % 3 == 0);
+            const auto nfaces = nverts / 3;
+            iprint(sf, "{:>{}s}: {:d}, triangles: {:d}\n", "original vertices", s1,
+                   nverts, nfaces);
+        }
+    }
     const auto nverts_opt = ham_mesh[j_verts_opt].size();
     const auto nfaces_opt = ham_mesh[j_faces_opt].size();
-    const auto ham_area = ham_mesh[j_ham_area].get<double>();
 
-    iprint(sf, "{:>{}s}: {:d}, triangles: {:d}\n", "original vertices", s1, nverts,
-           nfaces);
-    if (verb >= vgeom) {
-        iprint(sf, "{:>{}s}: {:d}, n-gons: {:d}\n", "optimized vertices", s1, nverts_opt,
-               nfaces_opt);
-    }
+    iprint(sf, "{:>{}s}: {:d}, n-gons: {:d}\n", "optimized vertices", s1, nverts_opt,
+           nfaces_opt);
+    const auto ham_area = ham_mesh[j_ham_area].get<double>();
     iprint(sf, "{:>{}s}: {:.2f} {:s}\n", "mesh area", s1, ham_area * 100, PRCT);
+}
+
+//  Print out the render description (Oculus).
+void print_hmd2eye_pose(const json& jd, int ind, int ts)
+{
+    const auto sf = ind * ts;
+    constexpr auto s1 = sizeof("orientation: ") - 1;
+    auto position = jd[j_position].get<std::vector<double>>();
+    auto orientation = jd[j_orientation].get<std::vector<double>>();
+    iprint(sf, "{:{}s}[{}]\n", "position:", s1,
+           fmt::format("{:#.5g}", fmt::join(position, ", ")));
+    iprint(sf, "{:{}s}[{}]\n", "orientation:", s1,
+           fmt::format("{}", fmt::join(orientation, ", ")));
+}
+
+//  Print out the render description (Oculus).
+void print_render_desc(const json& jd, int ind, int ts)
+{
+    const auto sf = ind * ts;
+    constexpr auto s1 = sizeof("distorted viewport: ") - 1;
+    auto distorted_viewport
+        = jd[j_distorted_viewport].get<std::vector<std::vector<int>>>();
+    auto pixels_per_tan = jd[j_pixels_per_tan].get<std::vector<double>>();
+    iprint(sf, "{:{}s}[[{}], [{}]]\n", "distorted viewport:", s1,
+           fmt::format("{}", fmt::join(distorted_viewport[0], ", ")),
+           fmt::format("{}", fmt::join(distorted_viewport[1], ", ")));
+    iprint(sf, "{:{}s}[{}]\n", "pixels per tan:", s1,
+           fmt::format("{:#.2f}", fmt::join(pixels_per_tan, ", ")));
+    iprint(sf, "HMD to eye pose:\n");
+    print_hmd2eye_pose(jd[j_hmd2eye_pose], ind + 1, ts);
 }
 
 //  Print all the info about the view geometry, calculated FOVs, hidden area mesh, etc.
@@ -188,6 +222,12 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
             if (jd.find(j_raw_eye) != jd.end()) {
                 iprint(sf, "{:s} eye raw LRBT values:\n", neye);
                 print_raw_lrbt(jd[j_raw_eye][neye], ind + 1, ts);
+                fmt::print("\n");
+            }
+
+            if (jd.find(j_render_desc) != jd.end()) {
+                iprint(sf, "{:s} eye render description:\n", neye);
+                print_render_desc(jd[j_render_desc][neye], ind + 1, ts);
                 fmt::print("\n");
             }
         }

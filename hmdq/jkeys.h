@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <string>
+
 //  JSON constants
 //------------------------------------------------------------------------------
 constexpr const char* ANON_PREFIX = "anon@";
@@ -129,3 +131,12 @@ constexpr const char* j_max_fov = "max_fov";
 constexpr const char* j_distorted_viewport = "distorted_viewport";
 constexpr const char* j_render_desc = "render_desc";
 constexpr const char* j_pixels_per_tan = "pixels_per_tan";
+constexpr const char* j_hmd2eye_pose = "hmd2eye_pose";
+constexpr const char* j_orientation = "orientation";
+constexpr const char* j_position = "position";
+constexpr const char* j_verts_idx = "verts_idx";
+constexpr const char* j_tris_idx = "tris_idx";
+
+//  Print friendly names for keys
+//------------------------------------------------------------------------------
+const std::string& get_jkey_pretty(const std::string& jkey);

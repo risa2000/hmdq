@@ -61,6 +61,18 @@ const nlohmann::fifo_map<int, const char*> g_mHmdTypes = {
 
 //  nlohmann/json serializers
 //------------------------------------------------------------------------------
+//  ovrVector2i serializers
+void to_json(json& j, const ovrVector2i& v2i)
+{
+    j = json::array({v2i.x, v2i.y});
+}
+
+void from_json(const json& j, ovrVector2i& v2i)
+{
+    j.at(0).get_to(v2i.x);
+    j.at(1).get_to(v2i.y);
+}
+
 //  ovrVector2f serializers
 void to_json(json& j, const ovrVector2f& v2f)
 {
@@ -73,12 +85,39 @@ void from_json(const json& j, ovrVector2f& v2f)
     j.at(1).get_to(v2f.y);
 }
 
+//  ovrVector3f serializers
+void to_json(json& j, const ovrVector3f& v3f)
+{
+    j = json::array({v3f.x, v3f.y, v3f.z});
+}
+
+void from_json(const json& j, ovrVector3f& v3f)
+{
+    j.at(0).get_to(v3f.x);
+    j.at(1).get_to(v3f.y);
+    j.at(2).get_to(v3f.z);
+}
+
+//  ovrQuatf serializers
+void to_json(json& j, const ovrQuatf& quat)
+{
+    j = json::array({quat.x, quat.y, quat.z, quat.w});
+}
+
+void from_json(const json& j, ovrQuatf& quat)
+{
+    j.at(0).get_to(quat.x);
+    j.at(1).get_to(quat.y);
+    j.at(2).get_to(quat.z);
+    j.at(3).get_to(quat.w);
+}
+
 //  ovrFovPort serializers
 void to_json(json& j, const ovrFovPort& fovPort)
 {
-    j[j_tan_left] = fovPort.LeftTan;
+    j[j_tan_left] = -fovPort.LeftTan;
     j[j_tan_right] = fovPort.RightTan;
-    j[j_tan_bottom] = fovPort.DownTan;
+    j[j_tan_bottom] = -fovPort.DownTan;
     j[j_tan_top] = fovPort.UpTan;
 }
 
@@ -90,16 +129,41 @@ void from_json(const json& j, ovrFovPort& fovPort)
     j.at(j_tan_top).get_to(fovPort.UpTan);
 }
 
+//  ovrSizei serializers
+void to_json(json& j, const ovrSizei& size)
+{
+    j = json::array({size.w, size.h});
+}
+
+void from_json(const json& j, ovrSizei& size)
+{
+    j.at(0).get_to(size.w);
+    j.at(1).get_to(size.h);
+}
+
 //  ovrRecti serializers
 void to_json(json& j, const ovrRecti& rect)
 {
-    j = json::array({rect.Pos.x, rect.Pos.y, rect.Size.w, rect.Size.h});
+    j = json::array();
+    j[0] = rect.Pos;
+    j[1] = rect.Size;
 }
 
 void from_json(const json& j, ovrRecti& rect)
 {
-    j.at(0).get_to(rect.Pos.x);
-    j.at(1).get_to(rect.Pos.y);
-    j.at(2).get_to(rect.Size.w);
-    j.at(3).get_to(rect.Size.h);
+    j.at(0).get_to(rect.Pos);
+    j.at(1).get_to(rect.Size);
+}
+
+//  ovrPosef serializers
+void to_json(json& j, const ovrPosef& pose)
+{
+    j[j_orientation] = pose.Orientation;
+    j[j_position] = pose.Position;
+}
+
+void from_json(const json& j, ovrPosef& pose)
+{
+    j.at(j_position).get_to(pose.Position);
+    j.at(j_orientation).get_to(pose.Orientation);
 }

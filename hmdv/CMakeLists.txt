@@ -71,6 +71,7 @@ set (hmdv_sources
     ${hmdq_dir}/config.cpp
     ${hmdq_dir}/geom.cpp
     ${hmdq_dir}/jtools.cpp
+    ${hmdq_dir}/jkeys.cpp
     ${hmdq_dir}/openvr_common.cpp
     ${hmdq_dir}/openvr_config.cpp
     ${hmdq_dir}/openvr_processor.cpp

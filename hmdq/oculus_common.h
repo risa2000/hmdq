@@ -44,12 +44,27 @@ extern const eyes_t EYES;
 
 //  nlohmann/json serializers
 //------------------------------------------------------------------------------
+//  ovrVector2i serializers
+void to_json(json& j, const ovrVector2i& v2i);
+void from_json(const json& j, ovrVector2i& v2i);
 //  ovrVector2f serializers
 void to_json(json& j, const ovrVector2f& v2f);
 void from_json(const json& j, ovrVector2f& v2f);
+//  ovrVector3f serializers
+void to_json(json& j, const ovrVector3f& v3f);
+void from_json(const json& j, ovrVector3f& v3f);
+//  ovrQuatf serializers
+void to_json(json& j, const ovrQuatf& quat);
+void from_json(const json& j, ovrQuatf& quat);
 //  ovrFovPort serializers
 void to_json(json& j, const ovrFovPort& fovPort);
 void from_json(const json& j, ovrFovPort& fovPort);
+//  ovrSizei serializers
+void to_json(json& j, const ovrSizei& size);
+void from_json(const json& j, ovrSizei& size);
 //  ovrRecti serializers
 void to_json(json& j, const ovrRecti& rect);
 void from_json(const json& j, ovrRecti& rect);
+//  ovrPosef serializers
+void to_json(json& j, const ovrPosef& pose);
+void from_json(const json& j, ovrPosef& pose);

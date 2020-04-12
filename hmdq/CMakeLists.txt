@@ -73,6 +73,7 @@ set (hmdq_sources
     config.cpp
     geom.cpp
     hmdq.cpp
+    jkeys.cpp
     jtools.cpp
     base_common.cpp
     oculus_common.cpp

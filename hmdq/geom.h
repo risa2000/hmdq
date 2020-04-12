@@ -19,7 +19,7 @@
 
 //  globals
 //------------------------------------------------------------------------------
-constexpr double EPS = std::numeric_limits<double>::epsilon() * 100;
+constexpr double EPS_100 = std::numeric_limits<double>::epsilon() * 100;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -53,7 +53,10 @@ inline double det_mat(const harray2d_t& m)
 }
 
 //  Compute vector length.
-inline double norm(const harray_t& v) { return sqrt(dot_prod(v, v)); }
+inline double norm(const harray_t& v)
+{
+    return sqrt(dot_prod(v, v));
+}
 
 //  Compute the angle between the two vectors in radians.
 inline double angle(const hvector_t& v1, const hvector_t& v2)
@@ -102,4 +105,8 @@ double area_triangle(const hvector_t& v1, const hvector_t& v2, const hvector_t& 
 
 //  Calculate the mesh area from given triangles. Each consequtive 3 vertices
 //  define one triangle.
-double area_mesh(const harray2d_t& verts);
+double area_mesh_raw(const harray2d_t& verts);
+
+//  Calculate the mesh area from given triangles. Triangle are specified by vertices
+//  indexed by an index array.
+double area_mesh_tris_idx(const harray2d_t& verts, const hfaces_t& tris);

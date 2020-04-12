@@ -160,8 +160,7 @@ TEST_CASE("geometry module", "[geometry]")
         auto tres2 = xt::stack(xt::xtuple(tres.first, tres.second));
         auto xres = hvector_t({-0.33333333333333337, 0.33333333333333326});
         auto xres2 = xt::stack(xt::xtuple(xres, xres));
-        REQUIRE(0.0 == Approx(norm(tres2 - xres2)).margin(EPS));
-
+        REQUIRE(0.0 == Approx(norm(tres2 - xres2)).margin(EPS_100));
 
         REQUIRE(bool(seg_seg_int(a4, a5, a4, a6) == hvecpair_t(a4, a4)));
         tres = seg_seg_int(a1, a2, a4, a5);
@@ -222,7 +221,7 @@ TEST_CASE("geometry module", "[geometry]")
             = xt::stack(xt::xtuple(o2, a1, a2, o2, a2, a3, o2, a3, a4, o2, a4, a5));
         harray2d_t verts2
             = xt::stack(xt::xtuple(o2, a5, a6, o2, a6, a7, o2, a7, a8, o2, a8, a1));
-        REQUIRE(area_mesh(verts) == Approx(2.0));
-        REQUIRE(area_mesh(verts2) == Approx(2.0));
+        REQUIRE(area_mesh_raw(verts) == Approx(2.0));
+        REQUIRE(area_mesh_raw(verts2) == Approx(2.0));
     }
 }

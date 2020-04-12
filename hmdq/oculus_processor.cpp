@@ -13,7 +13,11 @@
 
 #include <fmt/format.h>
 
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xbuilder.hpp>
 #include <xtensor/xjson.hpp>
+
+#include <Extras/OVR_Math.h>
 
 #include "base_common.h"
 #include "calcview.h"
@@ -110,6 +114,24 @@ void print_all_props(const json& props, int verb, int ind, int ts)
     }
 }
 
+//  Precalculate some date which are not directly provided by Oculus runtime.
+void precalc_geometry(json& jd)
+{
+    json eye2head;
+
+    for (const auto& neye : {j_leye, j_reye}) {
+
+        const ovrPosef jpose = jd[j_render_desc][neye][j_hmd2eye_pose].get<ovrPosef>();
+        const OVR::Pose<float> pose(jpose.Orientation, jpose.Position);
+        const OVR::Matrix4<float> trans(pose);
+        const auto e2h = xt::adapt(&trans.M[0][0], {3, 4});
+        eye2head[neye] = e2h;
+    }
+
+    // add this to the end of the JSON object
+    jd[j_eye2head] = eye2head;
+}
+
 //  OculusVR Processor class
 //------------------------------------------------------------------------------
 // Initialize the processor
@@ -124,8 +146,8 @@ void Processor::calculate()
     if (m_pjData->find(j_geometry) != m_pjData->end()) {
         auto& geom = (*m_pjData)[j_geometry];
         for (auto& [fovType, fovGeom] : geom.items()) {
-            // geom[fovType] = calc_geometry(fovGeom);
-            geom[fovType] = fovGeom;
+            precalc_geometry(fovGeom);
+            geom[fovType] = calc_geometry(fovGeom);
         }
     }
 }
@@ -183,8 +205,17 @@ void Processor::print(pmode mode, int verb, int ind, int ts) const
         if (m_pjData->find(j_geometry) != m_pjData->end()) {
             auto& geom = (*m_pjData)[j_geometry];
             const auto sf = ind * ts;
+            bool print_nl = false;
             for (auto& [fovType, fovGeom] : geom.items()) {
-                iprint(sf, "FOV : {}\n", fovType);
+                //  print the new line in between the different FOVs, but not before (or
+                //  after)
+                if (print_nl) {
+                    fmt::print("\n");
+                }
+                else {
+                    print_nl = true;
+                }
+                iprint(sf, "{}:\n", get_jkey_pretty(fovType));
                 fmt::print("\n");
                 print_geometry(fovGeom, tverb, ind + 1, ts);
             }

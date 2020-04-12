@@ -15,6 +15,7 @@
 
 #include <OVR_CAPI.h>
 
+#include "except.h"
 #include "jkeys.h"
 #include "oculus_collector.h"
 #include "oculus_common.h"
@@ -104,6 +105,48 @@ json get_render_desc(const ovrEyeRenderDesc& renderDesc)
     json res;
     res[j_distorted_viewport] = renderDesc.DistortedViewport;
     res[j_pixels_per_tan] = renderDesc.PixelsPerTanAngleAtCenter;
+    res[j_hmd2eye_pose] = renderDesc.HmdToEyePose;
+    return res;
+}
+
+json get_ham_mesh(ovrSession session, const ovrEyeRenderDesc& renderDesc)
+{
+    json res;
+    ovrFovStencilDesc fovStencilDesc;
+    ovrFovStencilMeshBuffer meshBuffer = {};
+    fovStencilDesc.StencilType = ovrFovStencil_HiddenArea;
+    fovStencilDesc.StencilFlags = ovrFovStencilFlag_MeshOriginAtBottomLeft;
+    fovStencilDesc.Eye = renderDesc.Eye;
+    fovStencilDesc.FovPort = renderDesc.Fov;
+    fovStencilDesc.HmdToEyeRotation = renderDesc.HmdToEyePose.Orientation;
+    auto ores = ovr_GetFovStencil(session, &fovStencilDesc, &meshBuffer);
+    if (!OVR_FAILURE(ores)) {
+        meshBuffer.AllocVertexCount = meshBuffer.UsedVertexCount;
+        meshBuffer.UsedVertexCount = 0;
+        auto vtxBuff = std::make_unique<ovrVector2f[]>(meshBuffer.AllocVertexCount);
+        meshBuffer.VertexBuffer = vtxBuff.get();
+        meshBuffer.AllocIndexCount = meshBuffer.UsedIndexCount;
+        meshBuffer.UsedIndexCount = 0;
+        auto idxBuff = std::make_unique<uint16_t[]>(meshBuffer.AllocIndexCount);
+        meshBuffer.IndexBuffer = idxBuff.get();
+        ores = ovr_GetFovStencil(session, &fovStencilDesc, &meshBuffer);
+        if (!OVR_FAILURE(ores)) {
+            HMDQ_ASSERT(meshBuffer.UsedIndexCount % 3 == 0);
+            json verts_idx = json::array();
+            json tris_idx = json::array();
+            for (auto i = 0; i < meshBuffer.UsedIndexCount; i += 3) {
+                tris_idx.push_back({meshBuffer.IndexBuffer[i],
+                                    meshBuffer.IndexBuffer[i + 1],
+                                    meshBuffer.IndexBuffer[i + 2]});
+            }
+            for (auto i = 0; i < meshBuffer.UsedVertexCount; ++i) {
+                verts_idx.push_back(
+                    {meshBuffer.VertexBuffer[i].x, meshBuffer.VertexBuffer[i].y});
+            }
+            res[j_verts_idx] = verts_idx;
+            res[j_tris_idx] = tris_idx;
+        }
+    }
     return res;
 }
 
@@ -112,9 +155,11 @@ json get_eye_fov(ovrSession session, const ovrHmdDesc& hmdDesc,
 {
     json res;
     for (const auto [eyeId, eyeName] : EYES) {
-        res[j_raw_eye][eyeName] = fovPort[eyeId];
         const auto renderDesc = ovr_GetRenderDesc(session, eyeId, fovPort[eyeId]);
+        res[j_rec_rts] = ovr_GetFovTextureSize(session, eyeId, fovPort[eyeId], 1.0f);
+        res[j_raw_eye][eyeName] = fovPort[eyeId];
         res[j_render_desc][eyeName] = get_render_desc(renderDesc);
+        res[j_ham_mesh][eyeName] = get_ham_mesh(session, renderDesc);
     }
     return res;
 }

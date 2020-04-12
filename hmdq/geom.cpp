@@ -59,7 +59,7 @@ hvecpair_t seg_seg_int(const hvector_t& a1, const hvector_t& a2, const hvector_t
     // build LR mat from vectors
     const auto mat = xt::stack(xt::xtuple(a2 - a1, b1 - b2, b1 - a1), 1);
     const auto deto = det_mat(xt::view(mat, xt::all(), xt::keep(0, 1)));
-    if (abs(deto) < EPS) {
+    if (abs(deto) < EPS_100) {
         // return "empty" vectors if the determinant -> 0
         return {hvector_t(), hvector_t()};
     }
@@ -97,7 +97,7 @@ harray2d_t seg_mesh_int(const hvector_t& a1, const hvector_t& a2, const harray2d
             const hvecpair_t tpts = seg_seg_int(a1, a2, v1, v2);
             if (tpts.first.size() > 0) {
                 // if size > 0 => not "empty" vector
-                if (point_dist(tpts.first, tpts.second) < EPS) {
+                if (point_dist(tpts.first, tpts.second) < EPS_100) {
                     points.push_back(tpts.first);
                 }
             }
@@ -136,12 +136,24 @@ double area_triangle(const hvector_t& v1, const hvector_t& v2, const hvector_t& 
 
 //  Calculate the mesh area from given triangles. Each consequtive 3 vertices
 //  define one triangle.
-double area_mesh(const harray2d_t& verts)
+double area_mesh_raw(const harray2d_t& verts)
 {
     double a = 0;
     for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
         a += area_triangle(xt::view(verts, i), xt::view(verts, i + 1),
                            xt::view(verts, i + 2));
+    }
+    return a;
+}
+
+//  Calculate the mesh area from given triangles. Triangle are specified by vertices
+//  indexed by an index array.
+double area_mesh_tris_idx(const harray2d_t& verts, const hfaces_t& tris)
+{
+    double a = 0;
+    for (const auto& face : tris) {
+        a += area_triangle(xt::view(verts, face[0]), xt::view(verts, face[1]),
+                           xt::view(verts, face[2]));
     }
     return a;
 }
