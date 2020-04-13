@@ -39,7 +39,7 @@ class Processor : public BaseVRProcessor
     // verb: verbosity
     // ind: indentation
     // ts: indent (tab) size
-    virtual void print(pmode mode, int verb, int ind, int ts) const override;
+    virtual void print(const print_options& opts, int ind, int ts) const override;
     // Clean up the data before saving
     virtual void purge() override;
 };

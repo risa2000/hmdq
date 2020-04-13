@@ -43,8 +43,12 @@ void print_openvr(const json& jd, int verb, int ind, int ts)
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     if (verb >= vdef) {
-        iprint(sf, "OpenVR runtime path: {:s}\n", jd[j_rt_path].get<std::string>());
-        iprint(sf, "OpenVR runtime version: {:s}\n", jd[j_rt_ver].get<std::string>());
+        if (jd.find(j_rt_path) != jd.cend()) {
+            iprint(sf, "OpenVR runtime path: {:s}\n", jd[j_rt_path].get<std::string>());
+        }
+        if (jd.find(j_rt_ver) != jd.cend()) {
+            iprint(sf, "OpenVR runtime version: {:s}\n", jd[j_rt_ver].get<std::string>());
+        }
     }
 }
 
@@ -137,26 +141,27 @@ void Processor::anonymize()
 // verb: verbosity
 // ind: indentation
 // ts: indent (tab) size
-void Processor::print(pmode mode, int verb, int ind, int ts) const
+void Processor::print(const print_options& opts, int ind, int ts) const
 {
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
 
     // if there was an error and there are no data, print the error and quit
     if (m_pjData->find(ERROR_PREFIX) != m_pjData->end()) {
-        if (verb >= vdef) {
+        if (opts.verbosity >= vdef) {
             iprint(ind * ts, ERR_MSG_FMT_OUT, (*m_pjData)[ERROR_PREFIX]);
             // fmt::print("\n");
         }
         return;
     }
 
-    print_openvr((*m_pjData), verb, ind, ts);
-    if (verb >= vdef)
+    print_openvr((*m_pjData), opts.verbosity, ind, ts);
+    if (opts.verbosity >= vdef)
         fmt::print("\n");
 
     // print the devices and the properties
-    auto tverb = (mode == pmode::props || mode == pmode::all) ? verb : vsil;
+    auto tverb
+        = (opts.mode == pmode::props || opts.mode == pmode::all) ? opts.verbosity : vsil;
     if (tverb >= vdef) {
         if (m_pjData->find(j_devices) != m_pjData->end()) {
             print_devs(*m_pjApi, (*m_pjData)[j_devices], ind, ts);
@@ -169,7 +174,7 @@ void Processor::print(pmode mode, int verb, int ind, int ts) const
     }
 
     // print all the geometry
-    tverb = (mode == pmode::geom || mode == pmode::all) ? verb : vsil;
+    tverb = (opts.mode == pmode::geom || opts.mode == pmode::all) ? opts.verbosity : vsil;
     if (tverb >= vdef) {
         if (m_pjData->find(j_geometry) != m_pjData->end()) {
             print_geometry((*m_pjData)[j_geometry], tverb, ind, ts);

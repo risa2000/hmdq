@@ -30,6 +30,7 @@ static constexpr auto MM_IN_METER = 1000;
 //  fix identifications
 //------------------------------------------------------------------------------
 static constexpr const char* PROG_VER_DATETIME_FORMAT_FIX = "0.3.1";
+static constexpr const char* PROG_VER_OPENVR_SECTION_FIX = "1.0.0";
 static constexpr const char* PROG_VER_IPD_FIX = "1.2.3";
 static constexpr const char* PROG_VER_FOV_FIX = "1.2.4";
 static constexpr const char* PROG_VER_OPENVR_LOCALIZED = "1.3.4";
@@ -62,7 +63,20 @@ void fix_datetime_format(json& jd)
     jd[j_misc][j_time] = fmt::format("{:%F %T}", tm);
 }
 
-//  Fix unit for saved IPD value, mm -> meters (ver < v1.2.3)
+//  Fix for moved OpenVR things from 'misc' to 'openvr'
+void fix_misc_to_openvr(json& jd) {
+    json jopenvr;
+    if (jd[j_misc].find("openvr_ver") != jd[j_misc].end()) {
+        jopenvr[j_rt_ver] = jd[j_misc]["openvr_ver"];
+        jd[j_misc].erase("openvr_ver");
+    }
+    else {
+        jopenvr[j_rt_ver] = "n/a";
+    }
+    jopenvr[j_rt_path] = "n/a";
+    jd[j_openvr] = jopenvr;
+}
+
 void fix_ipd_unit(json& jd)
 {
     // the old IPD is in milimeters, transform it to meters
@@ -96,6 +110,11 @@ bool apply_all_relevant_fixes(json& jd)
     // datetime format fix - remove 'T' in the middle
     if (comp_ver(hmdx_ver, PROG_VER_DATETIME_FORMAT_FIX) < 0) {
         fix_datetime_format(jd);
+        fixed = true;
+    }
+    // moved OpenVR things from 'misc' to 'openvr'
+    if (comp_ver(hmdx_ver, PROG_VER_OPENVR_SECTION_FIX) < 0) {
+        fix_misc_to_openvr(jd);
         fixed = true;
     }
     // change IPD unit in the JSON file - mm -> meters

@@ -24,3 +24,18 @@ constexpr const char* ERR_MSG_FMT_OUT = "Error: {:s}\n";
 //------------------------------------------------------------------------------
 //  print mode
 enum class pmode { geom, props, all };
+
+//  Command line options passed to the program
+struct print_options {
+    print_options()
+        : anonymize(false), oculus(true), openvr(true), ovr_def_fov(true),
+          ovr_max_fov(true), verbosity(0), mode(pmode::all)
+    {}
+    bool anonymize; // anonymize the sensitive data
+    bool oculus; // show Oculus data
+    bool openvr; // show OpenVR data
+    bool ovr_def_fov; // show Oculus default FOV
+    bool ovr_max_fov; // show Oculus max FOV
+    int verbosity; // output verbosity
+    pmode mode; // print mode
+};

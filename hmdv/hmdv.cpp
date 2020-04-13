@@ -126,9 +126,9 @@ int run_verify(const std::filesystem::path& in_json, int verb, int ind, int ts)
 }
 
 //  main runner
-int run(mode selected, const std::filesystem::path& api_json,
+int run(const print_options& opts, const std::filesystem::path& api_json,
         const std::filesystem::path& in_json, const std::filesystem::path& out_json,
-        bool anon, int verb, int ind, int ts)
+        int ind, int ts)
 {
     const auto sf = ind * ts;
     // initialize config values
@@ -136,8 +136,8 @@ int run(mode selected, const std::filesystem::path& api_json,
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     // print the execution header
-    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
-    if (verb >= vdef)
+    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, opts.verbosity, ind, ts);
+    if (opts.verbosity >= vdef)
         fmt::print("\n");
 
     // read JSON data input
@@ -145,7 +145,7 @@ int run(mode selected, const std::filesystem::path& api_json,
 
     // verify the checksum
     auto check_ok = verify_checksum(out);
-    if (!check_ok && verb >= vdef) {
+    if (!check_ok && opts.verbosity >= vdef) {
         iprint(sf, "Warning: Input file checksum is invalid\n\n");
     }
 
@@ -170,14 +170,14 @@ int run(mode selected, const std::filesystem::path& api_json,
     }
 
     // anonymize the data if requested
-    if (anon) {
+    if (opts.anonymize) {
         for (auto& [proc_id, proc] : processors) {
             proc->anonymize();
         }
     }
 
     // print all
-    print_all(mode2pmode(selected), out, processors, verb, ind, ts);
+    print_all(opts, out, processors, ind, ts);
 
     // dump the data into the optional JSON file
     if (!out_json.empty()) {
@@ -241,12 +241,14 @@ int main(int argc, char* argv[])
     const auto ts = g_cfg[j_format][j_cli_indent].get<int>();
     const auto ind = IND;
 
+    print_options opts;
+
     // defaults for the arguments
-    auto verb = g_cfg[j_verbosity][j_default].get<int>();
-    auto anon = g_cfg[j_control][j_anonymize].get<bool>();
+    opts.verbosity = g_cfg[j_verbosity][j_default].get<int>();
+    opts.anonymize = g_cfg[j_control][j_anonymize].get<bool>();
 
     // default command is 'all'
-    mode selected = mode::all;
+    mode cmd = mode::all;
 
     // build relative path to OPENVR_API_JSON file
     std::filesystem::path api_json_path = get_full_prog_path();
@@ -256,11 +258,11 @@ int main(int argc, char* argv[])
     std::string out_json;
     std::string in_json;
     // custom help texts
-    const auto verb_help = fmt::format("verbosity level [{:d}]", verb);
+    const auto verb_help = fmt::format("verbosity level [{:d}]", opts.verbosity);
     const auto api_json_help
         = fmt::format("OpenVR API JSON definition file [\"{:s}\"]", api_json);
     const auto anon_help
-        = fmt::format("anonymize serial numbers in the output [{}]", anon);
+        = fmt::format("anonymize serial numbers in the output [{}]", opts.anonymize);
 
     // Use this construct to accept an "empty" command. First parse all together
     // (cli_cmds, cli_args, cli_opts) then (cli_args, cli_opts) to accept also only the
@@ -269,26 +271,39 @@ int main(int argc, char* argv[])
     auto cli_opts
         = ((option("-a", "--api_json") & value("name", api_json)) % api_json_help,
            (option("-o", "--out_json") & value("name", out_json)) % "JSON output file",
-           (option("-v", "--verb").set(verb, 1) & opt_value("level", verb)) % verb_help,
-           (option("-n", "--anonymize").set(anon, !anon)) % anon_help);
+           (option("-v", "--verb").set(opts.verbosity, 1)
+            & opt_value("level", opts.verbosity))
+               % verb_help,
+           (option("-n", "--anonymize").set(opts.anonymize, !opts.anonymize) % anon_help),
+           (option("--openvr").set(opts.oculus, false).set(opts.openvr, true)
+            % "show only OpenVR data"),
+           (option("--oculus").set(opts.openvr, false).set(opts.oculus, true)
+            % "show only Oculus data"),
+           (option("--ovr_max_fov")
+                .set(opts.ovr_def_fov, false)
+                .set(opts.ovr_max_fov, true)
+            % "show only Oculus max FOV data"),
+           (option("--ovr_def_fov")
+                .set(opts.ovr_max_fov, false)
+                .set(opts.ovr_def_fov, true)
+            % "show only Oculus default FOV data"));
+
     auto cli_nocmd = (cli_opts, cli_args);
     auto cli_cmds
-        = ((command("geom").set(selected, mode::geom).doc("show only geometry data")
+        = ((command("geom").set(cmd, mode::geom).doc("show only geometry data")
                 | command("props")
-                      .set(selected, mode::props)
+                      .set(cmd, mode::props)
                       .doc("show only device properties")
                 | command("all")
-                      .set(selected, mode::all)
+                      .set(cmd, mode::all)
                       .doc("show all data (default choice)"),
             cli_nocmd)
            | (command("verify")
-                  .set(selected, mode::verify)
+                  .set(cmd, mode::verify)
                   .doc("verify the data file integrity"),
               cli_args)
-           | command("version")
-                 .set(selected, mode::info)
-                 .doc("show version and other info")
-           | command("help").set(selected, mode::help).doc("show this help page"));
+           | command("version").set(cmd, mode::info).doc("show version and other info")
+           | command("help").set(cmd, mode::help).doc("show this help page"));
 
     auto cli = cli_cmds;
     auto cli_dup = (cli_cmds | cli_nocmd);
@@ -297,20 +312,21 @@ int main(int argc, char* argv[])
     auto [cargv, buff] = get_c_argv(u8args);
     int res = 0;
     if (parse(cargv->size(), &(*cargv)[0], cli_dup)) {
-        switch (selected) {
+        switch (cmd) {
             case mode::info:
                 print_info(ind, ts);
                 break;
             case mode::geom:
             case mode::props:
             case mode::all:
-                res = run_wrapper(run, selected, std::filesystem::path(api_json),
+                opts.mode = mode2pmode(cmd);
+                res = run_wrapper(run, opts, std::filesystem::path(api_json),
                                   std::filesystem::path(in_json),
-                                  std::filesystem::path(out_json), anon, verb, ind, ts);
+                                  std::filesystem::path(out_json), ind, ts);
                 break;
             case mode::verify:
-                res = run_wrapper(run_verify, std::filesystem::path(in_json), verb, ind,
-                                  ts);
+                res = run_wrapper(run_verify, std::filesystem::path(in_json),
+                                  opts.verbosity, ind, ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",

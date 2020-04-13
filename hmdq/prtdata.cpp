@@ -38,6 +38,8 @@ static constexpr const char* MM = "mm";
 static constexpr const char* PRCT = "%";
 static constexpr auto MM_IN_METER = 1000;
 
+static constexpr const char* PROG_HMDQ_NAME = "hmdq";
+
 //  functions (miscellanous)
 //------------------------------------------------------------------------------
 //  Print header (displayed when the execution starts) needs verbosity=silent
@@ -267,8 +269,8 @@ bool have_sensible_data(const json& jd)
 //  functions (all print)
 //------------------------------------------------------------------------------
 //  Print the complete data file.
-void print_all(const pmode selected, const json& out, const procmap_t& processors,
-               int verb, int ind, int ts)
+void print_all(const print_options& opts, const json& out, const procmap_t& processors,
+               int ind, int ts)
 {
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
@@ -277,19 +279,24 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
     const auto log_ver = out[j_misc][j_log_ver].get<int>();
 
     // print the miscellanous (system and app) data
-    if (verb >= vdef) {
-        print_misc(out[j_misc], PROG_NAME, verb, ind, ts);
+    if (opts.verbosity >= vdef) {
+        print_misc(out[j_misc], PROG_HMDQ_NAME, opts.verbosity, ind, ts);
         fmt::print("\n");
         // print all the VR from different processors
         bool printed = false;
         for (const auto& [proc_id, proc] : processors) {
-            auto pjdata = proc->get_data();
-            if (have_sensible_data(*pjdata) || verb >= verr) {
-                iprint(sf, "... Subsystem: {} ...\n", get_jkey_pretty(proc->get_id()));
-                fmt::print("\n");
-                proc->print(selected, verb, ind, ts);
-                fmt::print("\n");
-                printed = true;
+            // print the data only if requested by user
+            if (opts.oculus && proc->get_id() == j_oculus
+                || opts.openvr && proc->get_id() == j_openvr) {
+                auto pjdata = proc->get_data();
+                if (have_sensible_data(*pjdata) || opts.verbosity >= verr) {
+                    iprint(sf, "... Subsystem: {} ...\n",
+                           get_jkey_pretty(proc->get_id()));
+                    fmt::print("\n");
+                    proc->print(opts, ind, ts);
+                    fmt::print("\n");
+                    printed = true;
+                }
             }
         }
         if (!printed) {
