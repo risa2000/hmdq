@@ -48,7 +48,6 @@ void print_header(const char* prog_name, const char* prog_ver, const char* prog_
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
     if (verb >= vsil) {
         iprint(sf, "{:s} version {:s} - {:s}\n", prog_name, prog_ver, prog_desc);
-        fmt::print("\n");
     }
 }
 
@@ -286,7 +285,7 @@ void print_all(const pmode selected, const json& out, const procmap_t& processor
         for (const auto& [proc_id, proc] : processors) {
             auto pjdata = proc->get_data();
             if (have_sensible_data(*pjdata) || verb >= verr) {
-                iprint(sf, "... Subsystem: {} ...\n", proc->get_id());
+                iprint(sf, "... Subsystem: {} ...\n", get_jkey_pretty(proc->get_id()));
                 fmt::print("\n");
                 proc->print(selected, verb, ind, ts);
                 fmt::print("\n");

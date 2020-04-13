@@ -134,10 +134,13 @@ int run(mode selected, const std::filesystem::path& api_json,
 {
     // initialize config values
     const auto json_indent = g_cfg[j_format][j_json_indent].get<int>();
+    const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     const auto verr = g_cfg[j_verbosity][j_error].get<int>();
 
     // print the execution header
     print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
+    if (verb >= vdef)
+        fmt::print("\n");
 
     // output
     json out;
