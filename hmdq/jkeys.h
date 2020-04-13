@@ -134,8 +134,7 @@ constexpr const char* j_pixels_per_tan = "pixels_per_tan";
 constexpr const char* j_hmd2eye_pose = "hmd2eye_pose";
 constexpr const char* j_orientation = "orientation";
 constexpr const char* j_position = "position";
-constexpr const char* j_verts_idx = "verts_idx";
-constexpr const char* j_tris_idx = "tris_idx";
+constexpr const char* j_tris_opt = "tris_opt";
 
 //  Print friendly names for keys
 //------------------------------------------------------------------------------

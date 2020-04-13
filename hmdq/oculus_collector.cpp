@@ -132,19 +132,21 @@ json get_ham_mesh(ovrSession session, const ovrEyeRenderDesc& renderDesc)
         ores = ovr_GetFovStencil(session, &fovStencilDesc, &meshBuffer);
         if (!OVR_FAILURE(ores)) {
             HMDQ_ASSERT(meshBuffer.UsedIndexCount % 3 == 0);
-            json verts_idx = json::array();
-            json tris_idx = json::array();
+            json verts_opt = json::array();
+            json tris_opt = json::array();
             for (auto i = 0; i < meshBuffer.UsedIndexCount; i += 3) {
-                tris_idx.push_back({meshBuffer.IndexBuffer[i],
+                tris_opt.push_back({meshBuffer.IndexBuffer[i],
                                     meshBuffer.IndexBuffer[i + 1],
                                     meshBuffer.IndexBuffer[i + 2]});
             }
             for (auto i = 0; i < meshBuffer.UsedVertexCount; ++i) {
-                verts_idx.push_back(
+                verts_opt.push_back(
                     {meshBuffer.VertexBuffer[i].x, meshBuffer.VertexBuffer[i].y});
             }
-            res[j_verts_idx] = verts_idx;
-            res[j_tris_idx] = tris_idx;
+            // push vertices as verts_opt as they effectively are already optimized to
+            // avoid useless duplicity in the final JSON
+            res[j_verts_opt] = verts_opt;
+            res[j_tris_opt] = tris_opt;
         }
     }
     return res;

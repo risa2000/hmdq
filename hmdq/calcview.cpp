@@ -53,50 +53,53 @@ harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh)
 {
-    harray2d_t n_verts;
-    hfaces_t n_faces;
+    // triangle indices into vertices
+    hfaces_t tris_opt;
+    // vertices for triangle indices
+    harray2d_t verts_opt;
+    // raw vertices = three consecutive vertices define one triangle
+    harray2d_t verts_raw;
     double area;
+    json res;
 
     // if there are already indexed vertices (Oculus) skip their creation
-    if (ham_mesh.find(j_verts_idx) == ham_mesh.cend()) {
-        harray2d_t verts = ham_mesh[j_verts_raw];
-        hfaces_t faces;
+    if (ham_mesh.find(j_verts_opt) == ham_mesh.cend()) {
+
+        verts_raw = ham_mesh[j_verts_raw];
         // number of vertices must be divisible by 3 as each 3 defined one triangle
-        HMDQ_ASSERT(verts.shape(0) % 3 == 0);
+        HMDQ_ASSERT(verts_raw.shape(0) % 3 == 0);
+
+        hfaces_t faces;
         // build the trivial faces for the triangles
-        for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
+        for (size_t i = 0, e = verts_raw.shape(0); i < e; i += 3) {
             faces.push_back(hface_t({i, i + 1, i + 2}));
         }
 
-        std::tie(n_verts, n_faces) = reduce_verts(verts, faces);
-        area = area_mesh_raw(verts);
-        auto area2 = area_mesh_tris_idx(n_verts, n_faces);
+        std::tie(verts_opt, tris_opt) = reduce_verts(verts_raw, faces);
+        area = area_mesh_raw(verts_raw);
+        auto area2 = area_mesh_tris_idx(verts_opt, tris_opt);
         // sanity check that the optimized vertices do not differ (much)
         HMDQ_ASSERT(std::abs(area - area2) < EPS_100)
     }
     else {
-        n_verts = ham_mesh[j_verts_idx];
-        n_faces = ham_mesh[j_tris_idx].get<hfaces_t>();
-        area = area_mesh_tris_idx(n_verts, n_faces);
+        verts_opt = ham_mesh[j_verts_opt];
+        tris_opt = ham_mesh[j_tris_opt].get<hfaces_t>();
+        area = area_mesh_tris_idx(verts_opt, tris_opt);
     }
 
-    hfaces_t n2_faces;
-    if (ham_mesh.find(j_verts_idx) != ham_mesh.cend()) {
-        // this is temporary workaround to not optimize Oculus vertices as this bugs out
-        n2_faces = n_faces;
-    }
-    else {
-        n2_faces = reduce_faces(n_faces);
-    }
+    const auto faces_opt = reduce_faces(tris_opt);
 
-    json res;
+    // build the resulting JSON
     res[j_ham_area] = area;
-    //  copy raw or indexed vertices
-    for (const auto& [oid, oprops] : ham_mesh.items()) {
-        res[oid] = oprops;
+    // copy whatever was originally collected by Collector
+    if (ham_mesh.find(j_verts_raw) != ham_mesh.cend()) {
+        res[j_verts_raw] = ham_mesh[j_verts_raw];
     }
-    res[j_verts_opt] = n_verts;
-    res[j_faces_opt] = n2_faces;
+    res[j_verts_opt] = verts_opt;
+    if (ham_mesh.find(j_tris_opt) != ham_mesh.cend()) {
+        res[j_tris_opt] = ham_mesh[j_tris_opt];
+    }
+    res[j_faces_opt] = faces_opt;
     return res;
 }
 

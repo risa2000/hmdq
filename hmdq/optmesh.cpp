@@ -12,6 +12,7 @@
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <algorithm>
 #include <list>
+#include <set>
 
 #include <xtensor/xview.hpp>
 
@@ -262,6 +263,19 @@ hedgelist_t check_chained(const hedgelist_t& edges)
     return res;
 }
 
+// Checks if the face `f` has inner cycle, i.e. it "crosses" itself.
+bool has_cycle(const hface_t& face)
+{
+    std::set<size_t> counter;
+    for (const auto& idx : face) {
+        if (counter.find(idx) != counter.end()) {
+            return true;
+        }
+        counter.insert(idx);
+    }
+    return false;
+}
+
 // Reduce faces by removing duplicate edges.
 hfaces_t reduce_faces(const hfaces_t& faces)
 {
@@ -289,8 +303,14 @@ hfaces_t reduce_faces(const hfaces_t& faces)
                     // if shared egdes are not chained we are probably not looking at the
                     // triangle mesh
                     HMDQ_ASSERT(chain.size() != 0);
-                    face = merge_edges(edges1, edges2, chain);
-                    found = true;
+                    auto new_face = merge_edges(edges1, edges2, chain);
+                    if (!has_cycle(new_face)) {
+                        face = new_face;
+                        found = true;
+                    }
+                    else {
+                        checked.push_back(f);
+                    }
                 }
                 else {
                     checked.push_back(f);

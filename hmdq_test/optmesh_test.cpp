@@ -52,6 +52,11 @@ const std::vector<hedgelist_t> edges3 = {{{0, 1}, {1, 2}, {2, 0}},
                                          {{0, 4}, {4, 3}, {3, 0}},
                                          {{0, 1}, {1, 4}, {4, 0}}};
 
+// this mesh contains "hole" in it, triangle (5, 6, 7)
+const hfaces_t faces4 = {{1, 2, 5}, {1, 5, 7}, {1, 7, 4}, {2, 5, 6},
+                         {2, 6, 3}, {3, 6, 8}, {6, 8, 7}, {8, 4, 7}};
+const hfaces_t nfaces4 = {{6, 5, 7, 4, 1, 2, 3, 8}, {7, 6, 8, 4}};
+
 //  tests
 //------------------------------------------------------------------------------
 TEST_CASE("HAM mesh optimization module", "[optmesh]")
@@ -226,5 +231,7 @@ TEST_CASE("HAM mesh optimization module", "[optmesh]")
         REQUIRE(res1 == reduce_faces({f3s, f4}));
         REQUIRE(res1 == reduce_faces({f3s, f4s}));
         REQUIRE(res2 == reduce_faces({f3, f4s}));
+
+        REQUIRE(nfaces4 == reduce_faces(faces4));
     }
 }
