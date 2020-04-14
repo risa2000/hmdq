@@ -1,5 +1,5 @@
 /******************************************************************************
- * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
+ * HMDQ Tools - tools for VR headsets and other hardware introspection        *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
  * Copyright (c) 2020, Richard Musil. All rights reserved.                    *

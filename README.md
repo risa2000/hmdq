@@ -1,27 +1,25 @@
 ![hmdq](docs/images/hmdq_128.png) ![hmdv](docs/images/hmdv_128.png)
 
 # HMDQ Tools
-HMDQ Tools is a set of two command line tools for an OpenVR headset and other hardware introspection:
+HMDQ Tools is a set of two command line tools for some VR headsets (now supports both OpenVR and Oculus) and other hardware introspection:
 
 ## `hmdq`
-is a main tool, which connects to an OpenVR subsystem and collects all available data about the connected devices (called _tracked devices_ in OpenVR terminology).  
+is a main tool, which connects to a VR subsystem and collects all available data about the connected devices (_tracked devices_ in OpenVR world, trackers and controllers in Oculus world).  
 
-It can either display the info in the console, or save all the collected information plus some additional calculated data to the data file in JSON format.
+It can either display the info in the console, or save all the collected information plus some additional calculated data to a file in JSON format.
 
-To run it, one needs an OpenVR subsystem installed, which usually means SteamVR and, of course, the hardware.
+To get some useful data, one needs to have either OpenVR or Oculus runtime installed, which means SteamVR or Oculus application and, of course, the hardware.
 
 ## `hmdv`
-is a complementary tool, whose only purpose is to process the data files created by `hmdq`, which basically means to view them in more human friendly way.
+is a complementary tool, whose only purpose is to process the data files created by `hmdq` and display them in more human friendly way.
 
-It does not need an OpenVR.
-
-Both tools use very similar command line interface. The only (major) difference is that `hmdq` reads the data it shows (and stores) from OpenVR, while `hmdv` reads the data from already stored file. The following paragraphs address both tools, unless its explicitly specified otherwise.
+Both tools use very similar command line interface. The only (major) difference is that `hmdq` reads the data it shows (and stores) from actual VR runtime, while `hmdv` reads the data from already stored file. The following paragraphs address both tools, unless it is explicitly specified otherwise.
 
 ## Installation
-Get the latest binary ZIP from [releases](https://github.com/risa2000/hmdq/releases) and unzip it wherever you want to run it.
+Get the latest binary ZIP from [releases](https://github.com/risa2000/hmdq/releases) and unzip it wherever you want to run it. The package should contain both `hmdq` and `hmdv` tools, this README file, LICENSE file, OpenVR API JSON file and some batch files for simplified execution.
 
 ## Operation
-Since both tools are command line tools, it is better to run them from Windows console (or any terminal window which supports standard I/O).
+Since both tools are command line tools, it is better to run them from Windows console or any terminal (window) which supports standard I/O.
 
 When the tools run the first time, they create a configuration file `<tool_name>.conf.json` in the same directory.
 
@@ -36,7 +34,9 @@ Shows all the commands and options with short descriptions.
 ```
 $ hmdq help
 Usage:
-        hmdq (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n]
+        hmdq (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n] [--openvr] [--oculus]
+             [--ovr_max_fov]
+
         hmdq version
         hmdq help
 Options:
@@ -44,7 +44,8 @@ Options:
         props       show only device properties
         all         show all data (default choice)
         -a, --api_json <name>
-                    OpenVR API JSON definition file ["openvr_api.json"]
+                    OpenVR API JSON definition file
+                    ["D:\Work\vsprojects\hmdq\out\build\x64-DLL-Debug\hmdq\openvr_api.json"]
 
         -o, --out_json <name>
                     JSON output file
@@ -54,6 +55,11 @@ Options:
 
         -n, --anonymize
                     anonymize serial numbers in the output [false]
+
+        --openvr    show only OpenVR data
+        --oculus    show only Oculus data
+        --ovr_max_fov
+                    show also Oculus max FOV data
 
         version     show version and other info
         help        show this help page
@@ -62,7 +68,9 @@ Options:
 ```
 $ hmdv help
 Usage:
-        hmdv (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n] <in_json>
+        hmdv (geom|props|all) [-a <name>] [-o <name>] [-v [<level>]] [-n] [--openvr] [--oculus]
+             [--ovr_max_fov] <in_json>
+
         hmdv verify <in_json>
         hmdv version
         hmdv help
@@ -71,7 +79,8 @@ Options:
         props       show only device properties
         all         show all data (default choice)
         -a, --api_json <name>
-                    OpenVR API JSON definition file ["openvr_api.json"]
+                    OpenVR API JSON definition file
+                    ["D:\Work\vsprojects\hmdq\out\build\x64-DLL-Debug\hmdv\openvr_api.json"]
 
         -o, --out_json <name>
                     JSON output file
@@ -81,6 +90,11 @@ Options:
 
         -n, --anonymize
                     anonymize serial numbers in the output [false]
+
+        --openvr    show only OpenVR data
+        --oculus    show only Oculus data
+        --ovr_max_fov
+                    show also Oculus max FOV data
 
         <in_json>   input data file
         verify      verify the data file integrity
@@ -117,7 +131,7 @@ View geometry:
 ```
 
 #### `props`
-Prints out all different _tracked device properties_ for all currently detected _tracked devices_. The term _tracked device_ includes not only the headset and the controllers, but also the lighthouses and the additional (not tracked) devices as the gamepads. The number of properties shown depends on the _verbosity_ level specified by the user, which, by default, is set to `0`.
+Prints out all different _properties_ for all currently detected _devices_. For OpenVR it includes not only the headset and the controllers, but also the lighthouses and the additional (not tracked) devices as the gamepads. The number of properties shown depends on the _verbosity_ level specified by the user, which, by default, is set to `0`.
 
 Example (excerpt):
 ```c
@@ -190,7 +204,16 @@ The anonymization happens in both the console output and in the output JSON file
 
 This could be useful when sharing the output data in the public, without disclosing the unique identifiers.
 
-The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: #1005 (`Prop_ManufacturerName_String`), concatenated with #1001 (`Prop_ModelNumber_String`), and finally with the incriminated value to anonymize. The manufacturer and model numbers are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers will not anonymize into the same values.
+The anonymized values are computed by using the secure hash function [Blake2](https://blake2.net) set with 96-bit wide output. The hash is computed over three properties: manufacturer name (#1005 `Prop_ManufacturerName_String` in OpenVR), concatenated with model name (#1001 `Prop_ModelNumber_String` in OpenVR), and finally with the incriminated value to anonymize. The manufacturer and model names are used to pre-seed the hash with distinct values, so the same serial numbers from different manufacturers will not anonymize into the same values.
+
+#### `--openvr`
+Will only show data collected from OpenVR runtime (if one is present and a headset is connected).
+
+#### `--oculus`
+Will only show date collected from Oculus runtime (if one is present and a headset is connected). Both options are meant to only control the program output, but the data are logged and saved into the data file (if requested by `--out_json` option) for both.
+
+#### `--ovr_max_fov`
+Show also data for Oculus _Maximum FOV_ defined by the runtime.
 
 ### Configuration
 The configuration file `<tool_name>.conf.json` is always created with the default values, and can be changed later by the user. The tool will not "touch" the configuration file as long as it exists and only create a new one if none is present.
@@ -201,40 +224,38 @@ One way how to do it is letting the tool to create a new (default) config file (
 
 Configuration options:
 
-* `meta`  
-This section is read-only. Changing it has no meaning or impact on the tool operation.
+* `meta` section is read-only. Changing it has no meaning or impact on the tool operation.
 * `control`
     * `anonymize` decides whether the sensitive data (the serial numbers) are anonymized by default. Default value is `false`.
-    * `anon_props` defines the list of tracked device properties which are anonymized, if requested either by the user with the  command line option or by specifying the default behavior in the config file.
-* `format`  
-Defines the indentation (in spaces):
+* `format` defines the indentation (in spaces):
     * `cli_indent` for standard output in the console,
     * `json_indent` for the output JSON file.
-* `openvr` (only used by `hmdq`)  
+* `verbosity` defines all the different verbosity levels to which the user specified verbosity (set by `--verb` on the command line) is compared.
+    * `silent` defines the level, which, when specified by user, will display only the basic startup info.
+    * `default` is default verbosity level which the tool will use, when none is specified on the command line.
+    * `geom` is the level at which all the geometry properties (displayed in `geom` command) are shown.
+    * `max` defines the level at which all properties _with meaningful values_ are included in the console output.
+    * `error` - the level which, when specified, will also display unsupported properties (with errors).
+* `openvr` (only used by OpenVR runtime or when processing OpenVR data)  
 Sets the operational conditions related to OpenVR. Currently only one is supported:
     * `app_type`  
     Defines how the tool initializes the OpenVR subsystem in `vr::VR_Init` call. The different application types are described [here](https://github.com/ValveSoftware/openvr/wiki/API-Documentation#initialization-and-cleanup).  
     **Note**: _Basically anything different from the default value is untested and unsupported. Putting in a wrong type can also impact the reported values. So only change it if you know what you are doing._
-* `verbosity`  
-Defines all the different verbosity levels to which the user specified verbosity (set by `--verb` on the command line) is compared.
-    * `silent`  
-    Defines the level, which, when specified by user, will display only the basic startup info.
-    * `default`  
-    The default verbosity level which the tool will use, when none is specified on the command line.
-    * `geom`  
-    The level at which all the geometry properties (displayed in `geom` command) are shown.
-    * `max`  
-    The level at which all properties _with meaningful values_ are included in the console output.
-    * `error`  
-    The level which, when specified, will also display unsupported properties (with errors).
-    * `props`  
-    Defines the individual verbosity levels for listed properties. The default list is more of an example than some sophisticated choice. The number defines the minimal required verbosity level specified by the user, in order to have the property value displayed in the output.
+    * `verbosity`
+        * `properties` defines the individual verbosity levels for listed properties. The default list is more of an example than some sophisticated choice. The number defines the minimal required verbosity level specified by the user, in order to have the property value displayed in the output.
+    * `anonymize`
+        * `properties` defines a list of tracked device properties which are anonymized, if requested either by the user with the  command line option or by specifying the default behavior in the config file.
+    * `props`
+* `oculus` (only used by Oculus runtime or when processing Oculus data)
+    * `init_flags` default value for the runtime initialization.
+    * `verbosity` (the same as for OpenVR)
+    * `anonymize` (the same as for OpenVR)
 
 ## Theory behind the FOV calculations
 While listing the properties of (tracked) devices is a mundane task, the rendered FOV calculation is an interesting topic which deserves its own space and is in detail dissected here [VR headset rendered FOV calculation](https://risa2000.github.io/vrdocs/docs/hmd_fov_calculation).
 
 ## Building the tool from the source code
-The tools are being developed as a fun project, so they are probably overdone on many levels, but should never the less be buildable. There are few external dependencies though.
+The tools are being developed as a fun project, so they are probably overdone on many levels, but should never the less be buildable.
 
 ### Required external libraries
 * [`muellan/clipp`](https://github.com/muellan/clipp)
@@ -246,6 +267,7 @@ for parsing the command line arguments.
 * [`ValveSoftware/openvr`](https://github.com/ValveSoftware/openvr) for obvious reasons.
 * [`randombit/botan`](https://github.com/randombit/botan) for secure hash implementation.
 * [`fmtlib/fmt`](https://github.com/fmtlib/fmt) for comfortable printing and formatting of the console output.
+* [`Oculus SDK`](https://developer.oculus.com/downloads/package/oculus-sdk-for-windows/)
 
 On top of that you will also need `cmake` version 3.15 or higher.
 
@@ -256,7 +278,5 @@ On top of that you will also need `cmake` version 3.15 or higher.
 The project is developed as a "CMake project" in Visual Studio 2019, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
 
 Building with `clang-cl` may provide some additional challenges which however should not surprise anyone who is using this compiler and as such is already accustomed to some roughing.
-
-Because of the particular use of `nlohmann/json` library, it is also necessary to patch `QuantStack/xtensor` JSON support with this [patch](https://github.com/QuantStack/xtensor/compare/master...risa2000:xjson_patch). At least until this patch is merged or some other solution to the issue is implemented.
 
 To have the automatic versioning working correctly, CMake scripts expect the build to happen in a locally cloned `git` repository.

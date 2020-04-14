@@ -1,5 +1,5 @@
 /******************************************************************************
- * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
+ * HMDQ Tools - tools for VR headsets and other hardware introspection        *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
  * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
@@ -43,10 +43,10 @@ BEGIN
         BLOCK "040904E4"
         BEGIN
             VALUE "CompanyName", "Richard Musil\0"
-            VALUE "FileDescription", "OpenVR headset utility\0"
+            VALUE "FileDescription", "VR headset data collecting utility\0"
             VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
             VALUE "InternalName", "${PROJECT_NAME}\0"
-            VALUE "LegalCopyright", "© 2019 Richard Musil\0"
+            VALUE "LegalCopyright", "© 2020 Richard Musil\0"
             VALUE "OriginalFilename", "${PROJECT_NAME}.exe\0"
             VALUE "ProductName", "${PROJECT_NAME}\0"
             VALUE "ProductVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\0"

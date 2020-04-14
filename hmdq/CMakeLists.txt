@@ -1,5 +1,5 @@
 ﻿#----------------------------------------------------------------------------+
-# HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      |
+# HMDQ Tools - tools for VR headsets and other hardware introspection        |
 # https://github.com/risa2000/hmdq                                           |
 #                                                                            |
 # Copyright (c) 2019, Richard Musil. All rights reserved.                    |
@@ -17,7 +17,7 @@ include(utils)
 # ============
 project (hmdq
     VERSION ${GIT_REPO_VERSION_MAJOR}.${GIT_REPO_VERSION_MINOR}.${GIT_REPO_VERSION_PATCH}
-    DESCRIPTION "collecting OpenVR headset characteristics in no time"
+    DESCRIPTION "collecting VR headsets characteristics in no time"
     HOMEPAGE_URL "https://github.com/risa2000/hmdq"
     )
 

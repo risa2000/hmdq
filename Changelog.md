@@ -1,5 +1,13 @@
 # HMDQ Tools Change Log
 
+## 2.0.0 - xxxxx xx, 2020
+Major release which includes mainly:
+* Completely redesigned internal architecture.
+* Added support for Oculus runtime, which means now that Oculus headsets can be queried directly without SteamVR intervention and can provide more information than what SteamVR exposes for them.
+
+## 1.3.90 - April 13, 2020
+* Release candidate RC1 before 2.0 release.
+
 ## 1.3.3 - January 4, 2020
 * Updated OpenVR API JSON to OpenVR SDK 1.9.15
 

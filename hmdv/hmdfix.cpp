@@ -1,5 +1,5 @@
 /******************************************************************************
- * HMDQ Tools - tools for an OpenVR HMD and other hardware introspection      *
+ * HMDQ Tools - tools for VR headsets and other hardware introspection        *
  * https://github.com/risa2000/hmdq                                           *
  *                                                                            *
  * Copyright (c) 2019, Richard Musil. All rights reserved.                    *
@@ -64,7 +64,8 @@ void fix_datetime_format(json& jd)
 }
 
 //  Fix for moved OpenVR things from 'misc' to 'openvr'
-void fix_misc_to_openvr(json& jd) {
+void fix_misc_to_openvr(json& jd)
+{
     json jopenvr;
     if (jd[j_misc].find("openvr_ver") != jd[j_misc].end()) {
         jopenvr[j_rt_ver] = jd[j_misc]["openvr_ver"];
