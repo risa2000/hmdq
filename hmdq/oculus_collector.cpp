@@ -72,7 +72,7 @@ json get_tracker_props(ovrSession session, unsigned int tnum)
         res[Prop::FrustumFarZInMeters_Float] = trDesc.FrustumFarZInMeters;
         res[Prop::FrustumNearZInMeters_Float] = trDesc.FrustumNearZInMeters;
     }
-    return {};
+    return res;
 }
 
 json get_controller_props(ovrSession session, ovrControllerType ctype)
