@@ -29,7 +29,7 @@ enum class pmode { geom, props, all };
 struct print_options {
     print_options()
         : anonymize(false), oculus(true), openvr(true), ovr_def_fov(true),
-          ovr_max_fov(true), verbosity(0), mode(pmode::all)
+          ovr_max_fov(false), verbosity(0), mode(pmode::all)
     {}
     bool anonymize; // anonymize the sensitive data
     bool oculus; // show Oculus data

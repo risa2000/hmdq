@@ -295,14 +295,8 @@ int main(int argc, char* argv[])
             % "show only OpenVR data"),
            (option("--oculus").set(opts.openvr, false).set(opts.oculus, true)
             % "show only Oculus data"),
-           (option("--ovr_max_fov")
-                .set(opts.ovr_def_fov, false)
-                .set(opts.ovr_max_fov, true)
-            % "show only Oculus max FOV data"),
-           (option("--ovr_def_fov")
-                .set(opts.ovr_max_fov, false)
-                .set(opts.ovr_def_fov, true)
-            % "show only Oculus default FOV data"));
+           (option("--ovr_max_fov").set(opts.ovr_max_fov, true)
+            % "show also Oculus max FOV data"));
 
     const auto cli_nocmd = cli_opts;
     const auto cli_cmds

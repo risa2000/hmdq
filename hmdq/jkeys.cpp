@@ -16,7 +16,7 @@
 
 //  Print friendly names for keys
 //------------------------------------------------------------------------------
-const std::map<std::string, std::string> j_key2pretty = {{j_max_fov, "Maximal FOV"},
+const std::map<std::string, std::string> j_key2pretty = {{j_max_fov, "Maximum FOV"},
                                                          {j_default_fov, "Default FOV"},
                                                          {j_oculus, "Oculus"},
                                                          {j_openvr, "OpenVR"}};
