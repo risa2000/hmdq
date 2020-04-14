@@ -53,52 +53,42 @@ harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh)
 {
-    // triangle indices into vertices
-    hfaces_t tris_opt;
-    // vertices for triangle indices
-    harray2d_t verts_opt;
     // raw vertices = three consecutive vertices define one triangle
-    harray2d_t verts_raw;
-    double area;
-    json res;
+    harray2d_t verts_raw = ham_mesh[j_verts_raw];
+    // faces (corresponding to verts_raw) either built or collected
+    hfaces_t faces_raw;
 
     // if there are already indexed vertices (Oculus) skip their creation
-    if (ham_mesh.find(j_verts_opt) == ham_mesh.cend()) {
-
-        verts_raw = ham_mesh[j_verts_raw];
+    if (ham_mesh.find(j_faces_raw) == ham_mesh.cend()) {
         // number of vertices must be divisible by 3 as each 3 defined one triangle
         HMDQ_ASSERT(verts_raw.shape(0) % 3 == 0);
-
-        hfaces_t faces;
-        // build the trivial faces for the triangles
+        // build the trivial faces_raw for the triangles
         for (size_t i = 0, e = verts_raw.shape(0); i < e; i += 3) {
-            faces.push_back(hface_t({i, i + 1, i + 2}));
+            faces_raw.push_back(hface_t({i, i + 1, i + 2}));
         }
-
-        std::tie(verts_opt, tris_opt) = reduce_verts(verts_raw, faces);
-        area = area_mesh_raw(verts_raw);
-        auto area2 = area_mesh_tris_idx(verts_opt, tris_opt);
-        // sanity check that the optimized vertices do not differ (much)
-        HMDQ_ASSERT(std::abs(area - area2) < EPS_100)
     }
     else {
-        verts_opt = ham_mesh[j_verts_opt];
-        tris_opt = ham_mesh[j_tris_opt].get<hfaces_t>();
-        area = area_mesh_tris_idx(verts_opt, tris_opt);
+        faces_raw = ham_mesh[j_faces_raw].get<hfaces_t>();
     }
+    // reduce duplicated vertices
+    const auto& [verts_opt, n_faces] = reduce_verts(verts_raw, faces_raw);
+    const auto area = area_mesh_tris_idx(verts_opt, n_faces);
 
-    const auto faces_opt = reduce_faces(tris_opt);
+    // do final faces optimization
+    const auto faces_opt = reduce_faces(n_faces);
 
+    json res;
     // build the resulting JSON
     res[j_ham_area] = area;
-    // copy whatever was originally collected by Collector
-    if (ham_mesh.find(j_verts_raw) != ham_mesh.cend()) {
-        res[j_verts_raw] = ham_mesh[j_verts_raw];
+    if (verts_raw.shape(0) != verts_opt.shape(0)) {
+        // save 'verts_raw' only if they differ from the optimized version
+        res[j_verts_raw] = verts_raw;
+    }
+    if (faces_raw.size() != faces_opt.size()) {
+        // save 'faces_raw' only if they differ from the optimized version
+        res[j_faces_raw] = faces_raw;
     }
     res[j_verts_opt] = verts_opt;
-    if (ham_mesh.find(j_tris_opt) != ham_mesh.cend()) {
-        res[j_tris_opt] = ham_mesh[j_tris_opt];
-    }
     res[j_faces_opt] = faces_opt;
     return res;
 }
