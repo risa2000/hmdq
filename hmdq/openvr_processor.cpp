@@ -43,10 +43,10 @@ void print_openvr(const json& jd, int verb, int ind, int ts)
     const auto sf = ind * ts;
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
     if (verb >= vdef) {
-        if (jd.find(j_rt_path) != jd.cend()) {
+        if (jd.contains(j_rt_path)) {
             iprint(sf, "OpenVR runtime path: {:s}\n", jd[j_rt_path].get<std::string>());
         }
-        if (jd.find(j_rt_ver) != jd.cend()) {
+        if (jd.contains(j_rt_ver)) {
             iprint(sf, "OpenVR runtime version: {:s}\n", jd[j_rt_ver].get<std::string>());
         }
     }
@@ -77,12 +77,11 @@ void print_dev_props(const json& api, const json& dprops, int verb, int ind, int
         const auto name2id = api[j_properties][j_name2id];
         // if there is a property which is no longer supported by current openvr_api.json
         // ignore it
-        if (name2id.find(pname) == name2id.end()) {
-            continue;
+        if (name2id.contains(pname)) {
+            // convert string to the correct type
+            const auto pid = name2id[pname].get<int>();
+            basevr::print_one_prop(pname, pval, pid, verb_props, verb, ind, ts);
         }
-        // convert string to the correct type
-        const auto pid = name2id[pname].get<int>();
-        basevr::print_one_prop(pname, pval, pid, verb_props, verb, ind, ts);
     }
 }
 

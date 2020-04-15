@@ -156,13 +156,13 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     procmap_t processors;
 
     // process all VR subsystem interfaces
-    if (out.find(j_openvr) != out.end()) {
+    if (out.contains(j_openvr)) {
         auto openvr_processor
             = new openvr::Processor(api_json, std::make_shared<json>(out[j_openvr]));
         openvr_processor->init();
         processors.emplace(openvr_processor->get_id(), openvr_processor);
     }
-    if (out.find(j_oculus) != out.end()) {
+    if (out.contains(j_oculus)) {
         auto oculus_processor
             = new oculus::Processor(std::make_shared<json>(out[j_oculus]));
         oculus_processor->init();

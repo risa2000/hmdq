@@ -123,9 +123,9 @@ void to_json(json& j, const ovrFovPort& fovPort)
 
 void from_json(const json& j, ovrFovPort& fovPort)
 {
-    j.at(j_tan_left).get_to(fovPort.LeftTan);
+    fovPort.LeftTan = -j.at(j_tan_left).get<float>();
     j.at(j_tan_right).get_to(fovPort.RightTan);
-    j.at(j_tan_bottom).get_to(fovPort.DownTan);
+    fovPort.DownTan = -j.at(j_tan_bottom).get<float>();
     j.at(j_tan_top).get_to(fovPort.UpTan);
 }
 

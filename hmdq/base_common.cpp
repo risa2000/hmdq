@@ -197,7 +197,7 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
     }
     else {
         // determine the "active" verbosity level for the current property
-        if (verb_props.find(pname) != verb_props.end()) {
+        if (verb_props.contains(pname)) {
             // explicitly defined property
             pverb = verb_props[pname].get<int>();
         }

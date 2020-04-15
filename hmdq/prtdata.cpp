@@ -143,7 +143,7 @@ void print_ham_mesh(const json& ham_mesh, int verb, int vgeom, int ind, int ts)
 
     if (verb >= vgeom) {
         // show raw vertices only if reported by the headset
-        if (ham_mesh.find(j_verts_raw) != ham_mesh.end()) {
+        if (ham_mesh.contains(j_verts_raw)) {
             const auto nverts = ham_mesh[j_verts_raw].size();
             // just a safety check that the data are authentic
             HMDQ_ASSERT(nverts % 3 == 0);
@@ -201,55 +201,55 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     if (verb < vdef) {
         return;
     }
-    if (jd.find(j_rec_rts) != jd.end()) {
+    if (jd.contains(j_rec_rts)) {
         const auto rec_rts = jd[j_rec_rts].get<std::vector<uint32_t>>();
         iprint(sf, "Recommended render target size: {}\n\n", rec_rts);
     }
     for (const auto& neye : {j_leye, j_reye}) {
 
-        if (jd.find(j_ham_mesh) != jd.end()) {
+        if (jd.contains(j_ham_mesh)) {
             iprint(sf, "{:s} eye HAM mesh:\n", neye);
             print_ham_mesh(jd[j_ham_mesh][neye], verb, vgeom, ind + 1, ts);
             fmt::print("\n");
         }
         if (verb >= vgeom) {
-            if (jd.find(j_eye2head) != jd.end()) {
+            if (jd.contains(j_eye2head)) {
                 const harray2d_t e2h = jd[j_eye2head][neye];
                 iprint(sf, "{:s} eye to head transformation matrix:\n", neye);
                 print_harray(e2h, ind + 1, ts);
                 fmt::print("\n");
             }
 
-            if (jd.find(j_raw_eye) != jd.end()) {
+            if (jd.contains(j_raw_eye)) {
                 iprint(sf, "{:s} eye raw LRBT values:\n", neye);
                 print_raw_lrbt(jd[j_raw_eye][neye], ind + 1, ts);
                 fmt::print("\n");
             }
 
-            if (jd.find(j_render_desc) != jd.end()) {
+            if (jd.contains(j_render_desc)) {
                 iprint(sf, "{:s} eye render description:\n", neye);
                 print_render_desc(jd[j_render_desc][neye], ind + 1, ts);
                 fmt::print("\n");
             }
         }
         // print eye FOV points only if eye FOV is different from head FOV
-        if (jd.find(j_fov_eye) != jd.end() && !jd[j_fov_eye].is_null()) {
+        if (jd.contains(j_fov_eye) && !jd[j_fov_eye].is_null()) {
             iprint(sf, "{:s} eye raw FOV:\n", neye);
             print_fov(jd[j_fov_eye][neye], ind + 1, ts);
             fmt::print("\n");
         }
-        if (jd.find(j_fov_head) != jd.end()) {
+        if (jd.contains(j_fov_head)) {
             iprint(sf, "{:s} eye head FOV:\n", neye);
             print_fov(jd[j_fov_head][neye], ind + 1, ts);
             fmt::print("\n");
         }
     }
-    if (jd.find(j_fov_tot) != jd.end()) {
+    if (jd.contains(j_fov_tot)) {
         iprint(sf, "Total FOV:\n");
         print_fov_total(jd[j_fov_tot], ind + 1, ts);
         fmt::print("\n");
     }
-    if (jd.find(j_view_geom) != jd.end()) {
+    if (jd.contains(j_view_geom)) {
         iprint(sf, "View geometry:\n");
         print_view_geom(jd[j_view_geom], ind + 1, ts);
     }
@@ -260,7 +260,7 @@ bool have_sensible_data(const json& jd)
     if (jd.empty() || jd.is_null()) {
         return false;
     }
-    if (jd.find(ERROR_PREFIX) != jd.cend()) {
+    if (jd.contains(ERROR_PREFIX)) {
         return false;
     }
     return true;

@@ -57,15 +57,18 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     harray2d_t verts_raw = ham_mesh[j_verts_raw];
     // faces (corresponding to verts_raw) either built or collected
     hfaces_t faces_raw;
+    // faces raw computed or recorded?
+    bool faces_raw_computed = false;
 
     // if there are already indexed vertices (Oculus) skip their creation
-    if (ham_mesh.find(j_faces_raw) == ham_mesh.cend()) {
+    if (!ham_mesh.contains(j_faces_raw)) {
         // number of vertices must be divisible by 3 as each 3 defined one triangle
         HMDQ_ASSERT(verts_raw.shape(0) % 3 == 0);
         // build the trivial faces_raw for the triangles
         for (size_t i = 0, e = verts_raw.shape(0); i < e; i += 3) {
             faces_raw.push_back(hface_t({i, i + 1, i + 2}));
         }
+        faces_raw_computed = true;
     }
     else {
         faces_raw = ham_mesh[j_faces_raw].get<hfaces_t>();
@@ -84,7 +87,7 @@ json calc_opt_ham_mesh(const json& ham_mesh)
         // save 'verts_raw' only if they differ from the optimized version
         res[j_verts_raw] = verts_raw;
     }
-    if (faces_raw.size() != faces_opt.size()) {
+    if (faces_raw.size() != faces_opt.size() && !faces_raw_computed) {
         // save 'faces_raw' only if they differ from the optimized version
         res[j_faces_raw] = faces_raw;
     }
@@ -257,7 +260,7 @@ json calc_geometry(const json& jd)
     json fov_head;
     json ham_mesh;
 
-    if (jd.find(j_ham_mesh) != jd.cend()) {
+    if (jd.contains(j_ham_mesh)) {
         ham_mesh = jd[j_ham_mesh];
     }
     else {
@@ -298,7 +301,7 @@ json calc_geometry(const json& jd)
     // copy first only certain properties and only if they exist.
     // At the moment, it only concerns Oculus specific j_render_desc.
     for (const auto& name : {j_rec_rts, j_raw_eye, j_eye2head, j_render_desc}) {
-        if (jd.find(name) != jd.cend()) {
+        if (jd.contains(name)) {
             res[name] = jd[name];
         }
     }

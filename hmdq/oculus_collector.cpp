@@ -27,7 +27,7 @@ namespace oculus {
 
 //  constants
 //------------------------------------------------------------------------------
-constexpr const char* TRACKER_FMT = "tracker{}";
+constexpr const char* TRACKER_FMT = "Tracker{}";
 
 //  functions
 //------------------------------------------------------------------------------

@@ -81,7 +81,7 @@ void anonymize(std::vector<char>& out, const std::vector<char>& in)
 //  Return (string) property value for given property from properties
 inline std::string get_prop_val(const json& jdprops, const std::string& pname)
 {
-    if (jdprops.find(pname) != jdprops.end() && jdprops[pname].is_string())
+    if (jdprops.contains(pname) && jdprops[pname].is_string())
         return jdprops[pname].get<std::string>();
     else {
         return "";

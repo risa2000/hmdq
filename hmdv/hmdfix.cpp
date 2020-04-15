@@ -42,7 +42,7 @@ std::string get_hmdx_ver(const json& jd)
 {
     const auto misc = jd[j_misc];
     std::string hmdx_ver;
-    if (misc.find(j_hmdv_ver) != misc.end()) {
+    if (misc.contains(j_hmdv_ver)) {
         hmdx_ver = misc[j_hmdv_ver].get<std::string>();
     }
     else {
@@ -67,7 +67,7 @@ void fix_datetime_format(json& jd)
 void fix_misc_to_openvr(json& jd)
 {
     json jopenvr;
-    if (jd[j_misc].find("openvr_ver") != jd[j_misc].end()) {
+    if (jd[j_misc].contains("openvr_ver")) {
         jopenvr[j_rt_ver] = jd[j_misc]["openvr_ver"];
         jd[j_misc].erase("openvr_ver");
     }
