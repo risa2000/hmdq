@@ -121,10 +121,10 @@ void print_fov_total(const json& jd, int ind, int ts)
 void print_view_geom(const json& jd, int ind, int ts)
 {
     const auto sf = ind * ts;
-    constexpr auto s1 = 22; // strlen("right panel rotation: ");
-    iprint(sf, "{:{}s}{:6.1f} {:s}\n", "left panel rotation:", s1,
+    constexpr auto s1 = 21; // strlen("right panel rotation: ");
+    iprint(sf, "{:{}s}{:6.1f} {:s}\n", "left view rotation:", s1,
            jd[j_left_rot].get<double>(), DEG);
-    iprint(sf, "{:{}s}{:6.1f} {:s}\n", "right panel rotation:", s1,
+    iprint(sf, "{:{}s}{:6.1f} {:s}\n", "right view rotation:", s1,
            jd[j_right_rot].get<double>(), DEG);
     const auto ipd = jd[j_ipd].get<double>() * MM_IN_METER;
     iprint(sf, "{:{}s}{:6.1f} {:s}\n", "reported IPD:", s1, ipd, MM);
