@@ -91,20 +91,13 @@ set (hmdq_sources
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 
-# mangle the lib name for Clang build
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-    set (OPENVRLIB openvr_api64c)
-else()
-    set (OPENVRLIB openvr_api64)
-endif()
-
 # set the path to OVR_SDK
 if (NOT OVR_SDK)
     set (OVR_SDK $ENV{OVR_SDK})
 endif()
 
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
-set (EXT_LIBS botan ${OPENVRLIB})
+set (EXT_LIBS botan openvr_api64)
 
 # Add sources to `hmdq` executable.
 add_executable (hmdq)
