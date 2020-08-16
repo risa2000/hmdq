@@ -20,7 +20,7 @@
 #include "misc.h"
 #include "verhlp.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  locals
 //------------------------------------------------------------------------------

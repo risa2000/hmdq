@@ -18,7 +18,7 @@
 
 #include <OVR_CAPI.h>
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 namespace oculus {
 

@@ -14,7 +14,7 @@
 #include <string>
 #include <tuple>
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 namespace basevr {
 

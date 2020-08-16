@@ -37,7 +37,7 @@
 #include "prtdata.h"
 #include "wintools.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  typedefs
 //------------------------------------------------------------------------------

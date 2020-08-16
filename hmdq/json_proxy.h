@@ -11,17 +11,6 @@
 
 #pragma once
 
-#include <nlohmann/fifo_map.hpp>
 #include <nlohmann/json.hpp>
 
-namespace fix {
-
-// A workaround which allows using fifo_map as a custom (ordered) map,
-// we are just ignoring the 'less' compare
-template<class K, class V, class dummy_compare, class A>
-using my_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
-using json = nlohmann::basic_json<my_fifo_map>;
-
-} // namespace fix
-
-using json = fix::json;
+using json = nlohmann::ordered_json;

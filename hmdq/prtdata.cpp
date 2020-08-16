@@ -29,7 +29,7 @@
 #include "prtdata.h"
 #include "xtdef.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  locals
 //------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     }
     if (jd.contains(j_rec_rts)) {
         const auto rec_rts = jd[j_rec_rts].get<std::vector<uint32_t>>();
-        iprint(sf, "Recommended render target size: {}\n\n", rec_rts);
+        iprint(sf, "Recommended render target size: [{}, {}]\n\n", rec_rts[0], rec_rts[1]);
     }
     for (const auto& neye : {j_leye, j_reye}) {
 

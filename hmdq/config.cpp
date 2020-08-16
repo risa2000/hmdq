@@ -20,7 +20,7 @@
 #include "jkeys.h"
 #include "misc.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  globals
 //------------------------------------------------------------------------------

@@ -27,7 +27,7 @@
 #include "jkeys.h"
 #include "jtools.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  JSON file I/O
 //------------------------------------------------------------------------------

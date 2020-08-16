@@ -24,8 +24,8 @@ project (hmdq
 # Dependencies
 # ============
 find_package (xtensor 0.21.4 REQUIRED)
-find_package (nlohmann_json 3.7.3 REQUIRED)
-find_package (fmt 6.1.3 REQUIRED)
+find_package (nlohmann_json 3.9.1 REQUIRED)
+find_package (fmt 7.0.3 REQUIRED)
 
 # Project defines
 # ============

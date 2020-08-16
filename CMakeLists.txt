@@ -23,7 +23,7 @@ message (STATUS "GIT_REPO_VERSION = ${GIT_REPO_VERSION}")
 
 # Standards
 # ============
-set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # CMake options
@@ -34,7 +34,7 @@ option(BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
 # ============
 project (hmdq_tools
     VERSION ${GIT_REPO_VERSION_MAJOR}.${GIT_REPO_VERSION_MINOR}.${GIT_REPO_VERSION_PATCH}
-    DESCRIPTION "Tools for OpenVR HMD and other hardware introspection."
+    DESCRIPTION "Tools for VR headset and other hardware introspection."
     HOMEPAGE_URL "https://github.com/risa2000/hmdq"
     )
 

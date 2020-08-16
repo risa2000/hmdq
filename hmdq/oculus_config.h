@@ -11,8 +11,6 @@
 
 #include "base_classes.h"
 
-#include "fifo_map_fix.h"
-
 namespace oculus {
 
 //  OculusVR Config class (default config)

@@ -14,7 +14,7 @@
 #include "base_classes.h"
 #include "prtdef.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------

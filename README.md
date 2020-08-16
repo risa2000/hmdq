@@ -262,7 +262,7 @@ for parsing the command line arguments.
 * [`QuantStack/xtensor`](https://github.com/QuantStack/xtensor) for all 2D, 3D vectors and matrices operations.
 * [`QuantStack/xtl`](https://github.com/QuantStack/xtl) required by `QuantStack/xtensor`.
 * [`nlohmann/json`](https://github.com/nlohmann/json) for all JSON parsing and creating.
-* [`nlohmann/fifo_map`](https://github.com/nlohmann/fifo_map) for supporting ordered JSON output.
+* [`nlohmann/fifo_map`](https://github.com/nlohmann/fifo_map) for ordered map support.
 * [`ValveSoftware/openvr`](https://github.com/ValveSoftware/openvr) for obvious reasons.
 * [`randombit/botan`](https://github.com/randombit/botan) for secure hash implementation.
 * [`fmtlib/fmt`](https://github.com/fmtlib/fmt) for comfortable printing and formatting of the console output.

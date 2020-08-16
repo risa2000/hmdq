@@ -21,7 +21,7 @@
 #include "oculus_common.h"
 #include "oculus_props.h"
 
-#include "fifo_map_fix.h"
+#include "json_proxy.h"
 
 namespace oculus {
 

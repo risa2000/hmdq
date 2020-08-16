@@ -11,8 +11,6 @@
 
 #include "base_classes.h"
 
-#include "fifo_map_fix.h"
-
 namespace openvr {
 
 //  OpenVR Config class (default config)
