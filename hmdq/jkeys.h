@@ -118,6 +118,7 @@ constexpr const char* j_ham_area = "ham_area";
 constexpr const char* j_verts_raw = "verts_raw";
 constexpr const char* j_verts_opt = "verts_opt";
 constexpr const char* j_faces_opt = "faces_opt";
+constexpr const char* j_tris_opt = "tris_opt"; // not used
 
 //  OpenVR specifics
 constexpr const char* j_openvr = "openvr";

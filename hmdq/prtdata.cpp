@@ -143,13 +143,20 @@ void print_ham_mesh(const json& ham_mesh, int verb, int vgeom, int ind, int ts)
 
     if (verb >= vgeom) {
         // show raw vertices only if reported by the headset
+        size_t nverts = 0;
+        size_t ntris = 0;
+        if (ham_mesh.contains(j_faces_raw)) {
+            ntris = ham_mesh[j_faces_raw].size();
+        }
         if (ham_mesh.contains(j_verts_raw)) {
-            const auto nverts = ham_mesh[j_verts_raw].size();
+            nverts = ham_mesh[j_verts_raw].size();
+            if (0 == ntris) {
+                HMDQ_ASSERT(nverts % 3 == 0);
+                ntris = nverts / 3;
+            }
             // just a safety check that the data are authentic
-            HMDQ_ASSERT(nverts % 3 == 0);
-            const auto nfaces = nverts / 3;
             iprint(sf, "{:>{}s}: {:d}, triangles: {:d}\n", "original vertices", s1,
-                   nverts, nfaces);
+                   nverts, ntris);
         }
     }
     const auto nverts_opt = ham_mesh[j_verts_opt].size();
@@ -203,7 +210,8 @@ void print_geometry(const json& jd, int verb, int ind, int ts)
     }
     if (jd.contains(j_rec_rts)) {
         const auto rec_rts = jd[j_rec_rts].get<std::vector<uint32_t>>();
-        iprint(sf, "Recommended render target size: [{}, {}]\n\n", rec_rts[0], rec_rts[1]);
+        iprint(sf, "Recommended render target size: [{}, {}]\n\n", rec_rts[0],
+               rec_rts[1]);
     }
     for (const auto& neye : {j_leye, j_reye}) {
 

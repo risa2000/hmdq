@@ -17,51 +17,36 @@
 #include "calcview.h"
 #include "except.h"
 #include "geom.h"
+#include "geom2.h"
 #include "jkeys.h"
+#include "json_proxy.h"
 #include "optmesh.h"
 #include "xtdef.h"
 
-#include "json_proxy.h"
-
 //  functions
 //------------------------------------------------------------------------------
-//  Transform vertices from UV space into LRBT space.
-harray2d_t verts_uv2lrbt(const harray2d_t& verts, double l, double r, double b, double t)
-{
-    const auto trans = uv2lrbt(l, r, b, t);
-    // add ones into the third "dimension" of the 2D points to acknowledge the translation
-    const xt::xtensor<double, 2>::shape_type shape = {1, verts.shape(0)};
-    const harray2d_t tones = xt::ones<double>(shape);
-    // nverts end up being transposed, which is useful for the matmul later
-    const harray2d_t nverts = xt::concatenate(xt::xtuple(xt::transpose(verts), tones));
-    // trasform 2D points in `nverts` by using `trans` transformation matrix
-    const auto tres = matmul(trans, nverts);
-    // we need to transpose it back so the points are the rows of the array
-    return xt::transpose(tres);
-}
-
-//  Build 2D points/vectors (depends on `bpt`) for LRBT rectangle.
-harray2d_t build_lrbt_quad_2d(const json& raw, double norm)
-{
-    const auto l = raw[j_tan_left].get<double>() * norm;
-    const auto r = raw[j_tan_right].get<double>() * norm;
-    const auto b = raw[j_tan_bottom].get<double>() * norm;
-    const auto t = raw[j_tan_top].get<double>() * norm;
-    return harray2d_t({{l, b}, {r, b}, {r, t}, {l, t}});
-}
-
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh)
 {
     // raw vertices = three consecutive vertices define one triangle
-    harray2d_t verts_raw = ham_mesh[j_verts_raw];
+    harray2d_t verts_raw;
     // faces (corresponding to verts_raw) either built or collected
     hfaces_t faces_raw;
     // faces raw computed or recorded?
     bool faces_raw_computed = false;
 
+    // if the raw values are not explicitly present, the raw values are in "opt" values
+    const char* j_verts = ham_mesh.contains(j_verts_raw) ? j_verts_raw : j_verts_opt;
+    // if there are verts_opt then "enforce" faces_raw to be raw as potential faces_opt
+    // should address verts_opt
+    const char* j_faces = ham_mesh.contains(j_faces_raw) || ham_mesh.contains(j_verts_opt)
+        ? j_faces_raw
+        : j_faces_opt;
+
+    verts_raw = ham_mesh[j_verts];
+
     // if there are already indexed vertices (Oculus) skip their creation
-    if (!ham_mesh.contains(j_faces_raw)) {
+    if (!ham_mesh.contains(j_faces)) {
         // number of vertices must be divisible by 3 as each 3 defined one triangle
         HMDQ_ASSERT(verts_raw.shape(0) % 3 == 0);
         // build the trivial faces_raw for the triangles
@@ -71,23 +56,24 @@ json calc_opt_ham_mesh(const json& ham_mesh)
         faces_raw_computed = true;
     }
     else {
-        faces_raw = ham_mesh[j_faces_raw].get<hfaces_t>();
+        faces_raw = ham_mesh[j_faces].get<hfaces_t>();
     }
     // reduce duplicated vertices
     const auto& [verts_opt, n_faces] = reduce_verts(verts_raw, faces_raw);
-    const auto area = area_mesh_tris_idx(verts_opt, n_faces);
-
     // do final faces optimization
     const auto faces_opt = reduce_faces(n_faces);
 
-    json res;
     // build the resulting JSON
-    res[j_ham_area] = area;
-    if (verts_raw.shape(0) != verts_opt.shape(0)) {
+    json res;
+
+    // assume here that n_faces are 'faces_raw' and in fact triangles
+    res[j_ham_area] = area_mesh_tris_idx(verts_opt, n_faces);
+
+    if (verts_raw != verts_opt) {
         // save 'verts_raw' only if they differ from the optimized version
         res[j_verts_raw] = verts_raw;
     }
-    if (faces_raw.size() != faces_opt.size() && !faces_raw_computed) {
+    if (faces_raw != faces_opt && !faces_raw_computed) {
         // save 'faces_raw' only if they differ from the optimized version
         res[j_faces_raw] = faces_raw;
     }
@@ -96,95 +82,40 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     return res;
 }
 
-//  Calculate partial FOVs for the projection.
+//  Calculate partial FOVs for the projection (new version).
 json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot)
 {
-    harray2d_t verts2d;
-    hfaces_t mfaces;
+    std::unique_ptr<geom::Meshd> pHam;
+    std::unique_ptr<geom::Rotation> pRot;
+
     if (!mesh.is_null()) {
-        // if there is a mesh, stretch it to LRBT quad, ortherwise use just the quad
-        const harray2d_t uvverts = mesh[j_verts_opt];
-        mfaces = mesh[j_faces_opt].get<hfaces_t>();
-        verts2d = verts_uv2lrbt(
-            uvverts, raw[j_tan_left].get<double>(), raw[j_tan_right].get<double>(),
-            raw[j_tan_bottom].get<double>(), raw[j_tan_top].get<double>());
-        verts2d = xt::concatenate(xt::xtuple(verts2d, build_lrbt_quad_2d(raw)));
+        const harray2d_t verts = mesh[j_verts_opt];
+        const hfaces_t faces = mesh[j_faces_opt];
+        hedgelist_t edges = geom::faces_to_edges(faces);
+        pHam = std::make_unique<geom::Meshd>(verts, edges);
     }
-    else {
-        verts2d = build_lrbt_quad_2d(raw);
-    }
-    // now verts hold all mesh vertices plus LRBT base quad vertices
-    auto len = verts2d.shape(0);
-    const hface_t lrbt_face = {len - 4, len - 3, len - 2, len - 1};
-    // add the face for the LRBT quad
-    mfaces.push_back(lrbt_face);
-    // put everything into 3D (at z=-1.0)
-    xt::xtensor<double, 2>::shape_type shape = {1, verts2d.shape(0)};
-    harray2d_t tones = xt::ones<double>(shape);
-    harray2d_t verts3d = xt::transpose(
-        xt::concatenate(xt::xtuple(xt::transpose(verts2d), tones * -1.0)));
     if (nullptr != rot) {
-        // rotate the projection plane quad
-        const auto tverts3d = matmul(verts3d, xt::transpose(*rot));
-        // get the last column and use it to normalize the points
-        const auto tcol = xt::view(tverts3d, xt::all(), 2);
-        const auto zcol = xt::expand_dims(tcol, 1);
-        // project the quad into z=-1.0 plane (again)
-        verts3d = tverts3d / abs(zcol);
-        // verts3d changed, update verts2d (get only 2D coordinates, z must be -1.0)
-        verts2d = xt::view(verts3d, xt::all(), xt::range(0, 2));
+        const auto rotMat
+            = Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(rot->data());
+        pRot = std::make_unique<geom::Rotation>(rotMat);
     }
-    // calculate FOV points (corners and points on the edges with one coordinate==0)
-    // make sure the "mid-edge" segments overreach the original dimensions
-    const double fac = 1.1;
-    len = verts2d.shape(0);
-    const auto lb = xt::view(verts2d, len - 4);
-    const hvector_t bc
-        = {0,
-           std::min(xt::view(verts2d, len - 4, 1)[0], xt::view(verts2d, len - 3, 1)[0])
-               * fac};
-    const auto rb = xt::view(verts2d, len - 3);
-    const hvector_t rc
-        = {std::max(xt::view(verts2d, len - 3, 0)[0], xt::view(verts2d, len - 2, 0)[0])
-               * fac,
-           0};
-    const auto rt = xt::view(verts2d, len - 2);
-    const hvector_t tc
-        = {0,
-           std::max(xt::view(verts2d, len - 2, 1)[0], xt::view(verts2d, len - 1, 1)[0])
-               * fac};
-    const auto lt = xt::view(verts2d, len - 1);
-    const hvector_t lc
-        = {std::min(xt::view(verts2d, len - 1, 0)[0], xt::view(verts2d, len - 4, 0)[0])
-               * fac,
-           0};
-    const harray2d_t vectors = xt::stack(xt::xtuple(lb, bc, rb, rc, rt, tc, lt, lc));
+    auto frustum
+        = geom::Frustum(raw[j_tan_left].get<double>(), raw[j_tan_right].get<double>(),
+                        raw[j_tan_bottom].get<double>(), raw[j_tan_top].get<double>(),
+                        pRot.get(), pHam.get());
 
-    hveclist_t pts;
-    const hvector_t origin = {0, 0};
-    for (size_t i = 0, e = vectors.shape(0); i < e; ++i) {
-        const auto v = xt::view(vectors, i);
-        const auto tpts = seg_mesh_int(origin, v, verts2d, mfaces);
-        HMDQ_ASSERT(tpts.size());
-        pts.push_back(find_closest(origin, tpts));
-    }
+    harray2d_t pts = frustum.get_fov_points(true);
 
-    const auto apts = build_array(pts);
-    // add z-coord at z = -1.0 to make them 3D points again
-    shape = {1, pts.size()};
-    tones = xt::ones<double>(shape);
-    const harray2d_t pts3d
-        = xt::transpose(xt::concatenate(xt::xtuple(xt::transpose(apts), tones * -1.0)));
     // calculate angles
     std::vector<double> deg_pts;
     const hvector_t base = {0, 0, -1};
-    for (size_t i = 0, e = pts3d.shape(0); i < e; ++i) {
-        const auto p = xt::view(pts3d, i);
+    for (size_t i = 0, e = pts.shape(0); i < e; ++i) {
+        const auto p = xt::view(pts, i);
         deg_pts.push_back(angle_deg(base, p));
     }
 
     json res;
-    json fov_pts = pts3d;
+    json fov_pts = pts;
     res[j_fov_pts] = fov_pts;
     res[j_deg_left] = -deg_pts[7];
     res[j_deg_right] = deg_pts[3];

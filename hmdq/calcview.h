@@ -11,28 +11,15 @@
 
 #pragma once
 
-#include "xtdef.h"
-
 #include "json_proxy.h"
+#include "xtdef.h"
 
 //  functions
 //------------------------------------------------------------------------------
-//  Return transform matrix from UV (mesh space) to LRTB (lrtb projection plane).
-inline harray2d_t uv2lrbt(double l, double r, double b, double t)
-{
-    return harray2d_t({{r - l, 0, l}, {0, t - b, b}});
-}
-
-//  Transform vertices from UV space into LRBT space.
-harray2d_t verts_uv2lrbt(const harray2d_t& verts, double l, double r, double b, double t);
-
-//  Build 2D points/vectors (depends on `bpt`) for LRBT rectangle.
-harray2d_t build_lrbt_quad_2d(const json& raw, double norm = 1.0);
-
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh);
 
-//  Calculate partial FOVs for the projection.
+//  Calculate partial FOVs for the projection (new version).
 json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot = nullptr);
 
 //  Calculate total FOV, vertical, horizontal and diagonal.

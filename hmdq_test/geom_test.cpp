@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xview.hpp>
 
@@ -75,20 +74,6 @@ TEST_CASE("geometry module", "[geometry]")
         REQUIRE(dot_prod(o3, b7) == 0);
     }
 
-    SECTION("matrix determinant 2x2", "[mat_det_2x2]")
-    {
-        REQUIRE(det_mat_2x2(mat1) == -1);
-        REQUIRE(det_mat_2x2(mat2) == 0);
-        REQUIRE_THROWS_AS(det_mat_2x2(mat3), hmdq_exception);
-    }
-
-    SECTION("matrix determinant", "[mat_det]")
-    {
-        REQUIRE(det_mat(mat1 + mat2) == -10);
-        REQUIRE(det_mat(mat1 - mat2) == 8);
-        REQUIRE_THROWS_AS(det_mat(mat3), hmdq_exception);
-    }
-
     SECTION("vector magnitude", "[norm]")
     {
         REQUIRE(norm(o2) == 0);
@@ -119,87 +104,6 @@ TEST_CASE("geometry module", "[geometry]")
         REQUIRE(angle(b1, b8) == angle(b8, b1));
     }
 
-    SECTION("matrix multiplication", "[matmul]")
-    {
-        harray2d_t ident = xt::eye<double>(3, 0);
-        harray2d_t mat1 = {{1, 2, 1}, {1, 0, 0}, {1, 1, 1}};
-        harray2d_t mat2 = {{-4, 0, -1}, {1, -3, 3}, {-4, -2, -3}};
-        harray2d_t mat3 = {{1, -1, -3}, {3, 0, -2}, {-4, -2, 0}};
-        harray2d_t rmat1 = {{-6., -8., 2.}, {-4., 0., -1}, {-7., -5., -1.}};
-        harray2d_t rmat2 = {{-5., -9., -5.}, {1., 5., 4.}, {-9., -11., -7.}};
-
-        REQUIRE(bool(rmat1 == matmul(mat1, mat2)));
-        REQUIRE(bool(rmat2 == matmul(mat2, mat1)));
-        REQUIRE(bool(mat2 == matmul(mat2, ident)));
-        REQUIRE(bool(mat2 == matmul(ident, mat2)));
-        REQUIRE(bool(mat1 == matmul(mat1, ident)));
-        REQUIRE(bool(mat1 == matmul(ident, mat1)));
-
-        harray2d_t tmat1 = xt::view(mat1, xt::all(), xt::range(0, 2));
-        harray2d_t tmat2 = xt::view(mat2, xt::range(0, 2), xt::all());
-        harray2d_t rmat3 = {{-2, -6, 5}, {-4, 0, -1}, {-3, -3, 2}};
-
-        REQUIRE(bool(rmat3 == matmul(tmat1, tmat2)));
-        REQUIRE_THROWS_AS(matmul(tmat1, tmat1), hmdq_exception);
-        REQUIRE_THROWS_AS(matmul(tmat2, tmat2), hmdq_exception);
-    }
-
-    SECTION("segment x segment intersection", "[seg_seg_int]")
-    {
-        REQUIRE(bool(seg_seg_int(a1, a2, a3, a4) == hvecpair_t({1, 1}, {0, 1})));
-        REQUIRE(bool(seg_seg_int(o2, a2, o2, a4) == hvecpair_t({0, 0}, {0, 0})));
-        REQUIRE(bool(seg_seg_int(o2, a2, o2, a4) == hvecpair_t({0, 0}, {0, 0})));
-        REQUIRE(bool(seg_seg_int(a2, a6, a1, a5) == hvecpair_t({0, 0}, {0, 0})));
-        REQUIRE(bool(seg_seg_int(a2, a3, a1, a2) == hvecpair_t(a2, a2)));
-        REQUIRE(bool(seg_seg_int(a3, a8, a2, a8) == hvecpair_t(a8, a8)));
-        REQUIRE(
-            bool(seg_seg_int(o2, a6, a5, a7) == hvecpair_t({-0.5, -0.5}, {-0.5, -0.5})));
-        REQUIRE(bool(seg_seg_int(a4, a5, a4, a6) == hvecpair_t(a4, a4)));
-
-        hvecpair_t tres = seg_seg_int(a3, a6, o2, a4);
-        auto tres2 = xt::stack(xt::xtuple(tres.first, tres.second));
-        auto xres = hvector_t({-0.33333333333333337, 0.33333333333333326});
-        auto xres2 = xt::stack(xt::xtuple(xres, xres));
-        REQUIRE(0.0 == Approx(norm(tres2 - xres2)).margin(EPS_100));
-
-        REQUIRE(bool(seg_seg_int(a4, a5, a4, a6) == hvecpair_t(a4, a4)));
-        tres = seg_seg_int(a1, a2, a4, a5);
-        REQUIRE(tres.first.size() == 0);
-        REQUIRE(tres.second.size() == 0);
-        tres = seg_seg_int(a2, a3, a6, a7);
-        REQUIRE(tres.first.size() == 0);
-        REQUIRE(tres.second.size() == 0);
-        REQUIRE(bool(seg_seg_int(o2, a2, o2, a6) == hvecpair_t(o2, o2)));
-    }
-
-    SECTION("segment x mesh intersection", "[seg_mesh_int]")
-    {
-        harray2d_t verts = xt::stack(xt::xtuple(a5, a2, a4, a6, a8));
-        std::vector<std::vector<size_t>> faces = {{0, 1, 2, 3, 4}};
-
-        REQUIRE(bool(seg_mesh_int(o2, a5, verts, faces)
-                     == xt::stack(xt::xtuple(a5, a5, a5))));
-        REQUIRE(bool(seg_mesh_int(a7, a3, verts, faces)
-                     == xt::stack(xt::xtuple(a3 / 2, a3, a7, a7 / 2))));
-    }
-
-    SECTION("find the closest point", "[find_closest]")
-    {
-        harray2d_t verts = xt::stack(xt::xtuple(a5, a2, a4, a6, a8));
-        std::vector<std::vector<size_t>> faces = {{0, 1, 2, 3, 4}};
-
-        auto tset = seg_mesh_int(o2, a5, verts, faces);
-        REQUIRE(bool(find_closest(o2, tset) == a5));
-
-        tset = seg_mesh_int(a7, a3, verts, faces);
-        auto fset = find_closest(o2, tset);
-        CAPTURE(fset);
-        REQUIRE(bool(fset == a7 / 2 || fset == a3 / 2));
-
-        tset = seg_mesh_int(a7 * 3, a3, verts, faces);
-        REQUIRE(bool(find_closest(a7 * 3, tset) == a7));
-    }
-
     SECTION("traingle surface calculation", "[area_triangle]")
     {
         REQUIRE(area_triangle(a1 * 3, o2, a3 * 4) == Approx(6.0));
@@ -213,15 +117,5 @@ TEST_CASE("geometry module", "[geometry]")
         REQUIRE(area_triangle(a2, o2, o2) == Approx(0));
         REQUIRE(area_triangle(o2, a2, o2) == Approx(0));
         REQUIRE(area_triangle(a5, a1, a7 * 2) == Approx(2.0));
-    }
-
-    SECTION("triangle mesh surface calculation", "[area_mesh]")
-    {
-        harray2d_t verts
-            = xt::stack(xt::xtuple(o2, a1, a2, o2, a2, a3, o2, a3, a4, o2, a4, a5));
-        harray2d_t verts2
-            = xt::stack(xt::xtuple(o2, a5, a6, o2, a6, a7, o2, a7, a8, o2, a8, a1));
-        REQUIRE(area_mesh_raw(verts) == Approx(2.0));
-        REQUIRE(area_mesh_raw(verts2) == Approx(2.0));
     }
 }

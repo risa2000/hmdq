@@ -26,6 +26,7 @@ project (hmdq
 find_package (xtensor 0.21.4 REQUIRED)
 find_package (nlohmann_json 3.9.1 REQUIRED)
 find_package (fmt 7.0.3 REQUIRED)
+find_package (Eigen3 3.3.90 REQUIRED)
 
 # Project defines
 # ============
@@ -34,7 +35,7 @@ set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
 # Custom files
 # ============
 configure_file (
-    ${PROJECT_RES_DIR}/misc.h.in
+    ${CMAKE_SOURCE_DIR}/res/misc.h.in
     ${PROJECT_BINARY_DIR}/misc.h
     )
 
@@ -72,6 +73,7 @@ set (hmdq_sources
     calcview.cpp
     config.cpp
     geom.cpp
+    geom2.cpp
     hmdq.cpp
     jkeys.cpp
     jtools.cpp
@@ -106,11 +108,13 @@ target_sources (hmdq PRIVATE ${hmdq_sources})
 target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
 target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
+target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options (hmdq PRIVATE /Zc:inline /Zc:__cplusplus)
 
 target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/$<IF:$<CONFIG:Debug>,Debug,Release>)
 target_link_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
+target_link_directories (hmdq PRIVATE Eigen3::Eigen)
 
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (hmdq PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
@@ -149,4 +153,4 @@ install (TARGETS hmdq
     DESTINATION .
     )
 
-print_variables ("hmdq_.*")
+print_variables ("eigen3_.*")

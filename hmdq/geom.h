@@ -11,15 +11,9 @@
 
 #pragma once
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <cmath>
 
-#include "except.h"
 #include "xtdef.h"
-
-//  globals
-//------------------------------------------------------------------------------
-constexpr double EPS_100 = std::numeric_limits<double>::epsilon() * 100;
 
 //  functions
 //------------------------------------------------------------------------------
@@ -34,22 +28,6 @@ inline double dot_prod(const harray_t& v1, const harray_t& v2)
 {
     auto sres = xt::sum(v1 * v2);
     return sres[0];
-}
-
-//  Compute determinant of 2x2 matrix.
-inline double det_mat_2x2(const harray2d_t& m)
-{
-    // make sure these are indeed 2x2 matrices
-    HMDQ_ASSERT(m.dimension() == 2 && m.shape(0) == 2 && m.shape(1) == 2);
-    return m(0, 0) * m(1, 1) - m(1, 0) * m(0, 1);
-}
-
-//  Compute determinant of the matrix.
-inline double det_mat(const harray2d_t& m)
-{
-    // only 2x2 matrices are supported by now
-    HMDQ_ASSERT(m.dimension() == 2 && m.shape(0) == 2 && m.shape(1) == 2);
-    return det_mat_2x2(m);
 }
 
 //  Compute vector length.
@@ -83,29 +61,8 @@ inline double point_dist(const hvector_t& p1, const hvector_t& p2)
     return norm(xt::eval(p1 - p2));
 }
 
-//  Calculate matrix multiplication of two 2D arrays.
-harray2d_t matmul(const harray2d_t& a1, const harray2d_t& a2);
-
-//  Calculate two points where two segments are closest:
-//  seg1 = (a1, a2), seg2 = (b1, b2),
-//  where a1, a2, b1, b2 are the respective endpoints of the segments.
-//  Return "empty" vectors, if the segments are parallel.
-hvecpair_t seg_seg_int(const hvector_t& a1, const hvector_t& a2, const hvector_t& b1,
-                       const hvector_t& b2);
-
-//  Calculate points of intersection of segement (a1, a2) and the mesh edges.
-harray2d_t seg_mesh_int(const hvector_t& a1, const hvector_t& a2, const harray2d_t& verts,
-                        const hfaces_t& faces);
-
-//  Find closest vertex from `verts` to point `pt`.
-hvector_t find_closest(const hvector_t& pt, const harray2d_t& verts);
-
 //  Calculate the area of the triangle given by the vertices.
 double area_triangle(const hvector_t& v1, const hvector_t& v2, const hvector_t& v3);
-
-//  Calculate the mesh area from given triangles. Each consequtive 3 vertices
-//  define one triangle.
-double area_mesh_raw(const harray2d_t& verts);
 
 //  Calculate the mesh area from given triangles. Triangle are specified by vertices
 //  indexed by an index array.

@@ -24,12 +24,14 @@ project (hmdq_test
 find_package (xtensor 0.21.4 REQUIRED)
 # Use Catch2 unit test framework
 find_package (Catch2 REQUIRED)
+find_package (Eigen3 3.3.90 REQUIRED)
 
 set (hmdq_dir ../hmdq)
 set (hmdv_dir ../hmdv)
 
 set (hmdq_test_sources
     ${hmdq_dir}/geom.cpp
+    ${hmdq_dir}/geom2.cpp
     geom_test.cpp # this one defines main
     ${hmdq_dir}/optmesh.cpp
     optmesh_test.cpp
@@ -43,6 +45,7 @@ add_executable (hmdq_test)
 target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
 
 target_include_directories (hmdq_test PRIVATE ${hmdq_dir} ${hmdv_dir})
+target_include_directories (hmdq_test PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options(hmdq_test PRIVATE /Zc:inline /Zc:__cplusplus)
 

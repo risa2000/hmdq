@@ -9,14 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-#include <algorithm>
 #include <list>
 #include <set>
 
 #include <xtensor/xview.hpp>
 
-#include "geom.h"
+#include "except.h"
 #include "optmesh.h"
 #include "xtdef.h"
 
@@ -150,6 +148,7 @@ hface_t build_face(const hedgelist_t& edges1, const hedgelist_t& edges2)
     }
     return res;
 }
+
 //  Remove continous chain of edges (sorted) from `edges` and return what
 //  remains again continous.
 hedgelist_t remove_chain(const hedgelist_t& chain, const hedgelist_t& edges)
@@ -300,13 +299,15 @@ hfaces_t reduce_faces(const hfaces_t& faces)
                 hedgelist_t shared = shared_edges(edges1, edges2);
                 if (shared.size()) {
                     auto chain = check_chained(shared);
-                    // if shared egdes are not chained we are probably not looking at the
-                    // triangle mesh
-                    HMDQ_ASSERT(chain.size() != 0);
-                    auto new_face = merge_edges(edges1, edges2, chain);
-                    if (!has_cycle(new_face)) {
-                        face = new_face;
-                        found = true;
+                    if (0 != chain.size()) {
+                        auto new_face = merge_edges(edges1, edges2, chain);
+                        if (!has_cycle(new_face)) {
+                            face = new_face;
+                            found = true;
+                        }
+                        else {
+                            checked.push_back(f);
+                        }
                     }
                     else {
                         checked.push_back(f);

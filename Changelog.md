@@ -1,5 +1,12 @@
 # HMDQ Tools Change Log
 
+## 2.1.0 - September 12, 2020
+* Changed FOV calculation algorithm to accept raw total horizontal FOV > 180 deg. (StarVR One).
+* Updated to OpenVR SDK 1.12.5.
+
+## 2.0.1 - April 25, 2020
+* Updated to OpenVR SDK 1.11.11.
+
 ## 2.0.0 - April 18, 2020
 Major release which includes mainly:
 * Completely redesigned internal architecture.
@@ -9,14 +16,14 @@ Major release which includes mainly:
 * Release candidate RC1 before 2.0 release.
 
 ## 1.3.3 - January 4, 2020
-* Updated OpenVR API JSON to OpenVR SDK 1.9.15
+* Updated OpenVR API JSON to OpenVR SDK 1.9.15.
 
 ## 1.3.2 - November 6, 2019
-* Updated OpenVR API JSON to OpenVR SDK 1.8.19
+* Updated OpenVR API JSON to OpenVR SDK 1.8.19.
 
 ## 1.3.1 - September 18, 2019
 * Added OpenVR build version to the version info.
-* Updated OpenVR API JSON to OpenVR SDK 1.17.15.
+* Updated OpenVR API JSON to OpenVR SDK 1.7.15.
 * Internal: Changed version info generation.
 * Internal: Updated all external libraries.
 

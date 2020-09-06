@@ -24,8 +24,9 @@ project (hmdv
 # Dependencies
 # ============
 find_package (xtensor 0.21.4 REQUIRED)
-find_package (nlohmann_json 3.7.3 REQUIRED)
-find_package (fmt 6.1.3 REQUIRED)
+find_package (nlohmann_json 3.9.1 REQUIRED)
+find_package (fmt 7.0.3 REQUIRED)
+find_package (Eigen3 3.3.90 REQUIRED)
 
 # Project defines
 # ============
@@ -34,7 +35,7 @@ set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
 # Custom files
 # ============
 configure_file (
-    ${PROJECT_RES_DIR}/misc.h.in
+    ${CMAKE_SOURCE_DIR}/res/misc.h.in
     ${PROJECT_BINARY_DIR}/misc.h
     )
 
@@ -70,6 +71,7 @@ set (hmdv_sources
     ${hmdq_dir}/calcview.cpp
     ${hmdq_dir}/config.cpp
     ${hmdq_dir}/geom.cpp
+    ${hmdq_dir}/geom2.cpp
     ${hmdq_dir}/jtools.cpp
     ${hmdq_dir}/jkeys.cpp
     ${hmdq_dir}/openvr_common.cpp
@@ -101,6 +103,7 @@ target_include_directories (hmdv PRIVATE ${hmdq_dir})
 target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
 target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
+target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options (hmdv PRIVATE /Zc:inline /Zc:__cplusplus)
 

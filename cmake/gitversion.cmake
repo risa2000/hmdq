@@ -18,7 +18,7 @@ message (STATUS "Resolving GIT Version")
 find_package (Git)
 if (GIT_FOUND)
     execute_process (
-        COMMAND ${GIT_EXECUTABLE} describe --tags --always --match "v*"
+        COMMAND ${GIT_EXECUTABLE} describe --tags --long --always --dirty --match "v*"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_VARIABLE GIT_REPO_VERSION
         ERROR_QUIET
@@ -35,18 +35,25 @@ if (GIT_REPO_VERSION MATCHES "^v([0-9]+).([0-9]+).([0-9]+)($|(-([0-9]+)-([a-h0-9
     set (GIT_REPO_VERSION_MINOR ${CMAKE_MATCH_2})
     set (GIT_REPO_VERSION_PATCH ${CMAKE_MATCH_3})
     set (GIT_REPO_VERSION_NCOMM ${CMAKE_MATCH_6})
-    set (GIT_REPO_VERSION_HASH ${CMAKE_MATCH_7})
+    set (GIT_REPO_VERSION_GHASH ${CMAKE_MATCH_7})
+    if (CMAKE_MATCH_9)
+        set (GIT_REPO_VERSION_DIRTY "true")
+    else()
+        set (GIT_REPO_VERSION_DIRTY "false")
+    endif()
     foreach (i RANGE ${CMAKE_MATCH_COUNT})
         message (STATUS "CMAKE_MATCH_${i} = ${CMAKE_MATCH_${i}}")
     endforeach()
     print_variables("GIT_.*")
 else()
-    message (STATUS "No valid GIT version found, unsetting the var")
-    unset (GIT_REPO_VERSION)
+    message (STATUS "No valid GIT version found, supplying 0.1.0")
+    set (GIT_REPO_VERSION_MAJOR 0)
+    set (GIT_REPO_VERSION_MINOR 1)
+    set (GIT_REPO_VERSION_PATCH 0)
 endif()
 
-string (TIMESTAMP _TIMESTAMP "%Y-%m-%d %H:%M:%S")
-message (STATUS "${_TIMESTAMP}")
+string (TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+message (STATUS "BUILD_TIMESTAMP = ${BUILD_TIMESTAMP}")
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/res/gitversion.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/res/gitversion.h

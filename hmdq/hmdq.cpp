@@ -21,12 +21,18 @@
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include <Eigen/Core>
+
+#include <xtensor/xtensor_config.hpp>
+#include <xtl/xtl_config.hpp>
+
 #include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
 #include "gitversion.h"
 #include "jkeys.h"
+#include "json_proxy.h"
 #include "jtools.h"
 #include "misc.h"
 #include "oculus_collector.h"
@@ -39,7 +45,10 @@
 #include "prtdata.h"
 #include "wintools.h"
 
-#include "json_proxy.h"
+//  defines
+//------------------------------------------------------------------------------
+#define xstringify(_s) stringify(_s)
+#define stringify(_x) #_x
 
 //  typedefs
 //------------------------------------------------------------------------------
@@ -78,23 +87,30 @@ void print_info(int ind = 0, int ts = 0)
            CXX_COMPILER_VERSION, CXX_COMPILER_ARCHITECTURE_ID);
     iprint(sf1, "{:>{}s}: {:s} ({:s})\n", "host", tf1, HOST_SYSTEM,
            HOST_SYSTEM_PROCESSOR);
-    iprint(sf1, "{:>{}s}: {:s}\n", "date", tf1, TIMESTAMP);
+    iprint(sf1, "{:>{}s}: {:s}\n", "date", tf1, BUILD_TIMESTAMP);
     fmt::print("\n");
     iprint(sf, "using libraries:\n");
-    constexpr const char* libver_nover_fmt = "{0:s} (https://github.com/{0:s})\n";
-    constexpr const char* libver_str_fmt = "{0:s} {1:s} (https://github.com/{0:s})\n";
-    constexpr const char* libver_num_fmt
-        = "{0:s} {1:d}.{2:d}.{3:d} (https://github.com/{0:s})\n";
+    constexpr const char* libver_nover_fmt = "{0} (https://github.com/{0})\n";
+    constexpr const char* libver_str_fmt = "{0} {1} (https://github.com/{0})\n";
+    constexpr const char* libver_num_fmt = "{0} {1}.{2}.{3} (https://github.com/{0})\n";
+    constexpr const char* gitlab_libver_num_fmt
+        = "{0} {1}.{2}.{3} (https://gitlab.com/{0})\n";
     iprint(sf1, libver_nover_fmt, "muellan/clip");
-    iprint(sf1, libver_str_fmt, "nlohmann/json", NLOHMANN_JSON_VERSION);
-    iprint(sf1, libver_str_fmt, "QuantStack/xtl", XTL_VERSION);
-    iprint(sf1, libver_str_fmt, "QuantStack/xtensor", XTENSOR_VERSION);
+    iprint(sf1, libver_num_fmt, "nlohmann/json", NLOHMANN_JSON_VERSION_MAJOR,
+           NLOHMANN_JSON_VERSION_MINOR, NLOHMANN_JSON_VERSION_PATCH);
+    iprint(sf1, libver_num_fmt, "QuantStack/xtl", XTL_VERSION_MAJOR, XTL_VERSION_MINOR,
+           XTL_VERSION_PATCH);
+    iprint(sf1, libver_num_fmt, "QuantStack/xtensor", XTENSOR_VERSION_MAJOR,
+           XTENSOR_VERSION_MINOR, xstringify(XTENSOR_VERSION_PATCH));
     iprint(sf1, libver_str_fmt, "randombit/botan", Botan::short_version_string());
     iprint(sf1, libver_num_fmt, "fmtlib/fmt", FMT_VERSION / 10000,
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
     const auto [vmaj, vmin, vbuild] = openvr::get_sdk_ver();
     iprint(sf1, libver_num_fmt, "ValveSoftware/openvr", vmaj, vmin, vbuild);
-    iprint(sf1, "{0:s} {1:s}\n", "Oculus/LibOVR", OVR_VERSION_STRING);
+    iprint(sf1, "{0:s} {1:s} ({2:s})\n", "Oculus/LibOVR", OVR_VERSION_STRING,
+           "https://developer.oculus.com/downloads/package/oculus-sdk-for-windows/");
+    iprint(sf1, gitlab_libver_num_fmt, "libeigen/eigen", EIGEN_WORLD_VERSION,
+           EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
 }
 
 //  Return some miscellanous info about the app and the OS.

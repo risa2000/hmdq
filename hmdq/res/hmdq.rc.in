@@ -11,11 +11,11 @@
 
 #include <verrsrc.h>
 
-#define VER_FILEVERSION        ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0
-#define VER_FILEVERSION_STR    "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
+#define VER_FILEVERSION        @GIT_REPO_VERSION_MAJOR@,@GIT_REPO_VERSION_MINOR@,@GIT_REPO_VERSION_PATCH@,@GIT_REPO_VERSION_NCOMM@
+#define VER_FILEVERSION_STR    "@GIT_REPO_VERSION@"
 
-#define VER_PRODUCTVERSION     ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},0,0
-#define VER_PRODUCTVERSION_STR "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\0"
+#define VER_PRODUCTVERSION     @GIT_REPO_VERSION_MAJOR@,@GIT_REPO_VERSION_MINOR@,@GIT_REPO_VERSION_PATCH@,@GIT_REPO_VERSION_NCOMM@
+#define VER_PRODUCTVERSION_STR "@GIT_REPO_VERSION@"
 
 #cmakedefine VI_DEBUG
 
@@ -42,14 +42,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "CompanyName", "Richard Musil\0"
-            VALUE "FileDescription", "VR headset data collecting utility\0"
-            VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\0"
-            VALUE "InternalName", "${PROJECT_NAME}\0"
-            VALUE "LegalCopyright", "© 2020 Richard Musil\0"
-            VALUE "OriginalFilename", "${PROJECT_NAME}.exe\0"
-            VALUE "ProductName", "${PROJECT_NAME}\0"
-            VALUE "ProductVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\0"
+            VALUE "CompanyName", "Richard Musil"
+            VALUE "FileDescription", "VR headset data collecting utility"
+            VALUE "FileVersion", VER_FILEVERSION_STR
+            VALUE "InternalName", "${PROJECT_NAME}"
+            VALUE "LegalCopyright", "© 2020 Richard Musil"
+            VALUE "OriginalFilename", "${PROJECT_NAME}.exe"
+            VALUE "ProductName", "${PROJECT_NAME}"
+            VALUE "ProductVersion", VER_PRODUCTVERSION_STR
         END
     END
     BLOCK "VarFileInfo"

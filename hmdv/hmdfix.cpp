@@ -34,6 +34,8 @@ static constexpr const char* PROG_VER_OPENVR_SECTION_FIX = "1.0.0";
 static constexpr const char* PROG_VER_IPD_FIX = "1.2.3";
 static constexpr const char* PROG_VER_FOV_FIX = "1.2.4";
 static constexpr const char* PROG_VER_OPENVR_LOCALIZED = "1.3.4";
+static constexpr const char* PROG_VER_TRIS_OPT_TO_FACES_RAW = "1.3.91";
+static constexpr const char* PROG_VER_NEW_FOV_ALGO = "2.1.0";
 
 //  functions
 //------------------------------------------------------------------------------
@@ -103,6 +105,69 @@ void fix_openvr_section(json& jd)
     jd.erase(j_geometry);
 }
 
+//  change (temporarily introduced) 'tris_opt' key to 'faces_raw' and make 'verts_opt'
+//  without 'verts_raw' 'verts_raw' again
+void fix_tris_opt(json& jd)
+{
+    std::vector<json*> geoms;
+    if (jd.contains(j_openvr)) {
+        json& jd_openvr = jd[j_openvr];
+        if (jd_openvr.contains(j_geometry)) {
+            geoms.push_back(&jd_openvr[j_geometry]);
+        }
+    }
+    if (jd.contains(j_oculus)) {
+        json& jd_oculus = jd[j_oculus];
+        if (jd_oculus.contains(j_geometry)) {
+            for (const auto& fov_id : {j_default_fov, j_max_fov}) {
+                if (jd_oculus[j_geometry].contains(fov_id)) {
+                    geoms.push_back(&jd_oculus[j_geometry][fov_id]);
+                }
+            }
+        }
+    }
+    for (json* g : geoms) {
+        if ((*g).contains(j_ham_mesh)) {
+            for (const auto& neye : {j_leye, j_reye}) {
+                if ((*g)[j_ham_mesh].contains(neye)
+                    && !(*g)[j_ham_mesh][neye].is_null()) {
+                    json& hm_eye = (*g)[j_ham_mesh][neye];
+                    if (hm_eye.contains(j_tris_opt)) {
+                        hm_eye[j_faces_raw] = std::move(hm_eye[j_tris_opt]);
+                        hm_eye.erase(j_tris_opt);
+                    }
+                    if (hm_eye.contains(j_verts_opt) && !hm_eye.contains(j_verts_raw)) {
+                        hm_eye[j_verts_raw] = std::move(hm_eye[j_verts_opt]);
+                        hm_eye.erase(j_verts_opt);
+                    }
+                }
+            }
+        }
+    }
+}
+
+//  recalculate FOV points with the new algorithm which works fine with total FOV > 180
+//  deg.
+void fix_fov_algo(json& jd)
+{
+    if (jd.contains(j_openvr)) {
+        json& jd_openvr = jd[j_openvr];
+        if (jd_openvr.contains(j_geometry)) {
+            jd_openvr[j_geometry] = calc_geometry(jd_openvr[j_geometry]);
+        }
+    }
+    if (jd.contains(j_oculus)) {
+        json& jd_oculus = jd[j_oculus];
+        if (jd_oculus.contains(j_geometry)) {
+            for (const auto& fov_id : {j_default_fov, j_max_fov}) {
+                if (jd_oculus[j_geometry].contains(fov_id)) {
+                    jd_oculus[j_geometry][fov_id]
+                        = calc_geometry(jd_oculus[j_geometry][fov_id]);
+                }
+            }
+        }
+    }
+}
 //  Check and run all fixes (return true if there was any)
 bool apply_all_relevant_fixes(json& jd)
 {
@@ -131,6 +196,18 @@ bool apply_all_relevant_fixes(json& jd)
     // move all OpenVR data into 'openvr' section
     if (comp_ver(hmdx_ver, PROG_VER_OPENVR_LOCALIZED) < 0) {
         fix_openvr_section(jd);
+        fixed = true;
+    }
+    // change (temporarily introduced) 'tris_opt' key to 'faces_raw' and make 'verts_opt'
+    // without 'verts_raw' 'verts_raw' again
+    if (comp_ver(hmdx_ver, PROG_VER_TRIS_OPT_TO_FACES_RAW) < 0) {
+        fix_tris_opt(jd);
+        fixed = true;
+    }
+    //  recalculate FOV points with the new algorithm which works fine with total FOV >
+    //  180 deg.
+    if (comp_ver(hmdx_ver, PROG_VER_NEW_FOV_ALGO) < 0) {
+        fix_fov_algo(jd);
         fixed = true;
     }
     // add 'hmdv_ver' into misc, if some change was made

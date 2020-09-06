@@ -26,8 +26,3 @@ constexpr const char* HOST_SYSTEM = "@CMAKE_HOST_SYSTEM@";
 constexpr const char* HOST_SYSTEM_NAME = "@CMAKE_HOST_SYSTEM_NAME@";
 constexpr const char* HOST_SYSTEM_PROCESSOR = "@CMAKE_HOST_SYSTEM_PROCESSOR@";
 constexpr const char* HOST_SYSTEM_VERSION = "@CMAKE_HOST_SYSTEM_VERSION@";
-
-// Include libraries
-constexpr const char* XTL_VERSION = "@xtl_VERSION@";
-constexpr const char* XTENSOR_VERSION = "@xtensor_VERSION@";
-constexpr const char* NLOHMANN_JSON_VERSION = "@nlohmann_json_VERSION@";
