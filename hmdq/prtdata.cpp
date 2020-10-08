@@ -9,27 +9,27 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <string>
-#include <vector>
-
-#include "prtstl.h"
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-
-#include <openvr/openvr.h>
-
-#include <xtensor/xjson.hpp>
-
+#include "prtdata.h"
 #include "calcview.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
 #include "jkeys.h"
+#include "json_proxy.h"
+#include "jtools.h"
 #include "misc.h"
-#include "prtdata.h"
+#include "prtstl.h"
 #include "xtdef.h"
 
-#include "json_proxy.h"
+#include <openvr/openvr.h>
+
+#include <xtensor/xjson.hpp>
+
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+
+#include <string>
+#include <vector>
 
 //  locals
 //------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ bool have_sensible_data(const json& jd)
     if (jd.empty() || jd.is_null()) {
         return false;
     }
-    if (jd.contains(ERROR_PREFIX)) {
+    if (has_error(jd)) {
         return false;
     }
     return true;

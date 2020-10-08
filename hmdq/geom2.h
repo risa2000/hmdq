@@ -22,6 +22,11 @@
 
 namespace geom {
 
+//  globals
+//------------------------------------------------------------------------------
+constexpr double DOUBLE_EPS_100 = std::numeric_limits<double>::epsilon() * 100;
+constexpr double DOUBLE_MAX = std::numeric_limits<double>::max();
+
 //  typedefs
 //------------------------------------------------------------------------------
 using Point3 = Eigen::Vector<double, 3>;

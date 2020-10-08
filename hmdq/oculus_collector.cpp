@@ -9,19 +9,19 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <algorithm>
-
-#include <fmt/format.h>
-
-#include <OVR_CAPI.h>
-
+#include "oculus_collector.h"
 #include "except.h"
 #include "jkeys.h"
-#include "oculus_collector.h"
+#include "json_proxy.h"
+#include "jtools.h"
 #include "oculus_common.h"
 #include "oculus_props.h"
 
-#include "json_proxy.h"
+#include <OVR_CAPI.h>
+
+#include <fmt/format.h>
+
+#include <algorithm>
 
 namespace oculus {
 
@@ -213,14 +213,14 @@ bool Collector::try_init()
            NULL, 0, 0};
     m_error = ovr_Initialize(&initParams);
     if (check_failure(m_error)) {
-        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
+        add_error(*m_pjData, get_last_error_msg());
         return false;
     }
     m_inited = true;
 
     m_error = ovr_Create(&m_session, &m_graphicsLuid);
     if (check_failure(m_error)) {
-        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
+        add_error(*m_pjData, get_last_error_msg());
         shutdown();
         return false;
     }

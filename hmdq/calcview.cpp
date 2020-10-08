@@ -9,19 +9,20 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <xtensor/xarray.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xjson.hpp>
-#include <xtensor/xview.hpp>
-
 #include "calcview.h"
 #include "except.h"
 #include "geom.h"
 #include "geom2.h"
 #include "jkeys.h"
 #include "json_proxy.h"
+#include "jtools.h"
 #include "optmesh.h"
 #include "xtdef.h"
+
+#include <xtensor/xarray.hpp>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xjson.hpp>
+#include <xtensor/xview.hpp>
 
 //  functions
 //------------------------------------------------------------------------------
@@ -58,6 +59,7 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     else {
         faces_raw = ham_mesh[j_faces].get<hfaces_t>();
     }
+
     // reduce duplicated vertices
     const auto& [verts_opt, n_faces] = reduce_verts(verts_raw, faces_raw);
     // do final faces optimization
@@ -79,6 +81,7 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     }
     res[j_verts_opt] = verts_opt;
     res[j_faces_opt] = faces_opt;
+
     return res;
 }
 
@@ -242,5 +245,43 @@ json calc_geometry(const json& jd)
     res[j_fov_tot] = fov_tot;
     res[j_ham_mesh] = ham_mesh;
 
+    return res;
+}
+
+//  Check to catch invalid raw frustum in (Quest 2 - firmware major 10579)
+bool raw_eye_sanity_check(json& raw_eye)
+{
+    bool res = true;
+    if (!(raw_eye[j_tan_left].get<double>() < -geom::DOUBLE_EPS_100)) {
+        add_error_array(raw_eye, "tan_left is invalid");
+        res = false;
+    }
+    if (!(raw_eye[j_tan_right].get<double>() > geom::DOUBLE_EPS_100)) {
+        add_error_array(raw_eye, "tan_right is invalid");
+        res = false;
+    }
+    if (!(raw_eye[j_tan_bottom].get<double>() < -geom::DOUBLE_EPS_100)) {
+        add_error_array(raw_eye, "tan_bottom is invalid");
+        res = false;
+    }
+    if (!(raw_eye[j_tan_top].get<double>() > geom::DOUBLE_EPS_100)) {
+        add_error_array(raw_eye, "tan_top is invalid");
+        res = false;
+    }
+    return res;
+}
+
+//  Do sanity check on geometry data (Quest 2 - firmware major 10579)
+//  Augment the JSON data with the error code if one is found.
+bool geometry_sanity_check(json& geom)
+{
+    bool res = true;
+    for (const auto& neye : {j_leye, j_reye}) {
+        // get raw eye values (direct from OpenVR)
+        auto& raw_eye = geom[j_raw_eye][neye];
+        if (!raw_eye_sanity_check(raw_eye)) {
+            res = false;
+        }
+    }
     return res;
 }

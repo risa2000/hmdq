@@ -9,28 +9,27 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <algorithm>
-#include <filesystem>
-#include <tuple>
-#include <type_traits>
-
-#include <fmt/format.h>
-
-#include <openvr/openvr.h>
+#include "openvr_collector.h"
+#include "base_common.h"
+#include "except.h"
+#include "jkeys.h"
+#include "json_proxy.h"
+#include "jtools.h"
+#include "openvr_common.h"
+#include "xtdef.h"
 
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xjson.hpp>
 #include <xtensor/xview.hpp>
 
-#include "base_common.h"
-#include "except.h"
-#include "jkeys.h"
-#include "jtools.h"
-#include "openvr_collector.h"
-#include "openvr_common.h"
-#include "xtdef.h"
+#include <openvr/openvr.h>
 
-#include "json_proxy.h"
+#include <fmt/format.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <tuple>
+#include <type_traits>
 
 namespace openvr {
 
@@ -107,7 +106,7 @@ hdevlist_t enum_devs(vr::IVRSystem* vrsys)
 inline json get_tp_error(vr::IVRSystem* vrsys, vr::ETrackedPropertyError err)
 {
     const auto msg = fmt::format("{:s}", vrsys->GetPropErrorNameFromEnum(err));
-    return json::object({{ERROR_PREFIX, msg}});
+    return make_error_obj(msg);
 }
 
 //  Get vector of scalar values (integral types) into a JSON dict.
@@ -199,7 +198,7 @@ json prop_array_to_json(const std::string& pname,
             return get_val_vec_array<vr::HmdVector4_t>(buffer, buffer.size());
         default:
             const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-            return json::object({{ERROR_PREFIX, msg}});
+            return make_error_obj(msg);
     }
 }
 
@@ -242,7 +241,7 @@ json get_any_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
 
     if (ptype == basevr::PropType::Invalid) {
         const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
-        return json::object({{ERROR_PREFIX, msg}});
+        return make_error_obj(msg);
     }
 
     vr::PropertyTypeTag_t ptag = ptype_to_ptag(ptype);
@@ -474,7 +473,7 @@ bool Collector::try_init()
 {
     if (!vr::VR_IsRuntimeInstalled()) {
         m_err = vr::VRInitError_Init_InstallationNotFound;
-        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
+        add_error(*m_pjData, get_last_error_msg());
         return false;
     }
     bool res = false;
@@ -487,7 +486,7 @@ bool Collector::try_init()
         res = true;
     }
     else {
-        (*m_pjData)[ERROR_PREFIX] = get_last_error_msg();
+        add_error(*m_pjData, get_last_error_msg());
     }
     return res;
 }

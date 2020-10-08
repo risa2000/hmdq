@@ -17,11 +17,6 @@
 
 namespace geom {
 
-//  locals
-//------------------------------------------------------------------------------
-constexpr double DOUBLE_EPS_100 = std::numeric_limits<double>::epsilon() * 100;
-constexpr double DOUBLE_MAX = std::numeric_limits<double>::max();
-
 //  helper functions
 //------------------------------------------------------------------------------
 //  Convert faces to edges

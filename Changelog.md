@@ -1,4 +1,8 @@
 # HMDQ Tools Change Log
+## 2.1.1 - October 12, 2020
+* Added a workaround for invalid FOV data (Quest 2).
+* Some code clean up.
+* Updated to OpenVR SDK 1.14.15.
 
 ## 2.1.0 - September 12, 2020
 * Changed FOV calculation algorithm to accept raw total horizontal FOV > 180 deg. (StarVR One).

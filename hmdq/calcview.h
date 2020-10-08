@@ -31,3 +31,7 @@ json calc_view_geom(const json& e2h);
 
 //  Calculate the additional data in the geometry data object (json)
 json calc_geometry(const json& jd);
+
+//  Do sanity check on geometry data (Quest 2 - firmware major 10579)
+//  Augment the JSON data with the error code if one is found.
+bool geometry_sanity_check(json& geom);

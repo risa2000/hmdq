@@ -9,16 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <filesystem>
-
-#include <fmt/format.h>
-
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xjson.hpp>
-
-#include <Extras/OVR_Math.h>
-
+#include "oculus_processor.h"
 #include "base_common.h"
 #include "calcview.h"
 #include "config.h"
@@ -26,10 +17,19 @@
 #include "jkeys.h"
 #include "jtools.h"
 #include "oculus_common.h"
-#include "oculus_processor.h"
 #include "oculus_props.h"
 #include "prtdata.h"
 #include "xtdef.h"
+
+#include <Extras/OVR_Math.h>
+
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xjson.hpp>
+
+#include <fmt/format.h>
+
+#include <filesystem>
 
 namespace oculus {
 
@@ -114,7 +114,7 @@ void print_all_props(const json& props, int verb, int ind, int ts)
     }
 }
 
-//  Precalculate some date which are not directly provided by Oculus runtime.
+//  Precalculate some data which are not directly provided by Oculus runtime.
 void precalc_geometry(json& jd)
 {
     json eye2head;
@@ -146,8 +146,13 @@ void Processor::calculate()
     if (m_pjData->find(j_geometry) != m_pjData->end()) {
         auto& geom = (*m_pjData)[j_geometry];
         for (auto& [fovType, fovGeom] : geom.items()) {
-            precalc_geometry(fovGeom);
-            geom[fovType] = calc_geometry(fovGeom);
+            if (geometry_sanity_check(fovGeom)) {
+                precalc_geometry(fovGeom);
+                geom[fovType] = calc_geometry(fovGeom);
+            }
+            else {
+                add_error(fovGeom, "Geometry data are invalid (check JSON output file)");
+            }
         }
     }
 }
@@ -175,9 +180,9 @@ void Processor::print(const print_options& opts, int ind, int ts) const
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
 
     // if there was an error and there are no data, print the error and quit
-    if (m_pjData->find(ERROR_PREFIX) != m_pjData->end()) {
+    if (has_error(*m_pjData)) {
         if (opts.verbosity >= vdef) {
-            iprint(ind * ts, ERR_MSG_FMT_OUT, (*m_pjData)[ERROR_PREFIX]);
+            iprint(ind * ts, ERR_MSG_FMT_OUT, get_error_msg(*m_pjData));
         }
         return;
     }
@@ -220,7 +225,12 @@ void Processor::print(const print_options& opts, int ind, int ts) const
                     }
                     iprint(sf, "{}:\n", get_jkey_pretty(fovType));
                     fmt::print("\n");
-                    print_geometry(fovGeom, tverb, ind + 1, ts);
+                    if (has_error(fovGeom)) {
+                        iprint((ind + 1) * ts, ERR_MSG_FMT_OUT, get_error_msg(fovGeom));
+                    }
+                    else {
+                        print_geometry(fovGeom, tverb, ind + 1, ts);
+                    }
                 }
             }
         }

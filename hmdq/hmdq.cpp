@@ -9,23 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <ctime>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-
-#include <clipp.h>
-
-#include <botan/version.h>
-
-#include <fmt/chrono.h>
-#include <fmt/format.h>
-
-#include <Eigen/Core>
-
-#include <xtensor/xtensor_config.hpp>
-#include <xtl/xtl_config.hpp>
-
 #include "compat.h"
 #include "config.h"
 #include "except.h"
@@ -44,6 +27,23 @@
 #include "openvr_processor.h"
 #include "prtdata.h"
 #include "wintools.h"
+
+#include <clipp.h>
+
+#include <botan/version.h>
+
+#include <xtensor/xtensor_config.hpp>
+#include <xtl/xtl_config.hpp>
+
+#include <Eigen/Core>
+
+#include <fmt/chrono.h>
+#include <fmt/format.h>
+
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <memory>
 
 //  defines
 //------------------------------------------------------------------------------
@@ -186,9 +186,34 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     collectors.emplace(oculus_collector->get_id(), oculus_collector);
     processors.emplace(oculus_processor->get_id(), oculus_processor);
 
+    constexpr const char* RAW_JSON_NAME_FMT = "{}_raw.hmdq.json";
+    bool raw_read = false;
     for (auto& [col_id, col] : collectors) {
         if (col->try_init()) {
-            col->collect();
+            if (opts.dbg_raw_in) {
+                const auto jinpath
+                    = std::filesystem::path(fmt::format(RAW_JSON_NAME_FMT, col_id));
+                if (std::filesystem::exists(jinpath)) {
+                    *col->get_data() = read_json(jinpath);
+                    fmt::print("DEBUG: Reading raw collected data <- {}\n",
+                               jinpath.string());
+                    raw_read = true;
+                }
+                else {
+                    fmt::print("DEBUG: Raw data JSON file {} not found\n",
+                               jinpath.string());
+                }
+            }
+            if (!raw_read) {
+                col->collect();
+                if (opts.dbg_raw_out) {
+                    const auto joutpath
+                        = std::filesystem::path(fmt::format(RAW_JSON_NAME_FMT, col_id));
+                    write_json(joutpath, *col->get_data(), 2);
+                    fmt::print("DEBUG: Writing raw collected data -> {}\n",
+                               joutpath.string());
+                }
+            }
             // if there is a processor registered run it now
             if (processors.find(col_id) != processors.end()) {
                 auto proc = processors[col_id].get();
@@ -218,8 +243,10 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
 
     // dump the data into the optional JSON file
     if (!out_json.empty()) {
-        // add the checksum
-        add_checksum(out);
+        if (!raw_read) {
+            // add the checksum (but only when the data are authentic)
+            add_checksum(out);
+        }
         // save the JSON file with indentation
         write_json(out_json, out, json_indent);
     }
@@ -312,7 +339,11 @@ int main(int argc, char* argv[])
            (option("--oculus").set(opts.openvr, false).set(opts.oculus, true)
             % "show only Oculus data"),
            (option("--ovr_max_fov").set(opts.ovr_max_fov, true)
-            % "show also Oculus max FOV data"));
+            % "show also Oculus max FOV data"),
+           (option("--dbg_raw_in").set(opts.dbg_raw_in, true)
+            % "read raw collected data from JSON file into the processor (debug)"),
+           (option("--dbg_raw_out").set(opts.dbg_raw_out, true)
+            % "write raw collected data into JSON file without any processing (debug)"));
 
     const auto cli_nocmd = cli_opts;
     const auto cli_cmds

@@ -11,14 +11,14 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "base_classes.h"
+#include "jkeys.h"
+#include "json_proxy.h"
 
 #include <OVR_CAPI.h>
 
-#include "base_classes.h"
-
-#include "json_proxy.h"
+#include <memory>
+#include <string>
 
 namespace oculus {
 

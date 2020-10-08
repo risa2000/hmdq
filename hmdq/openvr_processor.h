@@ -11,12 +11,12 @@
 
 #pragma once
 
+#include "base_classes.h"
+#include "jkeys.h"
+#include "json_proxy.h"
+
 #include <filesystem>
 #include <string>
-
-#include "base_classes.h"
-
-#include "json_proxy.h"
 
 namespace openvr {
 

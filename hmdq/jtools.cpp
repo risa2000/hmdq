@@ -9,25 +9,24 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <filesystem>
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include <fmt/format.h>
+#include "jtools.h"
+#include "compat.h"
+#include "config.h"
+#include "except.h"
+#include "jkeys.h"
+#include "json_proxy.h"
 
 #include <botan/filters.h>
 #include <botan/hash.h>
 #include <botan/hex.h>
 #include <botan/pipe.h>
 
-#include "compat.h"
-#include "config.h"
-#include "except.h"
-#include "jkeys.h"
-#include "jtools.h"
+#include <fmt/format.h>
 
-#include "json_proxy.h"
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
 
 //  JSON file I/O
 //------------------------------------------------------------------------------
@@ -122,13 +121,54 @@ void purge_jdprops_errors(json& jdprops)
 {
     std::vector<std::string> to_drop;
     for (const auto& [pname, pval] : jdprops.items()) {
-        if (pval.count(ERROR_PREFIX)) {
+        if (has_error(pval)) {
             to_drop.push_back(pname);
         }
     }
     // purge the props with errors
     for (const auto& pname : to_drop) {
         jdprops.erase(pname);
+    }
+}
+
+//  Add an error message to JSON item
+void add_error(json& jd, const char* msg)
+{
+    jd[ERROR_PREFIX] = msg;
+}
+
+//  Add an error message to JSON item
+void add_error(json& jd, const std::string& msg)
+{
+    jd[ERROR_PREFIX] = msg;
+}
+
+//  Add an error message to JSON item in an array container
+void add_error_array(json& jd, const char* msg)
+{
+    if (!jd.contains(ERROR_PREFIX)) {
+        jd[ERROR_PREFIX] = json::array();
+    }
+    HMDQ_ASSERT(jd[ERROR_PREFIX].is_array());
+    jd[ERROR_PREFIX].push_back(msg);
+}
+
+//  Return the error message
+std::string get_error_msg(const json& jd)
+{
+    const auto& jerr = get_error(jd);
+    if (jerr.is_string()) {
+        return jerr.get<std::string>();
+    }
+    else if (jerr.is_array()) {
+        std::vector<std::string> err_list;
+        for (const auto& e : jerr) {
+            err_list.push_back(e.get<std::string>());
+        }
+        return fmt::format("{}", fmt::join(err_list.cbegin(), err_list.cend(), ", "));
+    }
+    else {
+        return fmt::format("Invalid error type {}", jerr.type_name());
     }
 }
 

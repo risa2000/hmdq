@@ -9,12 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <filesystem>
-
-#include <fmt/format.h>
-
-#include <xtensor/xjson.hpp>
-
+#include "openvr_processor.h"
 #include "base_common.h"
 #include "calcview.h"
 #include "config.h"
@@ -22,9 +17,14 @@
 #include "jkeys.h"
 #include "jtools.h"
 #include "openvr_common.h"
-#include "openvr_processor.h"
 #include "prtdata.h"
 #include "xtdef.h"
+
+#include <xtensor/xjson.hpp>
+
+#include <fmt/format.h>
+
+#include <filesystem>
 
 namespace openvr {
 
@@ -146,9 +146,9 @@ void Processor::print(const print_options& opts, int ind, int ts) const
     const auto vsil = g_cfg[j_verbosity][j_silent].get<int>();
 
     // if there was an error and there are no data, print the error and quit
-    if (m_pjData->find(ERROR_PREFIX) != m_pjData->end()) {
+    if (has_error(*m_pjData)) {
         if (opts.verbosity >= vdef) {
-            iprint(ind * ts, ERR_MSG_FMT_OUT, (*m_pjData)[ERROR_PREFIX]);
+            iprint(ind * ts, ERR_MSG_FMT_OUT, get_error_msg(*m_pjData));
             // fmt::print("\n");
         }
         return;
@@ -162,11 +162,11 @@ void Processor::print(const print_options& opts, int ind, int ts) const
     auto tverb
         = (opts.mode == pmode::props || opts.mode == pmode::all) ? opts.verbosity : vsil;
     if (tverb >= vdef) {
-        if (m_pjData->find(j_devices) != m_pjData->end()) {
+        if (m_pjData->contains(j_devices)) {
             print_devs(*m_pjApi, (*m_pjData)[j_devices], ind, ts);
             fmt::print("\n");
         }
-        if (m_pjData->find(j_properties) != m_pjData->end()) {
+        if (m_pjData->contains(j_properties)) {
             print_all_props(*m_pjApi, (*m_pjData)[j_properties], tverb, ind, ts);
             fmt::print("\n");
         }

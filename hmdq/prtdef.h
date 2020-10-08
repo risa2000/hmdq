@@ -29,13 +29,16 @@ enum class pmode { geom, props, all };
 struct print_options {
     print_options()
         : anonymize(false), oculus(true), openvr(true), ovr_def_fov(true),
-          ovr_max_fov(false), verbosity(0), mode(pmode::all)
+          ovr_max_fov(false), dbg_raw_in(false), dbg_raw_out(false), verbosity(0),
+          mode(pmode::all)
     {}
     bool anonymize; // anonymize the sensitive data
     bool oculus; // show Oculus data
     bool openvr; // show OpenVR data
     bool ovr_def_fov; // show Oculus default FOV
     bool ovr_max_fov; // show Oculus max FOV
+    bool dbg_raw_in; // read collected data from JSON file into the processor
+    bool dbg_raw_out; // write collected data into JSON file without any processing
     int verbosity; // output verbosity
     pmode mode; // print mode
 };

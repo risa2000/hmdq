@@ -9,13 +9,14 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <xtensor/xjson.hpp>
-
 #include "base_common.h"
 #include "config.h"
 #include "fmthlp.h"
 #include "jkeys.h"
+#include "jtools.h"
 #include "xtdef.h"
+
+#include <xtensor/xjson.hpp>
 
 namespace basevr {
 
@@ -188,7 +189,7 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
     // property verbosity level (if defined) or max
     int pverb;
     // property having an error attached?
-    const auto nerr = pval.count(ERROR_PREFIX);
+    const auto nerr = has_error(pval);
 
     if (nerr) {
         // the value is an error code, so print it out only if the verbosity
@@ -214,7 +215,7 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
     // print the prop name
     prop_head_out(pid, basename, is_array, ind, ts);
     if (nerr) {
-        const auto msg = pval[ERROR_PREFIX].get<std::string>();
+        const auto msg = get_error_msg(pval);
         fmt::print(ERR_MSG_FMT_JSON, msg);
     }
     else if (is_array) {
