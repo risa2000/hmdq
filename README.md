@@ -1,7 +1,7 @@
 ![hmdq](docs/images/hmdq_128.png) ![hmdv](docs/images/hmdv_128.png)
 
 # HMDQ Tools
-HMDQ Tools is a set of two command line tools for some VR headsets and other hardware introspection with support for both OpenVR and Oculus runtimes:
+HMDQ Tools is a set of two command line tools for VR headsets and other hardware introspection with support for both OpenVR and Oculus runtimes. The tools are also used to collect the data for and build the [HMD Geometry Database](https://risa2000.github.io/hmdgdb/).
 
 ## `hmdq`
 is a main tool, which connects to a VR subsystem and collects all available data about the connected devices (_tracked devices_ in OpenVR world, headsets, trackers and controllers in Oculus world).  
