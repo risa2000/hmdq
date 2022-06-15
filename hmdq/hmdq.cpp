@@ -140,7 +140,8 @@ static pmode mode2pmode(const mode selected)
         case mode::all:
             return pmode::all;
         default:
-            HMDQ_EXCEPTION(fmt::format("mode2pmode({}) is undefined", selected));
+            HMDQ_EXCEPTION(
+                fmt::format("mode2pmode({}) is undefined", static_cast<int>(selected)));
     }
 }
 
