@@ -9,10 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <OVR_CAPI.h>
-
 #include "jkeys.h"
 #include "oculus_common.h"
+
+#include <nlohmann/ordered_map.hpp>
+
+#include <OVR_CAPI.h>
 
 namespace oculus {
 
@@ -23,7 +25,7 @@ const eyes_t EYES = {{ovrEye_Left, j_leye}, {ovrEye_Right, j_reye}};
 
 //  Controller types names
 // clang-format off
-const nlohmann::fifo_map<int, const char*> g_bmControllerTypes = {
+const nlohmann::ordered_map<int, const char*> g_bmControllerTypes = {
     {ovrControllerType_None, "None"},
     {ovrControllerType_LTouch, "LTouch"},
     {ovrControllerType_RTouch, "RTouch"},
@@ -37,20 +39,20 @@ const nlohmann::fifo_map<int, const char*> g_bmControllerTypes = {
 // clang-format on
 
 //  HMD capabilities names
-const nlohmann::fifo_map<int, const char*> g_bmHmdCaps = {
+const nlohmann::ordered_map<int, const char*> g_bmHmdCaps = {
     /// <B>(read only)</B> Specifies that the HMD is a virtual debug device.
     {ovrHmdCap_DebugDevice, "DebugDevice"},
 };
 
 //  Tracker capabilites names
-const nlohmann::fifo_map<int, const char*> g_bmTrackingCaps = {
+const nlohmann::ordered_map<int, const char*> g_bmTrackingCaps = {
     {ovrTrackingCap_Orientation, "Orientation"},
     {ovrTrackingCap_MagYawCorrection, "MagYawCorrection"},
     {ovrTrackingCap_Position, "Position"},
 };
 
 //  HMD types names
-const nlohmann::fifo_map<int, const char*> g_mHmdTypes = {
+const nlohmann::ordered_map<int, const char*> g_mHmdTypes = {
     {ovrHmd_None, "None"},       {ovrHmd_DK1, "DK1"},   {ovrHmd_DKHD, "DKHD"},
     {ovrHmd_DK2, "DK2"},         {ovrHmd_CB, "CB"},     {ovrHmd_Other, "Other"},
     {ovrHmd_E3_2015, "E3_2015"}, {ovrHmd_ES06, "ES06"}, {ovrHmd_ES09, "ES09"},

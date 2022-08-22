@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include <nlohmann/fifo_map.hpp>
+#include <nlohmann/ordered_map.hpp>
 
 #include <OVR_CAPI.h>
 
@@ -29,13 +29,13 @@ typedef std::vector<std::pair<ovrEyeType, std::string>> eyes_t;
 //  common constants
 //------------------------------------------------------------------------------
 //  Controller types names
-extern const nlohmann::fifo_map<int, const char*> g_bmControllerTypes;
+extern const nlohmann::ordered_map<int, const char*> g_bmControllerTypes;
 //  HMD capabilities names
-extern const nlohmann::fifo_map<int, const char*> g_bmHmdCaps;
+extern const nlohmann::ordered_map<int, const char*> g_bmHmdCaps;
 //  Tracker capabilites names
-extern const nlohmann::fifo_map<int, const char*> g_bmTrackingCaps;
+extern const nlohmann::ordered_map<int, const char*> g_bmTrackingCaps;
 //  HMD types names
-extern const nlohmann::fifo_map<int, const char*> g_mHmdTypes;
+extern const nlohmann::ordered_map<int, const char*> g_mHmdTypes;
 
 //  Eye nomenclature
 extern const eyes_t EYES;

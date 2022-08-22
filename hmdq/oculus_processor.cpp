@@ -21,6 +21,8 @@
 #include "prtdata.h"
 #include "xtdef.h"
 
+#include <nlohmann/ordered_map.hpp>
+
 #include <Extras/OVR_Math.h>
 
 #include <xtensor/xadapt.hpp>
@@ -46,7 +48,7 @@ const std::vector<std::string> PROPS_TO_SEED
 //  helper functions
 //------------------------------------------------------------------------------
 template<typename T, typename S>
-std::vector<std::string> bitmap_to_flags(T val, const nlohmann::fifo_map<T, S>& bmap)
+std::vector<std::string> bitmap_to_flags(T val, const nlohmann::ordered_map<T, S>& bmap)
 {
     std::vector<std::string> res;
     for (const auto [mask, name] : bmap) {

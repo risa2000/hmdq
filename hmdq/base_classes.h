@@ -14,7 +14,7 @@
 #include <map>
 #include <string>
 
-#include <nlohmann/fifo_map.hpp>
+#include <nlohmann/ordered_map.hpp>
 
 #include "prtdef.h"
 
@@ -29,11 +29,11 @@ class BaseVRConfig;
 //  typedefs
 //------------------------------------------------------------------------------
 // collector buffer
-typedef nlohmann::fifo_map<std::string, std::unique_ptr<BaseVRCollector>> colmap_t;
+typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRCollector>> colmap_t;
 // processor buffer
-typedef nlohmann::fifo_map<std::string, std::unique_ptr<BaseVRProcessor>> procmap_t;
+typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRProcessor>> procmap_t;
 // config buffer
-typedef nlohmann::fifo_map<std::string, std::unique_ptr<BaseVRConfig>> cfgmap_t;
+typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRConfig>> cfgmap_t;
 
 //  BaseVR class
 //------------------------------------------------------------------------------

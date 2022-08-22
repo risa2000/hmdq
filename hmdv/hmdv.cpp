@@ -173,15 +173,15 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     // process all VR subsystem interfaces
     if (out.contains(j_openvr)) {
         auto openvr_processor
-            = new openvr::Processor(api_json, std::make_shared<json>(out[j_openvr]));
+            = std::make_unique<openvr::Processor>(api_json, std::make_shared<json>(out[j_openvr]));
         openvr_processor->init();
-        processors.emplace(openvr_processor->get_id(), openvr_processor);
+        processors.emplace(openvr_processor->get_id(), std::move(openvr_processor));
     }
     if (out.contains(j_oculus)) {
         auto oculus_processor
-            = new oculus::Processor(std::make_shared<json>(out[j_oculus]));
+            = std::make_unique<oculus::Processor>(std::make_shared<json>(out[j_oculus]));
         oculus_processor->init();
-        processors.emplace(oculus_processor->get_id(), oculus_processor);
+        processors.emplace(oculus_processor->get_id(), std::move(oculus_processor));
     }
 
     // anonymize the data if requested
@@ -244,10 +244,10 @@ int main(int argc, char* argv[])
 
     // init global config before anything else
     cfgmap_t cfgs;
-    auto openvr_config = new openvr::Config();
-    cfgs.emplace(openvr_config->get_id(), openvr_config);
-    auto oculus_config = new oculus::Config();
-    cfgs.emplace(oculus_config->get_id(), oculus_config);
+    auto openvr_config = std::make_unique<openvr::Config>();
+    cfgs.emplace(openvr_config->get_id(), std::move(openvr_config));
+    auto oculus_config = std::make_unique<oculus::Config>();
+    cfgs.emplace(oculus_config->get_id(), std::move(oculus_config));
 
     const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)
