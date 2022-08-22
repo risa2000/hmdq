@@ -76,11 +76,11 @@ TEST_CASE("geometry module", "[geometry]")
 
     SECTION("vector magnitude", "[norm]")
     {
-        REQUIRE(norm(o2) == 0);
-        REQUIRE(norm(a1) == 1);
+        REQUIRE(norm(o2) == 0.0);
+        REQUIRE(norm(a1) == 1.0);
         REQUIRE(norm(a2) == 1.4142135623730951);
         REQUIRE(norm(a4) == 1.4142135623730951);
-        REQUIRE(norm(a7) == 1);
+        REQUIRE(norm(a7) == 1.0);
         REQUIRE(norm(a8) == 1.4142135623730951);
     }
 
@@ -96,6 +96,7 @@ TEST_CASE("geometry module", "[geometry]")
 
     SECTION("vector angle degrees", "[angle_deg]")
     {
+        using Approx = Catch::Approx;
         REQUIRE(angle_deg(b7, b8) == Approx(45.0));
         REQUIRE(std::isnan(angle(o3, b1)));
         REQUIRE(angle_deg(b1, b3) == Approx(90.0));
@@ -106,6 +107,7 @@ TEST_CASE("geometry module", "[geometry]")
 
     SECTION("traingle surface calculation", "[area_triangle]")
     {
+        using Approx = Catch::Approx;
         REQUIRE(area_triangle(a1 * 3, o2, a3 * 4) == Approx(6.0));
         REQUIRE(area_triangle(o2, a3 * 4, a1 * 3) == Approx(6.0));
         REQUIRE(area_triangle(a3 * 4, a1 * 3, o2) == Approx(6.0));
