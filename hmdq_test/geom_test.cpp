@@ -76,12 +76,12 @@ TEST_CASE("geometry module", "[geometry]")
 
     SECTION("vector magnitude", "[norm]")
     {
-        REQUIRE(norm(o2) == 0.0);
-        REQUIRE(norm(a1) == 1.0);
-        REQUIRE(norm(a2) == 1.4142135623730951);
-        REQUIRE(norm(a4) == 1.4142135623730951);
-        REQUIRE(norm(a7) == 1.0);
-        REQUIRE(norm(a8) == 1.4142135623730951);
+        REQUIRE(gnorm(o2) == 0.0);
+        REQUIRE(gnorm(a1) == 1.0);
+        REQUIRE(gnorm(a2) == 1.4142135623730951);
+        REQUIRE(gnorm(a4) == 1.4142135623730951);
+        REQUIRE(gnorm(a7) == 1.0);
+        REQUIRE(gnorm(a8) == 1.4142135623730951);
     }
 
     SECTION("vector angle", "[angle]")

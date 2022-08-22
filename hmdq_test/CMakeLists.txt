@@ -52,7 +52,7 @@ target_compile_options(hmdq_test PRIVATE /Zc:inline /Zc:__cplusplus)
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (hmdq_test PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
 
-target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2 Eigen3::Eigen xtensor)
+target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2WithMain Eigen3::Eigen xtensor)
 
 enable_testing ()
 

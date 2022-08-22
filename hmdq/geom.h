@@ -24,14 +24,16 @@ inline double degrees(double rad)
 }
 
 //  Compute dot product of two 2-D vectors.
-inline double dot_prod(const harray_t& v1, const harray_t& v2)
+template <typename TArray>
+double dot_prod(const TArray& v1, const TArray& v2)
 {
     auto sres = xt::sum(v1 * v2);
     return sres[0];
 }
 
 //  Compute vector length.
-inline double norm(const harray_t& v)
+template <typename TArray>
+double gnorm(const TArray& v)
 {
     return sqrt(dot_prod(v, v));
 }
@@ -39,7 +41,7 @@ inline double norm(const harray_t& v)
 //  Compute the angle between the two vectors in radians.
 inline double angle(const hvector_t& v1, const hvector_t& v2)
 {
-    double tres = dot_prod(v1, v2) / (norm(v1) * norm(v2));
+    double tres = dot_prod(v1, v2) / (gnorm(v1) * gnorm(v2));
     if (tres > 1.0) {
         tres = 1.0;
     }
@@ -58,7 +60,7 @@ inline double angle_deg(const hvector_t& v1, const hvector_t& v2)
 //  Calculate the distance between two 3D points.
 inline double point_dist(const hvector_t& p1, const hvector_t& p2)
 {
-    return norm(xt::eval(p1 - p2));
+    return gnorm(xt::eval(p1 - p2));
 }
 
 //  Calculate the area of the triangle given by the vertices.
