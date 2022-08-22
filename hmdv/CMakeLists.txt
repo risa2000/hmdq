@@ -23,10 +23,13 @@ project (hmdv
 
 # Dependencies
 # ============
-find_package (xtensor 0.21.4 REQUIRED)
-find_package (nlohmann_json 3.9.1 REQUIRED)
-find_package (fmt 7.0.3 REQUIRED)
-find_package (Eigen3 3.3.90 REQUIRED)
+find_package (clipp 1.2.3 REQUIRED)
+find_package (fmt 9.0.0 REQUIRED)
+find_package (nlohmann_json 3.11.2 REQUIRED)
+find_package (xtensor 0.24.2 REQUIRED)
+find_package (Eigen3 3.4.0 REQUIRED)
+find_package (botan 2.19.2 REQUIRED)
+find_package (openvr 1.16.8 REQUIRED)
 
 # Project defines
 # ============
@@ -50,7 +53,7 @@ configure_file (
     )
 
 # needed for version info
-if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set (VI_DEBUG ON)
 endif()
 
@@ -100,10 +103,7 @@ add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_sources})
 
 target_include_directories (hmdv PRIVATE ${hmdq_dir})
-target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
-target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
-target_include_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options (hmdv PRIVATE /Zc:inline /Zc:__cplusplus)
 
@@ -113,13 +113,7 @@ target_link_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
 target_link_options (hmdv PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
 
 target_link_libraries (hmdv PRIVATE version.lib)
-foreach (lib IN ITEMS ${EXT_LIBS})
-    target_link_libraries (hmdv PRIVATE debug ${lib}d.lib)
-    target_link_libraries (hmdv PRIVATE optimized ${lib}.lib)
-endforeach()
-# fix the problem with fmt which links to debug build in RelWithDebInfo config
-target_link_libraries(hmdv PRIVATE fmt$<$<CONFIG:Debug>:d>.lib)
-#target_link_libraries (hmdv PRIVATE fmt::fmt-header-only)
+target_link_libraries (hmdv PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen botan::botan openvr::openvr)
 
 # Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdv
@@ -128,9 +122,10 @@ add_custom_command (TARGET hmdv
     )
 
 # Check the CRT linkage, add DLLs if needed
-if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
-    collect_dlls(hmdv ${EXT_LIBS})
-endif()
+#if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL>?$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+#    collect_dlls(hmdv ${EXT_LIBS})
+#endif()
+
 # Install
 # ============
 install (FILES 

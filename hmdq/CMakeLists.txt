@@ -23,10 +23,13 @@ project (hmdq
 
 # Dependencies
 # ============
-find_package (xtensor 0.21.4 REQUIRED)
-find_package (nlohmann_json 3.9.1 REQUIRED)
-find_package (fmt 7.0.3 REQUIRED)
-find_package (Eigen3 3.3.90 REQUIRED)
+find_package (clipp 1.2.3 REQUIRED)
+find_package (fmt 9.0.0 REQUIRED)
+find_package (nlohmann_json 3.11.2 REQUIRED)
+find_package (xtensor 0.24.2 REQUIRED)
+find_package (Eigen3 3.4.0 REQUIRED)
+find_package (openvr 1.16.8 REQUIRED)
+find_package (botan 2.19.2 REQUIRED)
 
 # Project defines
 # ============
@@ -57,7 +60,7 @@ configure_file (
     )
 
 # needed for version info
-if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set (VI_DEBUG ON)
 endif()
 
@@ -105,29 +108,18 @@ set (EXT_LIBS botan openvr_api64)
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_sources})
 
-target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/botan-2)
 target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
-target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include)
-target_include_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options (hmdq PRIVATE /Zc:inline /Zc:__cplusplus)
 
 target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/$<IF:$<CONFIG:Debug>,Debug,Release>)
-target_link_directories (hmdq PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
-target_link_directories (hmdq PRIVATE Eigen3::Eigen)
 
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (hmdq PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
 
 target_link_libraries (hmdq PRIVATE version.lib)
 target_link_libraries (hmdq PRIVATE LibOVR.lib)
-foreach (lib IN ITEMS ${EXT_LIBS})
-    target_link_libraries (hmdq PRIVATE debug ${lib}d.lib)
-    target_link_libraries (hmdq PRIVATE optimized ${lib}.lib)
-endforeach()
-# fix the problem with fmt which links to debug build in RelWithDebInfo config
-target_link_libraries(hmdq PRIVATE fmt$<$<CONFIG:Debug>:d>.lib)
-#target_link_libraries (hmdq PRIVATE fmt::fmt-header-only)
+target_link_libraries (hmdq PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen openvr::openvr botan::botan)
 
 # Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdq
@@ -136,11 +128,9 @@ add_custom_command (TARGET hmdq
     )
 
 # Check the CRT linkage, add DLLs if needed
-if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
-    collect_dlls(hmdq ${EXT_LIBS})
-else()
-    target_compile_definitions(hmdq PRIVATE OPENVR_BUILD_STATIC)
-endif()
+#if (${CMAKE_MSVC_RUNTIME_LIBRARY} MATCHES "^.*DLL>?$" OR NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+#    collect_dlls(hmdq ${EXT_LIBS})
+#endif()
 
 # Install
 # ============

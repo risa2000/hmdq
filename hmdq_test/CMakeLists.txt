@@ -21,10 +21,11 @@ project (hmdq_test
 
 # Dependencies
 # ============
-find_package (xtensor 0.21.4 REQUIRED)
+find_package (fmt 9.0.0 REQUIRED)
+find_package (xtensor 0.24.2 REQUIRED)
 # Use Catch2 unit test framework
-find_package (Catch2 REQUIRED)
-find_package (Eigen3 3.3.90 REQUIRED)
+find_package (Catch2 3.1.0 REQUIRED)
+find_package (Eigen3 3.4.0 REQUIRED)
 
 set (hmdq_dir ../hmdq)
 set (hmdv_dir ../hmdv)
@@ -45,15 +46,16 @@ add_executable (hmdq_test)
 target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
 
 target_include_directories (hmdq_test PRIVATE ${hmdq_dir} ${hmdv_dir})
-target_include_directories (hmdq_test PRIVATE ${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 target_compile_options(hmdq_test PRIVATE /Zc:inline /Zc:__cplusplus)
 
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (hmdq_test PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
 
-target_link_libraries (hmdq_test PRIVATE Catch2::Catch2)
+target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2 Eigen3::Eigen xtensor)
+
 enable_testing ()
+
 add_test(NAME hmdq_test COMMAND hmdq_test)
 
 print_variables ("hmdq_test*")
