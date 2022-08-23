@@ -112,7 +112,7 @@ target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
 
 target_compile_options (hmdq PRIVATE /Zc:inline /Zc:__cplusplus)
 
-target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/$<IF:$<CONFIG:Debug>,Debug,Release>)
+target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/Release/VS2017)
 
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (hmdq PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)

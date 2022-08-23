@@ -11,14 +11,13 @@
 
 #pragma once
 
-#include <map>
-#include <string>
+#include "prtdef.h"
+#include "json_proxy.h"
 
 #include <nlohmann/ordered_map.hpp>
 
-#include "prtdef.h"
-
-#include "json_proxy.h"
+#include <map>
+#include <string>
 
 //  forward declarations
 //------------------------------------------------------------------------------
@@ -29,11 +28,11 @@ class BaseVRConfig;
 //  typedefs
 //------------------------------------------------------------------------------
 // collector buffer
-typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRCollector>> colmap_t;
+typedef nlohmann::ordered_map<std::string, std::shared_ptr<BaseVRCollector>> colmap_t;
 // processor buffer
-typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRProcessor>> procmap_t;
+typedef nlohmann::ordered_map<std::string, std::shared_ptr<BaseVRProcessor>> procmap_t;
 // config buffer
-typedef nlohmann::ordered_map<std::string, std::unique_ptr<BaseVRConfig>> cfgmap_t;
+typedef nlohmann::ordered_map<std::string, std::shared_ptr<BaseVRConfig>> cfgmap_t;
 
 //  BaseVR class
 //------------------------------------------------------------------------------

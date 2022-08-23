@@ -174,18 +174,18 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     // OpenVR collector
     const auto openvr_app_type
         = g_cfg[j_openvr][j_app_type].get<vr::EVRApplicationType>();
-    auto openvr_collector = std::make_unique<openvr::Collector>(api_json, openvr_app_type);
-    auto openvr_processor = std::make_unique<openvr::Processor>(openvr_collector->get_xapi(),
+    auto openvr_collector = std::make_shared<openvr::Collector>(api_json, openvr_app_type);
+    auto openvr_processor = std::make_shared<openvr::Processor>(openvr_collector->get_xapi(),
                                                   openvr_collector->get_data());
-    collectors.emplace(openvr_collector->get_id(), std::move(openvr_collector));
-    processors.emplace(openvr_processor->get_id(), std::move(openvr_processor));
+    collectors.emplace(openvr_collector->get_id(), openvr_collector);
+    processors.emplace(openvr_processor->get_id(), openvr_processor);
 
     // Oculus VR collector
     const auto init_flags = g_cfg[j_oculus][j_init_flags].get<ovrInitFlags>();
-    auto oculus_collector = std::make_unique<oculus::Collector>(init_flags);
-    auto oculus_processor = std::make_unique<oculus::Processor>(oculus_collector->get_data());
-    collectors.emplace(oculus_collector->get_id(), std::move(oculus_collector));
-    processors.emplace(oculus_processor->get_id(), std::move(oculus_processor));
+    auto oculus_collector = std::make_shared<oculus::Collector>(init_flags);
+    auto oculus_processor = std::make_shared<oculus::Processor>(oculus_collector->get_data());
+    collectors.emplace(oculus_collector->get_id(), oculus_collector);
+    processors.emplace(oculus_processor->get_id(), oculus_processor);
 
     constexpr const char* RAW_JSON_NAME_FMT = "{}_raw.hmdq.json";
     bool raw_read = false;
@@ -291,10 +291,10 @@ int main(int argc, char* argv[])
 
     // init global config before anything else
     cfgmap_t cfgs;
-    auto openvr_config = std::make_unique<openvr::Config>();
-    cfgs.emplace(openvr_config->get_id(), std::move(openvr_config));
-    auto oculus_config = std::make_unique<oculus::Config>();
-    cfgs.emplace(oculus_config->get_id(), std::move(oculus_config));
+    auto openvr_config = std::make_shared<openvr::Config>();
+    cfgs.emplace(openvr_config->get_id(), openvr_config);
+    auto oculus_config = std::make_shared<oculus::Config>();
+    cfgs.emplace(oculus_config->get_id(), oculus_config);
 
     const auto cfg_ok = init_config(get_full_prog_path(), cfgs);
     if (!cfg_ok)

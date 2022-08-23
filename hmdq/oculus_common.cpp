@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "jkeys.h"
 #include "oculus_common.h"
+#include "jkeys.h"
 
 #include <nlohmann/ordered_map.hpp>
 
@@ -53,10 +53,10 @@ const nlohmann::ordered_map<int, const char*> g_bmTrackingCaps = {
 
 //  HMD types names
 const nlohmann::ordered_map<int, const char*> g_mHmdTypes = {
-    {ovrHmd_None, "None"},       {ovrHmd_DK1, "DK1"},   {ovrHmd_DKHD, "DKHD"},
-    {ovrHmd_DK2, "DK2"},         {ovrHmd_CB, "CB"},     {ovrHmd_Other, "Other"},
-    {ovrHmd_E3_2015, "E3_2015"}, {ovrHmd_ES06, "ES06"}, {ovrHmd_ES09, "ES09"},
-    {ovrHmd_ES11, "ES11"},       {ovrHmd_CV1, "CV1"},   {ovrHmd_RiftS, "RiftS"},
+    {ovrHmd_None, "None"},   {ovrHmd_DK2, "DK2"},         {ovrHmd_CB, "CB"},
+    {ovrHmd_Other, "Other"}, {ovrHmd_E3_2015, "E3_2015"}, {ovrHmd_ES06, "ES06"},
+    {ovrHmd_ES09, "ES09"},   {ovrHmd_ES11, "ES11"},       {ovrHmd_CV1, "CV1"},
+    {ovrHmd_RiftS, "RiftS"}, {ovrHmd_Quest, "Quest"},     {ovrHmd_Quest2, "Quest2"},
 };
 
 } // namespace oculus
