@@ -182,8 +182,8 @@ json calc_view_geom(const json& e2h)
     const auto right_rot
         = degrees(acos(right(2 * cols + 2)) * ((right(0 * cols + 2) > 0) ? -1.0 : 1.0));
     // IPD is stored in meters
-    const auto ipd
-        = point_dist(xt::view(left, xt::all(), 3), xt::view(right, xt::all(), 3));
+    const auto ipd = point_dist(xt::view(left, xt::all(), static_cast<size_t>(3)),
+                                xt::view(right, xt::all(), static_cast<size_t>(3)));
     return json({{j_left_rot, left_rot}, {j_right_rot, right_rot}, {j_ipd, ipd}});
 }
 

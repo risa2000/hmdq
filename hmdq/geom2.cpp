@@ -123,7 +123,7 @@ harray2d_t Frustum::get_fov_points(bool projected)
     xt::filter(points, abs(points) < DOUBLE_EPS_100) = 0.0;
     if (projected) {
         // get the last column and use it to normalize the points
-        const auto tcol = xt::view(points, xt::all(), 2);
+        const auto tcol = xt::view(points, xt::all(), static_cast<size_t>(2));
         const auto zcol = xt::expand_dims(tcol, 1);
         // project the points onto z=+/-1.0 plane (again) to get "normalized" frustum
         // points
