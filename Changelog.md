@@ -1,4 +1,11 @@
 # HMDQ Tools Change Log
+## 2.1.2 - August 28, 2022
+Maintenance release:
+* Updated OpenVR API JSON to OpenVR SDK 1.23.7
+* Updated the build process to use conan packages
+* Updated external lib references to their current versions
+* Updated linked LibOVR to v32.0
+
 ## 2.1.1 - October 12, 2020
 * Added a workaround for invalid FOV data (Quest 2).
 * Some code clean up.

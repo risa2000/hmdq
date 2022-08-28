@@ -54,6 +54,12 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "clang_cl_x64" ],
+      "environments": [
+        {
+          "CC": "${env.LLVM_ROOT}/bin/clang-cl.exe",
+          "CXX": "${env.LLVM_ROOT}/bin/clang-cl.exe"
+        }
+      ],
       "variables": [
         {
           "name": "CMAKE_C_COMPILER",
@@ -77,6 +83,12 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "clang_cl_x64" ],
+      "environments": [
+        {
+          "CC": "${env.LLVM_ROOT}/bin/clang-cl.exe",
+          "CXX": "${env.LLVM_ROOT}/bin/clang-cl.exe"
+        }
+      ],
       "variables": [
         {
           "name": "CMAKE_C_COMPILER",

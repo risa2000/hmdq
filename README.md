@@ -262,7 +262,6 @@ for parsing the command line arguments.
 * [`QuantStack/xtensor`](https://github.com/QuantStack/xtensor) for all 2D, 3D vectors and matrices operations.
 * [`QuantStack/xtl`](https://github.com/QuantStack/xtl) required by `QuantStack/xtensor`.
 * [`nlohmann/json`](https://github.com/nlohmann/json) for all JSON parsing and creating.
-* [`nlohmann/fifo_map`](https://github.com/nlohmann/fifo_map) for ordered map support.
 * [`ValveSoftware/openvr`](https://github.com/ValveSoftware/openvr) for obvious reasons.
 * [`randombit/botan`](https://github.com/randombit/botan) for secure hash implementation.
 * [`fmtlib/fmt`](https://github.com/fmtlib/fmt) for comfortable printing and formatting of the console output.
@@ -275,8 +274,13 @@ On top of that you will also need `cmake` version 3.15 or higher.
 * [`Catch2`](https://github.com/catchorg/Catch2) to build unit tests.
 
 ### Building
-The project is developed as a "CMake project" in Visual Studio 2019, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
 
-Building with `clang-cl` may provide some additional challenges which however should not surprise anyone who is using this compiler and as such is already accustomed to some roughing.
+#### Building with CMake
+The project is developed as a "CMake project" in Visual Studio 2019/2022, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
 
 To have the automatic versioning working correctly, CMake scripts expect the build to happen in a locally cloned `git` repository.
+
+#### Building with Conan
+The batch file in `conan` subfolder creates all Conan generated files for the Visual Studio CMake integration (using `CMakeSettings.json`) to work correctly.
+
+The advantage is that all external dependencies (all except `LibOVR` which does not have a public Conan package) can be setup by Conan. This would also ensure that the local build corresponds to the released binary.
