@@ -1,4 +1,8 @@
 # HMDQ Tools Change Log
+## 2.1.3 - September 24, 2022
+Quickfix:
+* Fixed a crash in hmdv (forgotten fix from hmdq)
+
 ## 2.1.2 - August 28, 2022
 Maintenance release:
 * Updated OpenVR API JSON to OpenVR SDK 1.23.7
