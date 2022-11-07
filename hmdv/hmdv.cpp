@@ -191,6 +191,13 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
         }
     }
 
+    // put the modified data back into the output JSON
+    for (const auto& [proc_id, proc] : processors) {
+        if (proc->get_data()) {
+            out[proc_id] = *(proc->get_data());
+        }
+    }
+
     // print all
     print_all(opts, out, processors, ind, ts);
 

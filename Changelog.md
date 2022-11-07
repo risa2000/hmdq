@@ -1,4 +1,8 @@
 # HMDQ Tools Change Log
+## 2.1.4 - November 7, 2022
+Quickfix:
+* Fixed hmdv not saving anonymized values (when instructed with -n).
+
 ## 2.1.3 - September 24, 2022
 Quickfix:
 * Fixed a crash in hmdv (forgotten fix from hmdq)

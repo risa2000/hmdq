@@ -237,9 +237,10 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     }
 
     // put the collected data into the output JSON
-    for (auto& [col_id, col] : collectors) {
-        if (!col->get_data()->is_null())
+    for (const auto& [col_id, col] : collectors) {
+        if (col->get_data()) {
             out[col_id] = *col->get_data();
+        }
     }
 
     // dump the data into the optional JSON file
