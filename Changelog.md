@@ -1,18 +1,24 @@
 # HMDQ Tools Change Log
+## 2.1.5 - January 31, 2023
+Maintenance release:
+* Switched code compliance to C++20.
+* Added local conan recipes for packages not in conancenter.
+* Revamped conan integration.
+
 ## 2.1.4 - November 7, 2022
-Quickfix:
+Quick fix:
 * Fixed hmdv not saving anonymized values (when instructed with -n).
 
 ## 2.1.3 - September 24, 2022
-Quickfix:
-* Fixed a crash in hmdv (forgotten fix from hmdq)
+Quick fix:
+* Fixed a crash in hmdv (forgotten fix from hmdq).
 
 ## 2.1.2 - August 28, 2022
 Maintenance release:
-* Updated OpenVR API JSON to OpenVR SDK 1.23.7
-* Updated the build process to use conan packages
-* Updated external lib references to their current versions
-* Updated linked LibOVR to v32.0
+* Updated OpenVR API JSON to OpenVR SDK 1.23.7.
+* Updated the build process to use conan packages.
+* Updated external lib references to their current versions.
+* Updated linked LibOVR to v32.0.
 
 ## 2.1.1 - October 12, 2020
 * Added a workaround for invalid FOV data (Quest 2).

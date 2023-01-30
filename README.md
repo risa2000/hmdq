@@ -276,11 +276,13 @@ On top of that you will also need `cmake` version 3.15 or higher.
 ### Building
 
 #### Building with CMake
-The project is developed as a "CMake project" in Visual Studio 2019/2022, while using `ninja` as a build driver. The binary can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
+The project is developed as a CMake project in Visual Studio 2022, while using `ninja` as a build driver. The binaries can be successfully built by native MSVC compiler `cl` or by LLVM `clang-cl` (Clang drop in replacement for MSVC compiler).
 
 To have the automatic versioning working correctly, CMake scripts expect the build to happen in a locally cloned `git` repository.
 
 #### Building with Conan
-The batch file in `conan` subfolder creates all Conan generated files for the Visual Studio CMake integration (using `CMakeSettings.json`) to work correctly.
+This is a preferred and also the easiest way. The local `conan/packages` folder contains the conan recipes and build scripts for packages which are not in conan-center (or have older/incompatible versions there). In order to be able to initialize the conan build environment you need to run the batch files in the corresponding subfolders first to build and install the missing packages into the local conan cache.
 
-The advantage is that all external dependencies (all except `LibOVR` which does not have a public Conan package) can be setup by Conan. This would also ensure that the local build corresponds to the released binary.
+Then you need to run `conan/conan_install_all.cmd` batch to build and install the remaining packages. The conan files are installed into specific directories, where the Visual Studio CMake integration (using `CMakeSettings.json`) expects them. After that you can use VS IDE to build the binaries as you would for any other CMake project.
+
+The only dependency which does not have a public or local conan package or recipe is `LibOVR` as it needs to be downloaded from the Oculus website and set up manually, by setting `OVR_SDK` environment variable to the library root folder (e.g. `OVR_SDK=C:\ovr_sdk_win_32.0.0`).
