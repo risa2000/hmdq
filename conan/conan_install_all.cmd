@@ -1,0 +1,6 @@
+conan install -if out/conan/x64-DLL-Debug -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=dynamic -s build_type=Debug .
+conan install -if out/conan/x64-DLL-Release -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=dynamic -s build_type=Release .
+conan install -if out/conan/x64-Static-Debug -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=static -s build_type=Debug .
+conan install -if out/conan/x64-Static-Release -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=static -s build_type=Release .
+conan install -if out/conan/x64-xClang-Static-Debug -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=static -s build_type=Debug .
+conan install -if out/conan/x64-xClang-Static-Release -pr:h ./conan/profiles/host_msvc_v193_crtdll.txt -pr:b ./conan/profiles/build_msvc_v193_crtdll.txt --build=missing -s compiler.runtime=static -s build_type=Release .

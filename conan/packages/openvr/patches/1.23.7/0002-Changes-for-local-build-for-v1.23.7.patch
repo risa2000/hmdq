@@ -1,0 +1,377 @@
+From 0e0cc7194fc343253de3998433a8b26b4594e75d Mon Sep 17 00:00:00 2001
+From: Richard Musil <risa2000x@gmail.com>
+Date: Sun, 18 Dec 2022 15:23:31 +0100
+Subject: [PATCH 2/2] Changes for local build for v1.23.7.
+
+---
+ .gitignore         |  12 +++
+ CMakeLists.txt     |  16 ++--
+ CMakeSettings.json | 234 +++++++++++++++++++++++++++++++++++++++++++++
+ src/CMakeLists.txt |  13 ++-
+ 4 files changed, 264 insertions(+), 11 deletions(-)
+ create mode 100644 .gitignore
+ create mode 100644 CMakeSettings.json
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..4b78aa6
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,12 @@
++################################################################################
++# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
++################################################################################
++
++.vs
++*.vcxproj.user
++/out
++/build
++/samples/*/Debug
++/samples/bin
++/bin/win32
++/bin/win64
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8956cda..9167a91 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ # Set the minimum required version of CMake for this project.
+-cmake_minimum_required(VERSION 2.8)
++cmake_minimum_required(VERSION 3.15)
+ 
+ # Set project name.
+ project(OpenVRSDK)
+@@ -22,7 +22,7 @@ string(REGEX REPLACE "${VERSION_BUILD_REGEX}" "\\1" VERSION_BUILD ${VERSION_BUIL
+ set(OPENVR_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
+ 
+ # Setup some options.
+-option(BUILD_SHARED "Builds the library as shared library" OFF)
++option(BUILD_SHARED_LIBS "Builds the library as shared library" OFF)
+ option(BUILD_FRAMEWORK "Builds the library as an apple Framework" OFF)
+ option(BUILD_UNIVERSAL "Builds the shared or framework as a universal (fat, 32- & 64-bit) binary" ON)
+ option(BUILD_OSX_I386 "Builds the shared or framework as a 32-bit binary, even on a 64-bit platform" OFF)
+@@ -31,6 +31,8 @@ option(USE_CUSTOM_LIBCXX "Uses a custom libc++" OFF)
+ 
+ add_definitions( -DVR_API_PUBLIC )
+ 
++set (CMAKE_DEBUG_POSTFIX d)
++
+ # Check if 32 or 64 bit system.
+ set(SIZEOF_VOIDP ${CMAKE_SIZEOF_VOID_P})
+ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+@@ -42,7 +44,7 @@ endif()
+ # Get platform.
+ if(WIN32)
+   set(PLATFORM_NAME "win")
+-  if(NOT BUILD_SHARED)
++  if(NOT BUILD_SHARED_LIBS)
+     add_definitions(-DOPENVR_BUILD_STATIC)
+   endif()
+ elseif(UNIX AND NOT APPLE)
+@@ -68,9 +70,9 @@ elseif(APPLE)
+ endif()
+ 
+ # Set output folder for static and shared libraries
+-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
++#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
++#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
++#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/${PLATFORM_NAME}${PROCESSOR_ARCH})
+ 
+ # Enable some properties.
+ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+@@ -80,7 +82,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+ 	# Set custom libc++ usage here
+ 	if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND USE_LIBCXX)
+ 		if(USE_CUSTOM_LIBCXX)
+-			if(BUILD_SHARED)
++			if(BUILD_SHARED_LIBS)
+ 				set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
+ 			endif()
+ 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++")
+diff --git a/CMakeSettings.json b/CMakeSettings.json
+new file mode 100644
+index 0000000..88644b6
+--- /dev/null
++++ b/CMakeSettings.json
+@@ -0,0 +1,234 @@
++{
++  "configurations": [
++    {
++      "name": "x64-DLL-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x86-DLL-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "inheritEnvironments": [
++        "msvc_x86"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-DLL-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x86-DLL-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "inheritEnvironments": [
++        "msvc_x86"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-Static-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-Static-Debug-DLLRuntime",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x86-Static-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "inheritEnvironments": [
++        "msvc_x86"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-Static-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-Static-Release-DLLRuntime",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "inheritEnvironments": [
++        "msvc_x64_x64"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x86-Static-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "inheritEnvironments": [
++        "msvc_x86"
++      ],
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": ""
++    },
++    {
++      "name": "x64-xClang-DLL-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": "",
++      "inheritEnvironments": [
++        "clang_cl_x64"
++      ],
++      "variables": [
++        {
++          "name": "CMAKE_C_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        },
++        {
++          "name": "CMAKE_CXX_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        }
++      ]
++    },
++    {
++      "name": "x64-xClang-DLL-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DBUILD_SHARED_LIBS=ON -DCMAKE_RELEASE_POSTFIX=c -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>DLL\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": "",
++      "inheritEnvironments": [
++        "clang_cl_x64"
++      ],
++      "variables": [
++        {
++          "name": "CMAKE_C_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        },
++        {
++          "name": "CMAKE_CXX_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        }
++      ]
++    },
++    {
++      "name": "x64-xClang-Static-Debug",
++      "generator": "Ninja",
++      "configurationType": "Debug",
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": "",
++      "inheritEnvironments": [
++        "clang_cl_x64"
++      ],
++      "variables": [
++        {
++          "name": "CMAKE_C_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        },
++        {
++          "name": "CMAKE_CXX_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        }
++      ]
++    },
++    {
++      "name": "x64-xClang-Static-Release",
++      "generator": "Ninja",
++      "configurationType": "Release",
++      "buildRoot": "${projectDir}\\out\\build\\${name}",
++      "installRoot": "${projectDir}\\out\\install\\${name}",
++      "cmakeCommandArgs": "-DCMAKE_RELEASE_POSTFIX=c -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=\"MultiThreaded$<$<CONFIG:Debug>:Debug>\"",
++      "buildCommandArgs": "-v",
++      "ctestCommandArgs": "",
++      "inheritEnvironments": [
++        "clang_cl_x64"
++      ],
++      "variables": [
++        {
++          "name": "CMAKE_C_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        },
++        {
++          "name": "CMAKE_CXX_COMPILER",
++          "value": "${env.LLVM_ROOT}/bin/clang-cl.exe",
++          "type": "FILEPATH"
++        }
++      ]
++    }
++  ]
++}
+\ No newline at end of file
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index b83710a..b644fdb 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -10,11 +10,11 @@ if(APPLE)
+   if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+     set_source_files_properties(vrcore/pathtools_public.cpp vrcore/vrpathregistry_public.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
+   endif()
+-  if(BUILD_SHARED OR BUILD_FRAMEWORK)
++  if(BUILD_SHARED_LIBS OR BUILD_FRAMEWORK)
+     find_library(FOUNDATION_FRAMEWORK Foundation)
+     mark_as_advanced(FOUNDATION_FRAMEWORK)
+     set(EXTRA_LIBS ${EXTRA_LIBS} ${FOUNDATION_FRAMEWORK})
+-  endif(BUILD_SHARED OR BUILD_FRAMEWORK)
++  endif(BUILD_SHARED_LIBS OR BUILD_FRAMEWORK)
+ elseif(WIN32)
+   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+     add_definitions( -DWIN64 )
+@@ -68,7 +68,7 @@ source_group("VRCore" FILES
+ )
+ 
+ # Build the library.
+-if(BUILD_SHARED)
++if(BUILD_SHARED_LIBS)
+ 	add_library(${LIBNAME} SHARED ${SOURCE_FILES})
+ elseif(BUILD_FRAMEWORK)
+ 	set( LIBNAME "OpenVR" )
+@@ -103,7 +103,12 @@ endif()
+ target_link_libraries(${LIBNAME} ${EXTRA_LIBS} ${CMAKE_DL_LIBS})
+ target_include_directories(${LIBNAME} PUBLIC ${OPENVR_HEADER_DIR})
+ 
+-install(TARGETS ${LIBNAME} DESTINATION lib)
++install(TARGETS ${LIBNAME}
++    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
++    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
++    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
++	)
++
+ install(FILES ${PUBLIC_HEADER_FILES} DESTINATION include/openvr)
+ 
+ # Generate a .pc file for linux environments
+-- 
+2.36.1.windows.1
+

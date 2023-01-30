@@ -1,0 +1,5 @@
+SET VERSION=1.23.7
+SET PACKAGE=openvr
+SET RECIPE=.
+SET SHARED=True
+..\..\scripts\conan_build_and_cache_bin_shared_packages.cmd
