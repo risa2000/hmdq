@@ -23,13 +23,13 @@ project (hmdq
 
 # Dependencies
 # ============
-find_package (clipp 1.2.3 REQUIRED)
-find_package (fmt 9.0.0 REQUIRED)
-find_package (nlohmann_json 3.11.2 REQUIRED)
-find_package (xtensor 0.24.2 REQUIRED)
-find_package (Eigen3 3.4.0 REQUIRED)
-find_package (openvr 1.16.8 REQUIRED)
-find_package (botan 2.19.2 REQUIRED)
+find_package (clipp REQUIRED)
+find_package (fmt REQUIRED)
+find_package (nlohmann_json REQUIRED)
+find_package (xtensor REQUIRED)
+find_package (Eigen3 REQUIRED)
+find_package (openvr REQUIRED)
+find_package (botan REQUIRED)
 
 # Project defines
 # ============
