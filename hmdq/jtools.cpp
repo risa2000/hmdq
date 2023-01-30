@@ -10,10 +10,11 @@
  ******************************************************************************/
 
 #include "jtools.h"
-#include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "jkeys.h"
+#include "wintools.h"
+
 #include "json_proxy.h"
 
 #include <botan/filters.h>
@@ -34,7 +35,7 @@
 json read_json(const std::filesystem::path& inpath)
 {
     if (!std::filesystem::exists(inpath)) {
-        auto msg = fmt::format("File not found: \"{:s}\"", u8str2str(inpath.u8string()));
+        auto msg = fmt::format("File not found: \"{:s}\"", path_to_utf8(inpath));
         throw hmdq_error(msg);
     }
 

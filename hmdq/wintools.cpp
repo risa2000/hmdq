@@ -9,12 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <cassert>
-#include <filesystem>
-#include <numeric>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "wintools.h"
 
 #include <fmt/format.h>
 #include <fmt/os.h>
@@ -22,8 +17,12 @@
 #include <windows.h>
 #include <winver.h>
 
-#include "compat.h"
-#include "wintools.h"
+#include <cassert>
+#include <filesystem>
+#include <numeric>
+#include <sstream>
+#include <string>
+#include <vector>
 
 //  locals
 //------------------------------------------------------------------------------
@@ -48,7 +47,7 @@ inline auto sys_error(const char* message)
 bool print_sys_error(const char* message)
 {
     const auto werr = sys_error(message);
-    fmt::print(stderr, werr.what());
+    fmt::print(stderr, "{}", werr.what());
     return true;
 }
 
@@ -67,18 +66,38 @@ std::vector<std::wstring> get_wargs()
     return res;
 }
 
-//  Convert Windows Unicode zero termintad string to UTF-8 zero terminated string.
-std::string wstr2utf8(const wchar_t* wstr)
+std::vector<uint8_t> wstr_to_cp(const wchar_t* wstr, UINT code_page)
 {
-    static std::vector<char> buffer(BUFF_SIZE);
-    auto buffsize
-        = ::WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &buffer[0], 0, nullptr, nullptr);
+    std::vector<uint8_t> buffer(BUFF_SIZE);
+    auto buffsize = ::WideCharToMultiByte(code_page, 0, wstr, -1,
+                                          reinterpret_cast<char*>(&buffer[0]), 0, nullptr, nullptr);
     if (buffsize > buffer.size()) {
         buffer.resize(buffsize);
     }
-    buffsize = ::WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &buffer[0], buffer.size(),
-                                     nullptr, nullptr);
-    return std::string(&buffer[0]);
+    buffsize = ::WideCharToMultiByte(code_page, 0, wstr, -1, reinterpret_cast<char*>(&buffer[0]),
+                                     static_cast<int>(buffer.size()), nullptr, nullptr);
+    return buffer;
+}
+
+//  Convert Windows Unicode zero termintad string to UTF-8 zero terminated string.
+std::string wstr_to_utf8(const wchar_t* wstr)
+{
+    return std::string(reinterpret_cast<const char*>(&wstr_to_cp(wstr, CP_UTF8)[0]));
+}
+
+//  Convert Windows Unicode zero termintad string to UTF-8 zero terminated string.
+std::wstring utf8_to_wstr(const char* u8str)
+{
+    std::vector<wchar_t> buffer(BUFF_SIZE);
+    auto buffsize = ::MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCCH>(u8str), -1,
+                                          reinterpret_cast<LPWSTR>(&buffer[0]), 0);
+    if (buffsize > buffer.size()) {
+        buffer.resize(buffsize);
+    }
+    buffsize = ::MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCCH>(u8str), -1,
+                                     reinterpret_cast<LPWSTR>(&buffer[0]),
+                                     static_cast<int>(buffer.size()));
+    return std::wstring(&buffer[0]);
 }
 
 //  Return the full path of the module (prog image if NULL)
@@ -116,7 +135,7 @@ std::vector<std::string> wargs_to_u8args(const std::vector<std::wstring>& wargs)
 {
     std::vector<std::string> res(wargs.size());
     std::transform(wargs.cbegin(), wargs.cend(), res.begin(),
-                   [](const auto& w) { return wstr2utf8(w.c_str()); });
+                   [](const auto& w) { return wstr_to_utf8(w.c_str()); });
     return res;
 }
 
@@ -124,25 +143,6 @@ std::vector<std::string> wargs_to_u8args(const std::vector<std::wstring>& wargs)
 std::vector<std::string> get_u8args()
 {
     return wargs_to_u8args(get_wargs());
-}
-
-//  Get C-like args array from the list of strings (in a vector).
-std::tuple<std::shared_ptr<std::vector<char*>>, std::shared_ptr<std::vector<char>>>
-get_c_argv(const std::vector<std::string>& args)
-{
-    auto ptrs = std::make_shared<std::vector<char*>>(args.size());
-    auto buff = std::make_shared<std::vector<char>>();
-    std::vector<size_t> offsets;
-
-    for (const auto& astr : args) {
-        offsets.push_back(buff->size());
-        std::copy(astr.begin(), astr.end(), std::back_inserter<std::vector<char>>(*buff));
-        buff->push_back(u8'\0');
-    }
-    //  now the buffer is stable, we can calculate the absolute addresses of arguments
-    std::transform(offsets.begin(), offsets.end(), ptrs->begin(),
-                   [&buff](const auto& offset) { return &(*buff)[0] + offset; });
-    return {ptrs, buff};
 }
 
 //  Enum code page callback, should set the CP specified in `l_con_cp`.

@@ -28,15 +28,42 @@ void init_console_cp();
 //  Set console output code page, if installed
 void set_console_cp(unsigned int codepage);
 
+//  Convert wstring to UTF-8 string
+std::string wstr_to_utf8(const wchar_t* wstr);
+
+//  Convert UTF-8 string to wstring
+std::wstring utf8_to_wstr(const char* u8str);
+
 //  Return command line arguments as UTF-8 string list (in vector).
 std::vector<std::string> get_u8args();
-
-//  Get C-like args array from the list of strings (in a vector).
-std::tuple<std::shared_ptr<std::vector<char*>>, std::shared_ptr<std::vector<char>>>
-get_c_argv(const std::vector<std::string>& args);
 
 //  Return the full path of the executable which created the process
 std::filesystem::path get_full_prog_path();
 
 //  Print command line arguments (for debugging purposes)
 void print_u8args(std::vector<std::string> u8args);
+
+//  Convert wstring to UTF-8 string
+inline std::string wstr_to_utf8(const std::wstring& wstr)
+{
+    return wstr_to_utf8(wstr.c_str());
+}
+
+//  Convert UTF-8 string to wstring
+inline std::wstring utf8_to_wstr(const std::string& u8str)
+{
+    return utf8_to_wstr(u8str.c_str());
+}
+
+//  Convert UTF-8 string to filepath
+inline std::filesystem::path utf8_to_path(const char* u8str)
+{
+    return std::filesystem::path(utf8_to_wstr(u8str));
+}
+
+//  Convert filepath to UTF-8 string
+inline std::string path_to_utf8(const std::filesystem::path& path)
+{
+    return wstr_to_utf8(path.wstring());
+}
+

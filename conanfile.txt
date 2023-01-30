@@ -1,12 +1,12 @@
 [requires]
-clipp/1.2.3
-fmt/9.0.0
+clipp/cci.20221223
+fmt/9.1.0
 nlohmann_json/3.11.2
 xtensor/0.24.2
 eigen/3.4.0
-openvr/1.16.8
-catch2/3.1.0
-botan/2.19.2
+openvr/1.23.7
+catch2/3.3.0
+botan/2.19.3
 
 [generators]
 CMakeToolchain

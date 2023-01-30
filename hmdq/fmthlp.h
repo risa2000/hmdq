@@ -12,23 +12,22 @@
 #pragma once
 
 #include <fmt/format.h>
+
 #include <cstdio>
 #include <utility>
 
-#include <fmt/format.h>
-
 //  These functions are attributed to vitaut@github as per this discussion
 //  https://github.com/fmtlib/fmt/issues/1260
-template<typename... Args>
-void iprint(int indent, fmt::string_view format_str, Args&&... args)
+template<typename... T>
+void iprint(int indent, fmt::format_string<T...> format_str, T&&... args)
 {
     fmt::print("{:{}}", "", indent);
-    fmt::print(format_str, std::forward<Args>(args)...);
+    fmt::print(format_str, std::forward<T>(args)...);
 }
 
-template<typename... Args>
-void iprint(std::FILE* f, int indent, fmt::string_view format_str, Args&&... args)
+template<typename... T>
+void iprint(std::FILE* f, int indent, fmt::format_string<T...> format_str, T&&... args)
 {
     fmt::print(f, "{:{}}", "", indent);
-    fmt::print(f, format_str, std::forward<Args>(args)...);
+    fmt::print(f, format_str, std::forward<T>(args)...);
 }

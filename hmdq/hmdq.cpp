@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "compat.h"
 #include "config.h"
 #include "except.h"
 #include "fmthlp.h"
@@ -28,7 +27,7 @@
 #include "prtdata.h"
 #include "wintools.h"
 
-#include <clipp.h>
+#include <clipp/clipp.h>
 
 #include <botan/version.h>
 
@@ -95,7 +94,7 @@ void print_info(int ind = 0, int ts = 0)
     constexpr const char* libver_num_fmt = "{0} {1}.{2}.{3} (https://github.com/{0})\n";
     constexpr const char* gitlab_libver_num_fmt
         = "{0} {1}.{2}.{3} (https://gitlab.com/{0})\n";
-    iprint(sf1, libver_nover_fmt, "muellan/clip");
+    iprint(sf1, libver_nover_fmt, "GerHobbelt/clipp");
     iprint(sf1, libver_num_fmt, "nlohmann/json", NLOHMANN_JSON_VERSION_MAJOR,
            NLOHMANN_JSON_VERSION_MINOR, NLOHMANN_JSON_VERSION_PATCH);
     iprint(sf1, libver_num_fmt, "QuantStack/xtl", XTL_VERSION_MAJOR, XTL_VERSION_MINOR,
@@ -174,16 +173,18 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     // OpenVR collector
     const auto openvr_app_type
         = g_cfg[j_openvr][j_app_type].get<vr::EVRApplicationType>();
-    auto openvr_collector = std::make_shared<openvr::Collector>(api_json, openvr_app_type);
-    auto openvr_processor = std::make_shared<openvr::Processor>(openvr_collector->get_xapi(),
-                                                  openvr_collector->get_data());
+    auto openvr_collector
+        = std::make_shared<openvr::Collector>(api_json, openvr_app_type);
+    auto openvr_processor = std::make_shared<openvr::Processor>(
+        openvr_collector->get_xapi(), openvr_collector->get_data());
     collectors.emplace(openvr_collector->get_id(), openvr_collector);
     processors.emplace(openvr_processor->get_id(), openvr_processor);
 
     // Oculus VR collector
     const auto init_flags = g_cfg[j_oculus][j_init_flags].get<ovrInitFlags>();
     auto oculus_collector = std::make_shared<oculus::Collector>(init_flags);
-    auto oculus_processor = std::make_shared<oculus::Processor>(oculus_collector->get_data());
+    auto oculus_processor
+        = std::make_shared<oculus::Processor>(oculus_collector->get_data());
     collectors.emplace(oculus_collector->get_id(), oculus_collector);
     processors.emplace(oculus_processor->get_id(), oculus_processor);
 
@@ -316,13 +317,13 @@ int main(int argc, char* argv[])
     // build relative path to OPENVR_API_JSON file
     std::filesystem::path api_json_path = get_full_prog_path();
     api_json_path.replace_filename(OPENVR_API_JSON);
-    auto api_json = u8str2str(api_json_path.u8string());
+    auto api_json = path_to_utf8(api_json_path);
 
     std::string out_json;
     // custom help texts
-    const auto verb_help = fmt::format("verbosity level [{:d}]", opts.verbosity);
+    const auto verb_help = fmt::format("verbosity level [{}]", opts.verbosity);
     const auto api_json_help
-        = fmt::format("OpenVR API JSON definition file [\"{:s}\"]", api_json);
+        = fmt::format("OpenVR API JSON definition file [\"{}\"]", api_json);
     const auto anon_help
         = fmt::format("anonymize serial numbers in the output [{}]", opts.anonymize);
 
@@ -363,10 +364,8 @@ int main(int argc, char* argv[])
     const auto cli = cli_cmds;
     const auto cli_dup = (cli_cmds | cli_nocmd);
 
-    // build C-like argument array from UTF-8 arguments
-    auto [cargv, buff] = get_c_argv(u8args);
     int res = 0;
-    if (parse(cargv->size(), &(*cargv)[0], cli_dup)) {
+    if (parse(std::next(u8args.cbegin()), u8args.cend(), cli_dup)) {
         switch (cmd) {
             case mode::info:
                 print_info(ind, ts);
@@ -385,7 +384,7 @@ int main(int argc, char* argv[])
         }
     }
     else {
-        if (parse(cargv->size(), reinterpret_cast<char**>(&(*cargv)[0]), cli_nocmd)) {
+        if (parse(std::next(u8args.cbegin()), u8args.cend(), cli_nocmd)) {
             opts.mode = mode2pmode(mode::all);
             res = run_wrapper(opts, std::filesystem::path(api_json),
                               std::filesystem::path(out_json), ind, ts);
