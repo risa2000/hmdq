@@ -1,6 +1,6 @@
 sources:
   "1.23.7":
-    sha256: "e30d08882dcf4b697ed2a084da8575b6b842239396f93e3a5f344ccfbd99d217"
+    sha256: "cbe2afbfc9ed9c6c5ed7df7929f9b1f5ecfd858b849b377005d4881b72b910b3"
     url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v1.23.7.tar.gz"
 patches:
   "1.23.7":
