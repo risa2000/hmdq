@@ -46,7 +46,7 @@ BEGIN
             VALUE "FileDescription", "VR headset data collecting utility"
             VALUE "FileVersion", VER_FILEVERSION_STR
             VALUE "InternalName", "${PROJECT_NAME}"
-            VALUE "LegalCopyright", "© 2020 Richard Musil"
+            VALUE "LegalCopyright", "© 2019-2023 Richard Musil"
             VALUE "OriginalFilename", "${PROJECT_NAME}.exe"
             VALUE "ProductName", "${PROJECT_NAME}"
             VALUE "ProductVersion", VER_PRODUCTVERSION_STR
