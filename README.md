@@ -210,7 +210,7 @@ The anonymized values are computed by using the secure hash function [Blake2](ht
 Will only show data collected from OpenVR runtime (if one is present and any hardware is connected).
 
 #### `--oculus`
-Will only show date collected from Oculus runtime (if one is present and a headset is connected).
+Will only show data collected from Oculus runtime (if one is present and a headset is connected).
 
 Both options are meant to only control the program output, but the data are logged and saved into the data file (if requested by `--out_json` option) for both subsystems.
 
