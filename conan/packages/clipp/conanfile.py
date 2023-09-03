@@ -54,7 +54,7 @@ class ClippConan(ConanFile):
         self.folders.source = self.branch
 
     def package(self):
-        self.copy("LICENSE", dst="licenses")
+        self.copy("LICENSE", src=self.folders.source, dst="licenses")
         self.copy("*.h", dst="include/clipp", src=os.path.join(self.folders.source, "include"))
 
     def package_id(self):
