@@ -1,15 +1,17 @@
-From 0e0cc7194fc343253de3998433a8b26b4594e75d Mon Sep 17 00:00:00 2001
+From a5d3d891402d62b74465abae57e2d2d5c9b4f7b7 Mon Sep 17 00:00:00 2001
 From: Richard Musil <risa2000x@gmail.com>
 Date: Sun, 18 Dec 2022 15:23:31 +0100
-Subject: [PATCH 2/2] Changes for local build for v1.23.7.
+Subject: [PATCH 2/2] Changes for local build for v1.26.7.
 
 ---
  .gitignore         |  12 +++
  CMakeLists.txt     |  16 ++--
+ CMakePresets.json  | 135 ++++++++++++++++++++++++++
  CMakeSettings.json | 234 +++++++++++++++++++++++++++++++++++++++++++++
  src/CMakeLists.txt |  13 ++-
- 4 files changed, 264 insertions(+), 11 deletions(-)
+ 5 files changed, 399 insertions(+), 11 deletions(-)
  create mode 100644 .gitignore
+ create mode 100644 CMakePresets.json
  create mode 100644 CMakeSettings.json
 
 diff --git a/.gitignore b/.gitignore
@@ -31,7 +33,7 @@ index 0000000..4b78aa6
 +/bin/win32
 +/bin/win64
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8956cda..9167a91 100644
+index fb4c785..caafb0b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,5 +1,5 @@
@@ -68,7 +70,7 @@ index 8956cda..9167a91 100644
      add_definitions(-DOPENVR_BUILD_STATIC)
    endif()
  elseif(UNIX AND NOT APPLE)
-@@ -68,9 +70,9 @@ elseif(APPLE)
+@@ -70,9 +72,9 @@ elseif(APPLE)
  endif()
  
  # Set output folder for static and shared libraries
@@ -81,7 +83,7 @@ index 8956cda..9167a91 100644
  
  # Enable some properties.
  if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-@@ -80,7 +82,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+@@ -82,7 +84,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
  	# Set custom libc++ usage here
  	if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND USE_LIBCXX)
  		if(USE_CUSTOM_LIBCXX)
@@ -90,6 +92,147 @@ index 8956cda..9167a91 100644
  				set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
  			endif()
  			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++")
+diff --git a/CMakePresets.json b/CMakePresets.json
+new file mode 100644
+index 0000000..295d4d3
+--- /dev/null
++++ b/CMakePresets.json
+@@ -0,0 +1,135 @@
++{
++  "version": 3,
++  "configurePresets": [
++    {
++      "name": "arch_x64",
++      "hidden": true,
++      "architecture": {
++        "value": "x64",
++        "strategy": "external"
++      }
++    },
++    {
++      "name": "arch_x86",
++      "hidden": true,
++      "architecture": {
++        "value": "x86",
++        "strategy": "external"
++      }
++    },
++    {
++      "name": "generic-base",
++      "hidden": true,
++      "generator": "Ninja",
++      "binaryDir": "${sourceDir}/out/build/${presetName}",
++      "installDir": "${sourceDir}/out/install/${presetName}",
++      "cacheVariables": {
++        "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
++        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
++        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
++        "CMAKE_CXX_STANDARD": "17",
++        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
++      }
++    },
++    {
++      "name": "clang-cl",
++      "hidden": true,
++      "cacheVariables": {
++        "CMAKE_C_COMPILER": "clang-cl.exe",
++        "CMAKE_CXX_COMPILER": "clang-cl.exe"
++      },
++      "condition": {
++        "type": "equals",
++        "lhs": "${hostSystemName}",
++        "rhs": "Windows"
++      }
++    },
++    {
++      "name": "shared_libs",
++      "hidden": true,
++      "cacheVariables": {
++        "BUILD_SHARED_LIBS": "ON"
++      }
++    },
++    {
++      "name": "x64_DLL_Debug",
++      "displayName": "x64_DLL_Debug",
++      "inherits": ["generic-base", "arch_x64", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Debug"
++      }
++    },
++    {
++      "name": "x64_DLL_Release",
++      "displayName": "x64_DLL_Release",
++      "inherits": ["generic-base", "arch_x64", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Release"
++      }
++    },
++    {
++      "name": "x64_Lib_Debug",
++      "displayName": "x64_Lib_Debug",
++      "inherits": ["generic-base", "arch_x64"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Debug"
++      }
++    },
++    {
++      "name": "x64_Lib_Release",
++      "displayName": "x64_Lib_Release",
++      "inherits": ["generic-base", "arch_x64"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Release"
++      }
++    },
++    {
++      "name": "x86_DLL_Debug",
++      "displayName": "x86_DLL_Debug",
++      "inherits": ["generic-base", "arch_x86", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Debug"
++      }
++    },
++    {
++      "name": "x86_DLL_Release",
++      "displayName": "x86_DLL_Release",
++      "inherits": ["generic-base", "arch_x86", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Release"
++      }
++    },
++    {
++      "name": "x86_Lib_Debug",
++      "displayName": "x86_Lib_Debug",
++      "inherits": ["generic-base", "arch_x86"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Debug"
++      }
++    },
++    {
++      "name": "x86_Lib_Release",
++      "displayName": "x86_Lib_Release",
++      "inherits": ["generic-base", "arch_x86"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Release"
++      }
++    },
++    {
++      "name": "x64_DLL_Debug_xClangCl",
++      "displayName": "x64_DLL_Debug_xClangCl",
++      "inherits": ["generic-base", "arch_x64", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Debug"
++      }
++    },
++    {
++      "name": "x64_DLL_Release_xClangCl",
++      "displayName": "x64_DLL_Release_xClangCl",
++      "inherits": ["generic-base", "arch_x64", "shared_libs"],
++      "cacheVariables": {
++        "CMAKE_BUILD_TYPE": "Release"
++      }
++    }
++  ]
++}
 diff --git a/CMakeSettings.json b/CMakeSettings.json
 new file mode 100644
 index 0000000..88644b6
@@ -373,5 +516,5 @@ index b83710a..b644fdb 100644
  
  # Generate a .pc file for linux environments
 -- 
-2.36.1.windows.1
+2.40.0.windows.1
 

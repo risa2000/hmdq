@@ -1,4 +1,8 @@
 import os
+import errno
+import stat
+import shutil
+from pathlib import Path
 from datetime import datetime
 
 from conan import ConanFile
@@ -6,16 +10,23 @@ from conan.tools.scm import Git
 
 required_conan_version = ">=1.51.0"
 
+def handleRemoveReadonly(func, path, exc):
+  excvalue = exc[1]
+  if excvalue.errno == errno.EACCES:
+      os.chmod(path, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO) # 0777
+      func(path)
+  else:
+      raise
+
 class ClippConan(ConanFile):
     name = "clipp"
     description = "Command line interfaces for Modern C++"
     license = "MIT"
     topics = ("Windows", "c++")
-    homepage = "https://github.com/GerHobbelt/clipp"
-    url = "https://github.com/GerHobbelt/clipp"
+    homepage = "https://github.com/risa2000/clipp"
+    url = "https://github.com/risa2000/clipp"
     branch = "master"
-    commit = "02783b6782ebedbb2bebc2e6ceda738ee51c7df2"
-    commit_datetime = datetime.fromisoformat("2022-12-23 16:14:30 +01:00")
+    commit = "caab437909ce24ed59e1239539d498f8963c0e91"
     exports_sources = "include/*"
     no_copy_source = True
 
@@ -23,15 +34,21 @@ class ClippConan(ConanFile):
         if len(tms) > 5 and (tms[-5] in ('+', '-')):
             return tms[:-2] + ':' + tms[-2:]
 
+    def _get_commit_datetime(self):
+        self.source()
+        git = Git(self)
+        return datetime.fromisoformat(self._fix_isodatetime(git.run(f'-C {self.branch} show -s --format="%ci" .')))
+
     def set_version(self):
-        self.version = f'cci.{self.commit_datetime:%Y%m%d}'
+        commit_datetime = self._get_commit_datetime()
+        self.version = f'cci.{commit_datetime:%Y%m%d}'
 
     def source(self):
         git = Git(self)
+        if Path(self.branch).exists():
+            shutil.rmtree(self.branch, ignore_errors=False, onerror=handleRemoveReadonly)
         git.clone(url=self.url, target=self.branch)
         git.run(f"-C {self.branch} checkout {self.commit}")
-        commit_datetime = datetime.fromisoformat(self._fix_isodatetime(git.run(f'-C {self.branch} show -s --format="%ci" .')))
-        assert self.commit_datetime == commit_datetime
 
     def layout(self):
         self.folders.source = self.branch

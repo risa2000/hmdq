@@ -4,7 +4,7 @@ fmt/9.1.0
 nlohmann_json/3.11.2
 xtensor/0.24.2
 eigen/3.4.0
-openvr/1.23.7
+openvr/1.26.7
 catch2/3.3.0
 botan/2.19.3
 

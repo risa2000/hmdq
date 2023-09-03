@@ -1,0 +1,56 @@
+From 5e45960cf44d6eb19bbadcae4a3d32578a380c17 Mon Sep 17 00:00:00 2001
+From: Aaron Leiby <aaronl@valvesoftware.com>
+Date: Thu, 24 Aug 2023 16:06:12 -0800
+Subject: [PATCH 1/2] [openvr] Public API fix for C# (unity) (vrshared_double
+ -> double)
+
+CLs
+8290392
+
+Merging using vr_steamvr_rel_hotfix_to_sdk_release
+
+[git-p4: depot-paths = "//vr/steamvr/sdk_release/": change = 8291348]
+---
+ codegen/api_shared.py |  4 ++++
+ headers/openvr_api.cs | 10 +++++-----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/codegen/api_shared.py b/codegen/api_shared.py
+index af064d6..2098054 100755
+--- a/codegen/api_shared.py
++++ b/codegen/api_shared.py
+@@ -247,6 +247,10 @@ def converttype(thetype):
+ 		thetype = 'int'
+ 	if(thetype == 'WebConsoleHandle_t'):
+ 		thetype = 'ulong'
++	if(thetype == 'vrshared_double'):
++		thetype = 'double'
++	if(thetype == 'vrshared_uint64_t'):
++		thetype = 'ulong'
+ 
+ 	if(thetype[0:7] == 'struct '):
+ 		thetype = thetype[7:]
+diff --git a/headers/openvr_api.cs b/headers/openvr_api.cs
+index a579471..2c3dfb9 100644
+--- a/headers/openvr_api.cs
++++ b/headers/openvr_api.cs
+@@ -6480,11 +6480,11 @@ public enum EBlockQueueCreationFlag
+ 	public uint m_nNumDroppedFramesTimedOut;
+ 	public uint m_nNumReprojectedFramesTimedOut;
+ 	public uint m_nNumFrameSubmits;
+-	public vrshared_double m_flSumCompositorCPUTimeMS;
+-	public vrshared_double m_flSumCompositorGPUTimeMS;
+-	public vrshared_double m_flSumTargetFrameTimes;
+-	public vrshared_double m_flSumApplicationCPUTimeMS;
+-	public vrshared_double m_flSumApplicationGPUTimeMS;
++	public double m_flSumCompositorCPUTimeMS;
++	public double m_flSumCompositorGPUTimeMS;
++	public double m_flSumTargetFrameTimes;
++	public double m_flSumApplicationCPUTimeMS;
++	public double m_flSumApplicationGPUTimeMS;
+ 	public uint m_nNumFramesWithDepth;
+ }
+ [StructLayout(LayoutKind.Sequential)] public struct Compositor_StageRenderSettings
+-- 
+2.40.0.windows.1
+
