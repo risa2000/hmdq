@@ -83,7 +83,7 @@ void print_info(int ind = 0, int ts = 0)
     constexpr const char* libver_num_fmt = "{0} {1}.{2}.{3} (https://github.com/{0})\n";
     constexpr const char* gitlab_libver_num_fmt
         = "{0} {1}.{2}.{3} (https://gitlab.com/{0})\n";
-    iprint(sf1, libver_nover_fmt, "GerHobbelt/clipp");
+    iprint(sf1, libver_nover_fmt, "muellan/clipp");
     iprint(sf1, libver_num_fmt, "nlohmann/json", NLOHMANN_JSON_VERSION_MAJOR,
            NLOHMANN_JSON_VERSION_MINOR, NLOHMANN_JSON_VERSION_PATCH);
     iprint(sf1, libver_num_fmt, "QuantStack/xtl", XTL_VERSION_MAJOR, XTL_VERSION_MINOR,
