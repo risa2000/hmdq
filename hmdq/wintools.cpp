@@ -69,12 +69,13 @@ std::vector<std::wstring> get_wargs()
 std::vector<uint8_t> wstr_to_cp(const wchar_t* wstr, UINT code_page)
 {
     std::vector<uint8_t> buffer(BUFF_SIZE);
-    auto buffsize = ::WideCharToMultiByte(code_page, 0, wstr, -1,
-                                          reinterpret_cast<char*>(&buffer[0]), 0, nullptr, nullptr);
+    auto buffsize = ::WideCharToMultiByte(
+        code_page, 0, wstr, -1, reinterpret_cast<char*>(&buffer[0]), 0, nullptr, nullptr);
     if (buffsize > buffer.size()) {
         buffer.resize(buffsize);
     }
-    buffsize = ::WideCharToMultiByte(code_page, 0, wstr, -1, reinterpret_cast<char*>(&buffer[0]),
+    buffsize = ::WideCharToMultiByte(code_page, 0, wstr, -1,
+                                     reinterpret_cast<char*>(&buffer[0]),
                                      static_cast<int>(buffer.size()), nullptr, nullptr);
     return buffer;
 }

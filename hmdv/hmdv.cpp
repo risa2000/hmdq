@@ -30,8 +30,8 @@
 
 #include <botan/version.h>
 
-#include <fmt/format.h>
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 
 #include <Eigen/Core>
 
@@ -108,7 +108,8 @@ static pmode mode2pmode(const mode selected)
         case mode::all:
             return pmode::all;
         default:
-            HMDQ_EXCEPTION(fmt::format("mode2pmode({}) is undefined", static_cast<int>(selected)));
+            HMDQ_EXCEPTION(
+                fmt::format("mode2pmode({}) is undefined", static_cast<int>(selected)));
     }
 }
 
@@ -171,8 +172,8 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
 
     // process all VR subsystem interfaces
     if (out.contains(j_openvr)) {
-        auto openvr_processor
-            = std::make_shared<openvr::Processor>(api_json, std::make_shared<json>(out[j_openvr]));
+        auto openvr_processor = std::make_shared<openvr::Processor>(
+            api_json, std::make_shared<json>(out[j_openvr]));
         openvr_processor->init();
         processors.emplace(openvr_processor->get_id(), openvr_processor);
     }
@@ -333,13 +334,12 @@ int main(int argc, char* argv[])
             case mode::props:
             case mode::all:
                 opts.mode = mode2pmode(cmd);
-                res = run_wrapper(run, opts, std::filesystem::path(api_json),
-                                  std::filesystem::path(in_json),
-                                  std::filesystem::path(out_json), ind, ts);
+                res = run_wrapper(run, opts, utf8_to_path(api_json),
+                                  utf8_to_path(in_json), utf8_to_path(out_json), ind, ts);
                 break;
             case mode::verify:
-                res = run_wrapper(run_verify, std::filesystem::path(in_json),
-                                  opts.verbosity, ind, ts);
+                res = run_wrapper(run_verify, utf8_to_path(in_json), opts.verbosity, ind,
+                                  ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",

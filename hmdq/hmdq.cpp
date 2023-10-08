@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
     mode cmd = mode::all;
 
     // build relative path to OPENVR_API_JSON file
-    std::filesystem::path api_json_path = get_full_prog_path();
+    auto api_json_path = get_full_prog_path();
     api_json_path.replace_filename(OPENVR_API_JSON);
     auto api_json = path_to_utf8(api_json_path);
 
@@ -374,8 +374,8 @@ int main(int argc, char* argv[])
             case mode::props:
             case mode::all:
                 opts.mode = mode2pmode(cmd);
-                res = run_wrapper(opts, std::filesystem::path(api_json),
-                                  std::filesystem::path(out_json), ind, ts);
+                res = run_wrapper(opts, utf8_to_path(api_json), utf8_to_path(out_json),
+                                  ind, ts);
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
@@ -386,8 +386,8 @@ int main(int argc, char* argv[])
     else {
         if (parse(std::next(u8args.cbegin()), u8args.cend(), cli_nocmd)) {
             opts.mode = mode2pmode(mode::all);
-            res = run_wrapper(opts, std::filesystem::path(api_json),
-                              std::filesystem::path(out_json), ind, ts);
+            res = run_wrapper(opts, utf8_to_path(api_json), utf8_to_path(out_json), ind,
+                              ts);
         }
         else {
             fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());

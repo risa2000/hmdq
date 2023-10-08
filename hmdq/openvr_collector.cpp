@@ -16,6 +16,7 @@
 #include "json_proxy.h"
 #include "jtools.h"
 #include "openvr_common.h"
+#include "wintools.h"
 #include "xtdef.h"
 
 #include <xtensor/xadapt.hpp>
@@ -63,7 +64,7 @@ std::filesystem::path get_runtime_path()
                                     &buffsize);
     }
     if (res) {
-        return std::filesystem::u8path(&buffer[0]);
+        return utf8_to_path(&buffer[0]);
     }
     else {
         return "";
@@ -303,7 +304,7 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
 {
     json pvals;
 
-    for (const auto [did, dclass] : devs) {
+    for (const auto& [did, dclass] : devs) {
         const auto sdid = std::to_string(did);
         pvals[sdid] = get_dev_props(vrsys, did, dclass, PROP_CAT_COMMON, api);
         if (dclass == vr::TrackedDeviceClass_HMD) {

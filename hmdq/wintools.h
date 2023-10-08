@@ -61,9 +61,13 @@ inline std::filesystem::path utf8_to_path(const char* u8str)
     return std::filesystem::path(utf8_to_wstr(u8str));
 }
 
+inline std::filesystem::path utf8_to_path(const std::string& u8str)
+{
+    return utf8_to_path(u8str.c_str());
+}
+
 //  Convert filepath to UTF-8 string
 inline std::string path_to_utf8(const std::filesystem::path& path)
 {
     return wstr_to_utf8(path.wstring());
 }
-

@@ -1,4 +1,12 @@
 # HMDQ Tools Change Log
+## 2.1.7 - October 8, 2023
+Maintenance release:
+* Fixed localized path handling in CLI.
+
+## 2.1.6 - September 3, 2023
+Maintenance release:
+* Bumped OpenVR version to 1.26.7.
+
 ## 2.1.5 - January 31, 2023
 Maintenance release:
 * Switched code compliance to C++20.
