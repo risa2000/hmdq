@@ -21,11 +21,11 @@ project (hmdq_test
 
 # Dependencies
 # ============
-find_package (fmt 9.0.0 REQUIRED)
-find_package (xtensor 0.24.2 REQUIRED)
+find_package (fmt REQUIRED)
+find_package (xtensor REQUIRED)
+find_package (Eigen3 REQUIRED)
 # Use Catch2 unit test framework
-find_package (Catch2 3.1.0 REQUIRED)
-find_package (Eigen3 3.4.0 REQUIRED)
+find_package (Catch2 REQUIRED)
 
 set (hmdq_dir ../hmdq)
 set (hmdv_dir ../hmdv)

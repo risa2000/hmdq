@@ -26,7 +26,7 @@ class ClippConan(ConanFile):
     homepage = "https://github.com/risa2000/clipp"
     url = "https://github.com/risa2000/clipp"
     branch = "master"
-    commit = "caab437909ce24ed59e1239539d498f8963c0e91"
+    commit = "337f2264f240862bdc1eed3e9b0fc71107cacda8"
     exports_sources = "include/*"
     no_copy_source = True
 

@@ -1,11 +1,11 @@
 [requires]
-clipp/cci.20221223
-fmt/9.1.0
-nlohmann_json/3.11.2
-xtensor/0.24.2
+clipp/cci.20230831
+fmt/10.2.1
+nlohmann_json/3.11.3
+xtensor/0.24.7
 eigen/3.4.0
-openvr/1.26.7
-catch2/3.3.0
+openvr/2.2.3
+catch2/3.5.2
 botan/2.19.3
 
 [generators]

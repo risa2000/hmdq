@@ -1,8 +1,13 @@
 sources:
+  "2.2.3":
+    sha256: "4da20c2c33e7488703802eafd7f2e6c92dd0f324e887711e1e11e9b9d3dd3daa"
+    url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.2.3.tar.gz"
   "1.26.7":
     sha256: "e7391f1129db777b2754f5b017cfa356d7811a7bcaf57f09805b47c2e630a725"
     url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v1.26.7.tar.gz"
 patches:
+  "2.2.3":
+    - patch_file: "patches/2.2.3/0001-Changes-for-local-build.patch"
   "1.26.7":
     - patch_file: "patches/1.26.7/0001-openvr-Public-API-fix-for-C-unity-vrshared_double-do.patch"
     - patch_file: "patches/1.26.7/0002-Changes-for-local-build-for-v1.26.7.patch"

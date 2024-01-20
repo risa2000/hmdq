@@ -63,8 +63,8 @@ void print_devs(const json& api, const json& devs, int ind, int ts)
     hdevlist_t res;
     for (const auto [dev_id, dev_class] : devs.get<hdevlist_t>()) {
         const auto cname = api[j_classes][std::to_string(dev_class)].get<std::string>();
-        iprint(sf1, "Found dev: id={:d}, class={:d}, name={:s}\n", dev_id, dev_class,
-               cname);
+        iprint(sf1, "Found dev: id={:d}, class={:d}, name={:s}\n", dev_id,
+               static_cast<int>(dev_class), cname);
     }
 }
 
