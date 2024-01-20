@@ -1,4 +1,10 @@
 # HMDQ Tools Change Log
+## 2.1.8 - January 20, 2024
+Maintenance release:
+* Bumped dependencies versions.
+* Migraged CMakeSettings.json -> CMakePresets.json
+* Bumped OpenVR version to 2.2.3
+
 ## 2.1.7 - October 8, 2023
 Maintenance release:
 * Fixed localized path handling in CLI.
