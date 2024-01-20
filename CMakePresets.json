@@ -1,0 +1,92 @@
+{
+  "version": 5,
+  "configurePresets": [
+    {
+      "name": "arch_x64",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "generic-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/out/conan/${presetName}/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "clang-cl",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "shared_libs",
+      "hidden": true,
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON"
+      }
+    },
+    {
+      "name": "x64-DLL-Debug",
+      "displayName": "x64-DLL-Debug",
+      "inherits": ["generic-base", "arch_x64", "shared_libs"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x64-DLL-Release",
+      "displayName": "x64-DLL-Release",
+      "inherits": ["generic-base", "arch_x64", "shared_libs"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "x64-Static-Debug",
+      "displayName": "x64-Static-Debug",
+      "inherits": ["generic-base", "arch_x64"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x64-Static-Release",
+      "displayName": "x64-Static-Release",
+      "inherits": ["generic-base", "arch_x64"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "x64-xClang-Static-Debug",
+      "displayName": "x64-xClang-Static-Debug",
+      "inherits": ["clang-cl", "generic-base", "arch_x64"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x64-xClang-Static-Release",
+      "displayName": "x64-xClang-Static-Release",
+      "inherits": ["clang-cl", "generic-base", "arch_x64"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ]
+}
