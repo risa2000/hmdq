@@ -88,5 +88,31 @@
         "CMAKE_BUILD_TYPE": "Release"
       }
     }
+  ],
+  "buildPresets" : [
+    {
+      "name": "x64-DLL-Debug",
+      "configurePreset": "x64-DLL-Debug"
+    },
+    {
+      "name": "x64-DLL-Release",
+      "configurePreset": "x64-DLL-Release"
+    },
+    {
+      "name": "x64-Static-Debug",
+      "configurePreset": "x64-Static-Debug"
+    },
+    {
+      "name": "x64-Static-Release",
+      "configurePreset": "x64-Static-Release"
+    },
+    {
+      "name": "x64-xClang-Static-Debug",
+      "configurePreset": "x64-xClang-Static-Debug"
+    },
+    {
+      "name": "x64-xClang-Static-Release",
+      "configurePreset": "x64-xClang-Static-Release"
+    }
   ]
 }

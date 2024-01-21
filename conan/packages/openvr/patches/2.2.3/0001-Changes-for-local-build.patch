@@ -1,14 +1,14 @@
-From 02c05c1e23d15dfeb2519c70de96810fd230aeff Mon Sep 17 00:00:00 2001
+From 05e7f5a904836c967604b31227881d7ed0276d0c Mon Sep 17 00:00:00 2001
 From: Richard Musil <risa2000x@gmail.com>
 Date: Sun, 18 Dec 2022 15:23:31 +0100
 Subject: [PATCH] Changes for local build.
 
 ---
- .gitignore         |  12 ++++
- CMakeLists.txt     |  15 ++---
- CMakePresets.json  | 135 +++++++++++++++++++++++++++++++++++++++++++++
- src/CMakeLists.txt |  13 +++--
- 4 files changed, 162 insertions(+), 13 deletions(-)
+ .gitignore         |  12 +++
+ CMakeLists.txt     |  15 ++--
+ CMakePresets.json  | 177 +++++++++++++++++++++++++++++++++++++++++++++
+ src/CMakeLists.txt |  13 +++-
+ 4 files changed, 204 insertions(+), 13 deletions(-)
  create mode 100644 .gitignore
  create mode 100644 CMakePresets.json
 
@@ -91,10 +91,10 @@ index fb4c785..24ee799 100644
  			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++")
 diff --git a/CMakePresets.json b/CMakePresets.json
 new file mode 100644
-index 0000000..295d4d3
+index 0000000..4fe8830
 --- /dev/null
 +++ b/CMakePresets.json
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,177 @@
 +{
 +  "version": 3,
 +  "configurePresets": [
@@ -227,6 +227,48 @@ index 0000000..295d4d3
 +      "cacheVariables": {
 +        "CMAKE_BUILD_TYPE": "Release"
 +      }
++    }
++  ],
++  "buildPresets": [
++    {
++      "name": "x64_DLL_Debug",
++      "configurePreset": "x64_DLL_Debug"
++    },
++    {
++      "name": "x64_DLL_Release",
++      "configurePreset": "x64_DLL_Release"
++    },
++    {
++      "name": "x64_Lib_Debug",
++      "configurePreset": "x64_Lib_Debug"
++    },
++    {
++      "name": "x64_Lib_Release",
++      "configurePreset": "x64_Lib_Release"
++    },
++    {
++      "name": "x86_DLL_Debug",
++      "configurePreset": "x86_DLL_Debug"
++    },
++    {
++      "name": "x86_DLL_Release",
++      "configurePreset": "x86_DLL_Release"
++    },
++    {
++      "name": "x86_Lib_Debug",
++      "configurePreset": "x86_Lib_Debug"
++    },
++    {
++      "name": "x86_Lib_Release",
++      "configurePreset": "x86_Lib_Release"
++    },
++    {
++      "name": "x64_DLL_Debug_xClangCl",
++      "configurePreset": "x64_DLL_Debug_xClangCl"
++    },
++    {
++      "name": "x64_DLL_Release_xClangCl",
++      "configurePreset": "x64_DLL_Release_xClangCl"
 +    }
 +  ]
 +}
