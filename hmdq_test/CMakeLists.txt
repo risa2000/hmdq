@@ -41,6 +41,7 @@ set (hmdq_test_sources
     verhlp_test.cpp
     )
 
+
 # Add unity tests
 add_executable (hmdq_test)
 target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
@@ -54,8 +55,6 @@ target_link_options (hmdq_test PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO 
 
 target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2WithMain Eigen3::Eigen xtensor)
 
-enable_testing ()
-
-add_test(NAME hmdq_test COMMAND hmdq_test)
+catch_discover_tests(hmdq_test)
 
 print_variables ("hmdq_test*")

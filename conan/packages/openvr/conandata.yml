@@ -1,11 +1,16 @@
 sources:
+  "2.5.1":
+    url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.5.1.tar.gz"
+    sha256: "54f654fce001682d8ac608f544a6c41e03a672b005c1deca3579fa36480a537c"
   "2.2.3":
-    sha256: "4da20c2c33e7488703802eafd7f2e6c92dd0f324e887711e1e11e9b9d3dd3daa"
     url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.2.3.tar.gz"
+    sha256: "4da20c2c33e7488703802eafd7f2e6c92dd0f324e887711e1e11e9b9d3dd3daa"
   "1.26.7":
-    sha256: "e7391f1129db777b2754f5b017cfa356d7811a7bcaf57f09805b47c2e630a725"
     url: "https://github.com/ValveSoftware/openvr/archive/refs/tags/v1.26.7.tar.gz"
+    sha256: "e7391f1129db777b2754f5b017cfa356d7811a7bcaf57f09805b47c2e630a725"
 patches:
+  "2.5.1":
+    - patch_file: "patches/2.5.1/0001-Changes-for-local-build-v2.5.1.patch"
   "2.2.3":
     - patch_file: "patches/2.2.3/0001-Changes-for-local-build.patch"
   "1.26.7":

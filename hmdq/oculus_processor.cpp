@@ -30,6 +30,7 @@
 #include <xtensor/xjson.hpp>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <filesystem>
 

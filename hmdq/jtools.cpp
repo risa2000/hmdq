@@ -23,6 +23,7 @@
 #include <botan/pipe.h>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <filesystem>
 #include <fstream>

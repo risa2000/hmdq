@@ -1,12 +1,12 @@
 [requires]
 clipp/cci.20230831
-fmt/10.2.1
-nlohmann_json/3.11.3
-xtensor/0.24.7
+fmt/11.1.4
+nlohmann_json/3.12.0
+xtensor/0.25.0
 eigen/3.4.0
-openvr/2.2.3
-catch2/3.5.2
-botan/2.19.3
+openvr/2.5.1
+catch2/3.7.1
+botan/3.6.1
 
 [generators]
 CMakeToolchain

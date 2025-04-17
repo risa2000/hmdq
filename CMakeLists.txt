@@ -43,6 +43,9 @@ add_subdirectory ("hmdq")
 add_subdirectory ("hmdv")
 
 if (BUILD_TESTS)
+    include (CTest)
+    include (Catch)
+
     add_subdirectory ("hmdq_test")
 endif (BUILD_TESTS)
 
