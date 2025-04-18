@@ -20,7 +20,7 @@
 #include "prtdata.h"
 #include "xtdef.h"
 
-#include <xtensor/xjson.hpp>
+#include <xtensor/io/xjson.hpp>
 
 #include <fmt/format.h>
 

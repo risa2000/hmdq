@@ -19,9 +19,9 @@
 #include "wintools.h"
 #include "xtdef.h"
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xjson.hpp>
-#include <xtensor/xview.hpp>
+#include <xtensor/containers/xadapt.hpp>
+#include <xtensor/io/xjson.hpp>
+#include <xtensor/views/xview.hpp>
 
 #include <openvr/openvr.h>
 

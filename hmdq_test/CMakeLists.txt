@@ -24,13 +24,14 @@ project (hmdq_test
 find_package (fmt REQUIRED)
 find_package (xtensor REQUIRED)
 find_package (Eigen3 REQUIRED)
+find_package (geos REQUIRED)
 # Use Catch2 unit test framework
 find_package (Catch2 REQUIRED)
 
 set (hmdq_dir ../hmdq)
 set (hmdv_dir ../hmdv)
 
-set (hmdq_test_sources
+set (hmdq_test_SOURCES
     ${hmdq_dir}/geom.cpp
     ${hmdq_dir}/geom2.cpp
     geom_test.cpp # this one defines main
@@ -44,16 +45,12 @@ set (hmdq_test_sources
 
 # Add unity tests
 add_executable (hmdq_test)
-target_sources (hmdq_test PRIVATE ${hmdq_test_sources})
+target_sources (hmdq_test PRIVATE ${hmdq_test_SOURCES})
 
 target_include_directories (hmdq_test PRIVATE ${hmdq_dir} ${hmdv_dir})
 
-target_compile_options(hmdq_test PRIVATE /Zc:inline /Zc:__cplusplus)
-
-# turn on linker optimization back on in RelWithDebInfo config
-target_link_options (hmdq_test PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
-
-target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2WithMain Eigen3::Eigen xtensor)
+target_link_libraries (hmdv PRIVATE build_proxy)
+target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2WithMain Eigen3::Eigen xtensor GEOS::geos)
 
 catch_discover_tests(hmdq_test)
 

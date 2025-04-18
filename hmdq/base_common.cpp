@@ -16,7 +16,7 @@
 #include "jtools.h"
 #include "xtdef.h"
 
-#include <xtensor/xjson.hpp>
+#include <xtensor/io/xjson.hpp>
 
 namespace basevr {
 

@@ -25,9 +25,9 @@
 
 #include <Extras/OVR_Math.h>
 
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xbuilder.hpp>
-#include <xtensor/xjson.hpp>
+#include <xtensor/containers/xadapt.hpp>
+#include <xtensor/generators/xbuilder.hpp>
+#include <xtensor/io/xjson.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>

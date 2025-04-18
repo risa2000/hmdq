@@ -72,7 +72,7 @@ configure_file (
 
 # Targets
 # ============
-set (hmdq_sources
+set (hmdq_SOURCES
     calcview.cpp
     config.cpp
     geom.cpp
@@ -96,30 +96,19 @@ set (hmdq_sources
     ${PROJECT_BINARY_DIR}/hmdq.rc
     )
 
-# set the path to OVR_SDK
-if (NOT OVR_SDK)
-    set (OVR_SDK $ENV{OVR_SDK})
-endif()
-
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
 set (EXT_LIBS botan openvr_api64)
 
 # Add sources to `hmdq` executable.
 add_executable (hmdq)
-target_sources (hmdq PRIVATE ${hmdq_sources})
+target_sources (hmdq PRIVATE ${hmdq_SOURCES})
 
-target_include_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Include)
-
-target_compile_options (hmdq PRIVATE /Zc:inline /Zc:__cplusplus)
-
-target_link_directories (hmdq PRIVATE ${OVR_SDK}/LibOVR/Lib/Windows/x64/Release/VS2017)
-
-# turn on linker optimization back on in RelWithDebInfo config
-target_link_options (hmdq PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
-
+target_link_libraries (hmdq PRIVATE build_proxy)
 target_link_libraries (hmdq PRIVATE version.lib)
-target_link_libraries (hmdq PRIVATE LibOVR.lib)
 target_link_libraries (hmdq PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen openvr::openvr botan::botan)
+if (OVR_SDK)
+    target_link_libraries (hmdq PRIVATE LibOVR)
+endif()
 
 # Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdq

@@ -12,7 +12,7 @@
 #include <list>
 #include <set>
 
-#include <xtensor/xview.hpp>
+#include <xtensor/views/xview.hpp>
 
 #include "except.h"
 #include "optmesh.h"

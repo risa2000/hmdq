@@ -65,28 +65,28 @@ configure_file (
 
 # Targets
 # ============
-set (hmdq_dir ../hmdq)
-set (hmdv_sources
+set (hmdq_DIR ../hmdq)
+set (hmdv_SOURCES
     hmdv.cpp
     verhlp.cpp
     hmdfix.cpp
-    ${hmdq_dir}/base_common.cpp
-    ${hmdq_dir}/calcview.cpp
-    ${hmdq_dir}/config.cpp
-    ${hmdq_dir}/geom.cpp
-    ${hmdq_dir}/geom2.cpp
-    ${hmdq_dir}/jtools.cpp
-    ${hmdq_dir}/jkeys.cpp
-    ${hmdq_dir}/openvr_common.cpp
-    ${hmdq_dir}/openvr_config.cpp
-    ${hmdq_dir}/openvr_processor.cpp
-    ${hmdq_dir}/oculus_common.cpp
-    ${hmdq_dir}/oculus_config.cpp
-    ${hmdq_dir}/oculus_processor.cpp
-    ${hmdq_dir}/optmesh.cpp
-    ${hmdq_dir}/prtdata.cpp
-    ${hmdq_dir}/wintools.cpp
-    ${hmdq_dir}/xtdef.cpp
+    ${hmdq_DIR}/base_common.cpp
+    ${hmdq_DIR}/calcview.cpp
+    ${hmdq_DIR}/config.cpp
+    ${hmdq_DIR}/geom.cpp
+    ${hmdq_DIR}/geom2.cpp
+    ${hmdq_DIR}/jtools.cpp
+    ${hmdq_DIR}/jkeys.cpp
+    ${hmdq_DIR}/openvr_common.cpp
+    ${hmdq_DIR}/openvr_config.cpp
+    ${hmdq_DIR}/openvr_processor.cpp
+    ${hmdq_DIR}/oculus_common.cpp
+    ${hmdq_DIR}/oculus_config.cpp
+    ${hmdq_DIR}/oculus_processor.cpp
+    ${hmdq_DIR}/optmesh.cpp
+    ${hmdq_DIR}/prtdata.cpp
+    ${hmdq_DIR}/wintools.cpp
+    ${hmdq_DIR}/xtdef.cpp
     ${PROJECT_BINARY_DIR}/hmdv.rc
     )
 
@@ -100,18 +100,12 @@ set (EXT_LIBS botan)
 
 # Add sources to `hmdv` executable.
 add_executable (hmdv)
-target_sources (hmdv PRIVATE ${hmdv_sources})
+target_sources (hmdv PRIVATE ${hmdv_SOURCES})
 
-target_include_directories (hmdv PRIVATE ${hmdq_dir})
+target_include_directories (hmdv PRIVATE ${hmdq_DIR})
 target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
 
-target_compile_options (hmdv PRIVATE /Zc:inline /Zc:__cplusplus)
-
-target_link_directories (hmdv PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
-
-# turn on linker optimization back on in RelWithDebInfo config
-target_link_options (hmdv PRIVATE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
-
+target_link_libraries (hmdv PRIVATE build_proxy)
 target_link_libraries (hmdv PRIVATE version.lib)
 target_link_libraries (hmdv PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen botan::botan openvr::openvr)
 
