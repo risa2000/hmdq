@@ -11,17 +11,17 @@
 
 #pragma once
 
-#include <sstream>
-#include <string>
-#include <vector>
+#include "fmthlp.h"
+
+#include <xtensor/xarray.hpp>
+#include <xtensor/xio.hpp>
+#include <xtensor/xtensor.hpp>
 
 #include <fmt/format.h>
 
-#include <xtensor/containers/xarray.hpp>
-#include <xtensor/containers/xtensor.hpp>
-#include <xtensor/io/xio.hpp>
-
-#include "fmthlp.h"
+#include <sstream>
+#include <string>
+#include <vector>
 
 //  typedefs
 //------------------------------------------------------------------------------

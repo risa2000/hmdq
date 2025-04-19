@@ -35,7 +35,7 @@
 
 #include <Eigen/Core>
 
-#include <xtensor/core/xtensor_config.hpp>
+#include <xtensor/xtensor_config.hpp>
 #include <xtl/xtl_config.hpp>
 
 #include <geos/version.h>

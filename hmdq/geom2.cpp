@@ -11,9 +11,9 @@
 
 #include "geom2.h"
 
-#include <xtensor/containers/xadapt.hpp>
-#include <xtensor/views/xindex_view.hpp>
-#include <xtensor/views/xview.hpp>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xindex_view.hpp>
+#include <xtensor/xview.hpp>
 
 namespace geom {
 

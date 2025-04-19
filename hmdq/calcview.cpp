@@ -19,10 +19,10 @@
 #include "optmesh.h"
 #include "xtdef.h"
 
-#include <xtensor/containers/xarray.hpp>
-#include <xtensor/generators/xbuilder.hpp>
-#include <xtensor/io/xjson.hpp>
-#include <xtensor/views/xview.hpp>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xjson.hpp>
+#include <xtensor/xview.hpp>
 
 //  functions
 //------------------------------------------------------------------------------

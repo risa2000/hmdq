@@ -27,7 +27,8 @@
 //------------------------------------------------------------------------------
 //  miscellanous section keys
 static constexpr auto MM_IN_METER = 1000;
-static constexpr double HAM_AREA_ROUNDOFF = 0.00001;
+// static constexpr double HAM_AREA_ROUNDOFF = 0.00001;
+static constexpr double HAM_AREA_ROUNDOFF = std::numeric_limits<double>::epsilon();
 
 //  fix identifications
 //------------------------------------------------------------------------------

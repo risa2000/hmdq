@@ -23,7 +23,7 @@
 
 #include <openvr/openvr.h>
 
-#include <xtensor/io/xjson.hpp>
+#include <xtensor/xjson.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>

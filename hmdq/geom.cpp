@@ -12,7 +12,7 @@
 #include "geom.h"
 #include "except.h"
 
-#include <xtensor/views/xview.hpp>
+#include <xtensor/xview.hpp>
 
 #include <geos/geom/Geometry.h>
 #include <geos/geom/GeometryFactory.h>

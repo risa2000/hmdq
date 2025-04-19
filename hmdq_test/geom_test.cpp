@@ -9,10 +9,10 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <xtensor/generators/xbuilder.hpp>
-#include <xtensor/views/xview.hpp>
-
 #include "geom.h"
+
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xview.hpp>
 
 #define CATCH_CONFIG_MAIN // This tells Catch to provide a main() - only do this
                           // in one cpp file

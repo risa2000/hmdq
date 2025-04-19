@@ -9,14 +9,14 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
+#include "optmesh.h"
+#include "except.h"
+#include "xtdef.h"
+
+#include <xtensor/xview.hpp>
+
 #include <list>
 #include <set>
-
-#include <xtensor/views/xview.hpp>
-
-#include "except.h"
-#include "optmesh.h"
-#include "xtdef.h"
 
 //  functions
 //------------------------------------------------------------------------------
