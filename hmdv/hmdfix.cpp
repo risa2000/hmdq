@@ -9,23 +9,25 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <iomanip>
-#include <string>
-
-#include <fmt/chrono.h>
-#include <fmt/format.h>
-
 #include "calcview.h"
+#include "except.h"
 #include "jkeys.h"
 #include "misc.h"
 #include "verhlp.h"
 
 #include "json_proxy.h"
 
+#include <fmt/chrono.h>
+#include <fmt/format.h>
+
+#include <iomanip>
+#include <string>
+
 //  locals
 //------------------------------------------------------------------------------
 //  miscellanous section keys
 static constexpr auto MM_IN_METER = 1000;
+static constexpr double HAM_AREA_ROUNDOFF = 0.00001;
 
 //  fix identifications
 //------------------------------------------------------------------------------
@@ -36,6 +38,7 @@ static constexpr const char* PROG_VER_FOV_FIX = "1.2.4";
 static constexpr const char* PROG_VER_OPENVR_LOCALIZED = "1.3.4";
 static constexpr const char* PROG_VER_TRIS_OPT_TO_FACES_RAW = "1.3.91";
 static constexpr const char* PROG_VER_NEW_FOV_ALGO = "2.1.0";
+static constexpr const char* PROG_VER_NEW_HAM_ALGO = "2.2.0";
 
 //  functions
 //------------------------------------------------------------------------------
@@ -105,9 +108,8 @@ void fix_openvr_section(json& jd)
     jd.erase(j_geometry);
 }
 
-//  change (temporarily introduced) 'tris_opt' key to 'faces_raw' and make 'verts_opt'
-//  without 'verts_raw' 'verts_raw' again
-void fix_tris_opt(json& jd)
+//  collect valid geom sections (can be multiple if both runtimes were running)
+std::vector<json*> collect_geoms(json& jd)
 {
     std::vector<json*> geoms;
     if (jd.contains(j_openvr)) {
@@ -126,6 +128,14 @@ void fix_tris_opt(json& jd)
             }
         }
     }
+    return geoms;
+}
+
+//  change (temporarily introduced) 'tris_opt' key to 'faces_raw' and make 'verts_opt'
+//  without 'verts_raw' 'verts_raw' again
+void fix_tris_opt(json& jd)
+{
+    auto geoms = collect_geoms(jd);
     for (json* g : geoms) {
         if ((*g).contains(j_ham_mesh)) {
             for (const auto& neye : {j_leye, j_reye}) {
@@ -150,27 +160,44 @@ void fix_tris_opt(json& jd)
 //  deg.
 void fix_fov_algo(json& jd)
 {
-    if (jd.contains(j_openvr)) {
-        json& jd_openvr = jd[j_openvr];
-        if (jd_openvr.contains(j_geometry)) {
-            jd_openvr[j_geometry] = calc_geometry(jd_openvr[j_geometry]);
-        }
+    auto geoms = collect_geoms(jd);
+    for (json* g : geoms) {
+        auto recalc_geom = calc_geometry(*g);
+        (*g)[j_view_geom] = recalc_geom[j_view_geom];
+        (*g)[j_fov_eye] = recalc_geom[j_fov_eye];
+        (*g)[j_fov_head] = recalc_geom[j_fov_head];
+        (*g)[j_fov_tot] = recalc_geom[j_fov_tot];
     }
-    if (jd.contains(j_oculus)) {
-        json& jd_oculus = jd[j_oculus];
-        if (jd_oculus.contains(j_geometry)) {
-            for (const auto& fov_id : {j_default_fov, j_max_fov}) {
-                if (jd_oculus[j_geometry].contains(fov_id)) {
-                    jd_oculus[j_geometry][fov_id]
-                        = calc_geometry(jd_oculus[j_geometry][fov_id]);
+}
+
+bool fix_ham_algo(json& jd)
+{
+    auto geoms = collect_geoms(jd);
+    bool fixed{};
+    for (json* g : geoms) {
+        if ((*g).contains(j_ham_mesh)) {
+            auto& ham_mesh = (*g)[j_ham_mesh];
+            for (const auto& neye : {j_leye, j_reye}) {
+                if (!ham_mesh[neye].is_null()) {
+                    auto new_ham = calc_opt_ham_mesh(ham_mesh[neye]);
+                    if (std::abs(new_ham[j_ham_area].get<double>()
+                                 - ham_mesh[neye][j_ham_area].get<double>())
+                        >= HAM_AREA_ROUNDOFF) {
+                        ham_mesh[neye] = new_ham;
+                        fixed = true;
+                    }
                 }
             }
         }
     }
+    return fixed;
 }
+
 //  Check and run all fixes (return true if there was any)
 bool apply_all_relevant_fixes(json& jd)
 {
+    HMDQ_ASSERT(jd.contains(j_misc));
+
     const auto hmdx_ver = get_hmdx_ver(jd);
     bool fixed = false;
     // datetime format fix - remove 'T' in the middle
@@ -209,6 +236,11 @@ bool apply_all_relevant_fixes(json& jd)
     if (comp_ver(hmdx_ver, PROG_VER_NEW_FOV_ALGO) < 0) {
         fix_fov_algo(jd);
         fixed = true;
+    }
+    //  recalculate HAM area using a new algo which honors HAM out of (0,0), (1,1)
+    //  rectangle.
+    if (comp_ver(hmdx_ver, PROG_VER_NEW_HAM_ALGO) < 0) {
+        fixed = fixed || fix_ham_algo(jd);
     }
     // add 'hmdv_ver' into misc, if some change was made
     if (fixed) {

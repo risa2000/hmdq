@@ -30,6 +30,7 @@ find_package (xtensor REQUIRED)
 find_package (Eigen3 REQUIRED)
 find_package (openvr REQUIRED)
 find_package (botan REQUIRED)
+find_package (geos REQUIRED)
 
 # Project defines
 # ============
@@ -107,7 +108,16 @@ target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
 
 target_link_libraries (hmdv PRIVATE build_proxy)
 target_link_libraries (hmdv PRIVATE version.lib)
-target_link_libraries (hmdv PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen botan::botan openvr::openvr)
+target_link_libraries (hmdv PRIVATE
+    clipp::clipp
+    fmt::fmt
+    nlohmann_json::nlohmann_json
+    xtensor
+    Eigen3::Eigen
+    botan::botan
+    openvr::openvr
+    GEOS::geos
+)
 
 # Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdv

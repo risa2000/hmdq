@@ -38,6 +38,8 @@
 #include <xtensor/core/xtensor_config.hpp>
 #include <xtl/xtl_config.hpp>
 
+#include <geos/version.h>
+
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -95,6 +97,8 @@ void print_info(int ind = 0, int ts = 0)
            (FMT_VERSION % 10000) / 100, FMT_VERSION % 100);
     iprint(sf1, gitlab_libver_num_fmt, "libeigen/eigen", EIGEN_WORLD_VERSION,
            EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
+    iprint(sf1, libver_num_fmt, "libgeos/geos", GEOS_VERSION_MAJOR, GEOS_VERSION_MINOR,
+           GEOS_VERSION_PATCH);
 }
 
 // Translate the tool selected mode into print mode.
@@ -131,10 +135,10 @@ int run_verify(const std::filesystem::path& in_json, int verb, int ind, int ts)
     auto check_ok = verify_checksum(out);
     if (verb >= vdef) {
         if (check_ok) {
-            iprint(sf, "Input file checksum is OK\n");
+            iprint(sf, "[OK] {}\n", path_to_utf8(in_json));
         }
         else {
-            iprint(sf, "Input file checksum is invalid\n");
+            iprint(sf, "[Invalid] {}\n", path_to_utf8(in_json));
         }
     }
     return check_ok ? 0 : 1;
@@ -228,6 +232,7 @@ int run_wrapper(F func, Args&&... args)
     }
     catch (std::runtime_error e) {
         fmt::print(stderr, "{}\n", e.what());
+        res = 1;
     }
     return res;
 }

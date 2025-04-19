@@ -36,6 +36,8 @@
 
 #include <Eigen/Core>
 
+#include <geos/version.h>
+
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
@@ -110,6 +112,8 @@ void print_info(int ind = 0, int ts = 0)
            "https://developer.oculus.com/downloads/package/oculus-sdk-for-windows/");
     iprint(sf1, gitlab_libver_num_fmt, "libeigen/eigen", EIGEN_WORLD_VERSION,
            EIGEN_MAJOR_VERSION, EIGEN_MINOR_VERSION);
+    iprint(sf1, libver_num_fmt, "libgeos/geos", GEOS_VERSION_MAJOR, GEOS_VERSION_MINOR,
+           GEOS_VERSION_PATCH);
 }
 
 //  Return some miscellanous info about the app and the OS.

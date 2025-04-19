@@ -17,7 +17,7 @@ include(utils)
 # ============
 project (hmdq_test
     DESCRIPTION "Unit tests for hmdq tool"
-    )
+)
 
 # Dependencies
 # ============
@@ -40,7 +40,8 @@ set (hmdq_test_SOURCES
     ${hmdq_dir}/xtdef.cpp
     ${hmdv_dir}/verhlp.cpp
     verhlp_test.cpp
-    )
+    geos_test.cpp
+)
 
 
 # Add unity tests

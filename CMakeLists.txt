@@ -41,6 +41,7 @@ project (hmdq_tools
 # Global build defs (proxy target)
 # ================================
 add_library (build_proxy INTERFACE)
+#target_compile_definitions (build_proxy INTERFACE XTENSOR_FORCE_TEMPORARY_MEMORY_IN_ASSIGNMENTS)
 target_compile_options (build_proxy INTERFACE /Zc:inline /Zc:__cplusplus)
 # turn on linker optimization back on in RelWithDebInfo config
 target_link_options (build_proxy INTERFACE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)

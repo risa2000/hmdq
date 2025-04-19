@@ -30,6 +30,7 @@ find_package (xtensor REQUIRED)
 find_package (Eigen3 REQUIRED)
 find_package (openvr REQUIRED)
 find_package (botan REQUIRED)
+find_package (geos REQUIRED)
 
 # Project defines
 # ============
@@ -105,7 +106,17 @@ target_sources (hmdq PRIVATE ${hmdq_SOURCES})
 
 target_link_libraries (hmdq PRIVATE build_proxy)
 target_link_libraries (hmdq PRIVATE version.lib)
-target_link_libraries (hmdq PRIVATE clipp::clipp fmt::fmt nlohmann_json::nlohmann_json xtensor Eigen3::Eigen openvr::openvr botan::botan)
+target_link_libraries (hmdq PRIVATE
+    clipp::clipp
+    fmt::fmt
+    nlohmann_json::nlohmann_json
+    xtensor
+    Eigen3::Eigen
+    openvr::openvr
+    botan::botan
+    GEOS::geos
+)
+
 if (OVR_SDK)
     target_link_libraries (hmdq PRIVATE LibOVR)
 endif()

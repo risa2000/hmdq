@@ -9,10 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
+#include "geom.h"
+#include "except.h"
+
 #include <xtensor/views/xview.hpp>
 
-#include "except.h"
-#include "geom.h"
+#include <geos/geom/Geometry.h>
+#include <geos/geom/GeometryFactory.h>
 
 //  functions
 //------------------------------------------------------------------------------
@@ -33,6 +36,29 @@ double area_mesh_tris_idx(const harray2d_t& verts, const hfaces_t& tris)
         HMDQ_ASSERT(face.size() == 3);
         a += area_triangle(xt::view(verts, face[0]), xt::view(verts, face[1]),
                            xt::view(verts, face[2]));
+    }
+    return a;
+}
+
+double area_mesh_tris_idx_geos(const harray2d_t& verts, const hfaces_t& tris)
+{
+    using namespace geos::geom;
+
+    GeometryFactory::Ptr factory = GeometryFactory::create();
+    auto canvas{factory->createPolygon(
+        CoordinateSequence({CoordinateXY{0, 0}, CoordinateXY{0, 1}, CoordinateXY{1, 1},
+                            CoordinateXY{1, 0}, CoordinateXY{0, 0}}))};
+    double a = 0.0;
+    for (const auto& face : tris) {
+        HMDQ_ASSERT(face.size() == 3);
+        auto t_coords{CoordinateSequence(
+            {CoordinateXY{xt::view(verts, face[0])[0], xt::view(verts, face[0])[1]},
+             CoordinateXY{xt::view(verts, face[1])[0], xt::view(verts, face[1])[1]},
+             CoordinateXY{xt::view(verts, face[2])[0], xt::view(verts, face[2])[1]},
+             CoordinateXY{xt::view(verts, face[0])[0], xt::view(verts, face[0])[1]}})};
+        auto triangle{factory->createPolygon(std::move(t_coords))};
+        auto isection = canvas->intersection(triangle.get());
+        a += isection->getArea();
     }
     return a;
 }

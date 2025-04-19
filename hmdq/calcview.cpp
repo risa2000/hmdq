@@ -69,7 +69,8 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     json res;
 
     // assume here that n_faces are 'faces_raw' and in fact triangles
-    res[j_ham_area] = area_mesh_tris_idx(verts_opt, n_faces);
+    // res["ham_area_old"] = area_mesh_tris_idx(verts_opt, n_faces);
+    res[j_ham_area] = area_mesh_tris_idx_geos(verts_opt, n_faces);
 
     if (verts_raw != verts_opt) {
         // save 'verts_raw' only if they differ from the optimized version

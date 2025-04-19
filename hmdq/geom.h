@@ -69,3 +69,7 @@ double area_triangle(const hvector_t& v1, const hvector_t& v2, const hvector_t& 
 //  Calculate the mesh area from given triangles. Triangle are specified by vertices
 //  indexed by an index array.
 double area_mesh_tris_idx(const harray2d_t& verts, const hfaces_t& tris);
+
+//  Calculate the mesh area from given triangles. Triangle are specified by vertices
+//  indexed by an index array (using GEOS library)
+double area_mesh_tris_idx_geos(const harray2d_t& verts, const hfaces_t& tris);
