@@ -41,7 +41,7 @@ typedef std::vector<hedge_t> hedgelist_t;
 harray2d_t build_array(const hveclist_t& vecs);
 
 //  Indent print xarray.
-template<typename T, int N>
+template <typename T, int N>
 std::vector<std::string> format_tensor(const xt::xtensor<T, N>& a)
 {
     // stringstream to dump the xarray
@@ -64,7 +64,7 @@ inline void print_multiline(const std::vector<std::string>& lines, int ind, int 
 }
 
 //  Indent print xarray.
-template<typename T, int N>
+template <typename T, int N>
 void print_tensor(const xt::xtensor<T, N>& a, int ind, int ts)
 {
     const auto fval = format_tensor<T, N>(a);

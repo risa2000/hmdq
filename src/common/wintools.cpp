@@ -111,20 +111,17 @@ std::filesystem::path get_module_path(HMODULE hMod)
             throw sys_error(fmt::format("::GetModuleFileNameW failed on hModule = {}",
                                         reinterpret_cast<void*>(hMod))
                                 .c_str());
-        }
-        else if (nSize == buffer.size()) {
+        } else if (nSize == buffer.size()) {
             if (buffer.size() * 2 <= MAX_BUFF_SIZE) {
                 buffer.resize(buffer.size() * 2);
                 continue;
-            }
-            else {
+            } else {
                 throw sys_error(
                     fmt::format("::GetModuleFileNameW path too long on hModule = {}",
                                 reinterpret_cast<void*>(hMod))
                         .c_str());
             }
-        }
-        else {
+        } else {
             break;
         }
     }
@@ -191,16 +188,13 @@ std::string get_os_ver()
                                    LOWORD(fi->dwProductVersionMS),
                                    HIWORD(fi->dwProductVersionLS),
                                    LOWORD(fi->dwProductVersionLS));
-            }
-            else {
+            } else {
                 assert(print_sys_error(rpath));
             }
-        }
-        else {
+        } else {
             assert(print_sys_error(std::to_string(size).c_str()));
         }
-    }
-    else {
+    } else {
         assert(print_sys_error(fos));
     }
     return "n/a";

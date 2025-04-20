@@ -48,7 +48,7 @@ const std::vector<std::string> PROPS_TO_SEED
 
 //  helper functions
 //------------------------------------------------------------------------------
-template<typename T, typename S>
+template <typename T, typename S>
 std::vector<std::string> bitmap_to_flags(T val, const nlohmann::ordered_map<T, S>& bmap)
 {
     std::vector<std::string> res;
@@ -152,8 +152,7 @@ void Processor::calculate()
             if (geometry_sanity_check(fovGeom)) {
                 precalc_geometry(fovGeom);
                 geom[fovType] = calc_geometry(fovGeom);
-            }
-            else {
+            } else {
                 add_error(fovGeom, "Geometry data are invalid (check JSON output file)");
             }
         }
@@ -222,16 +221,14 @@ void Processor::print(const print_options& opts, int ind, int ts) const
                     //  (or after)
                     if (print_nl) {
                         fmt::print("\n");
-                    }
-                    else {
+                    } else {
                         print_nl = true;
                     }
                     iprint(sf, "{}:\n", get_jkey_pretty(fovType));
                     fmt::print("\n");
                     if (has_error(fovGeom)) {
                         iprint((ind + 1) * ts, ERR_MSG_FMT_OUT, get_error_msg(fovGeom));
-                    }
-                    else {
+                    } else {
                         print_geometry(fovGeom, tverb, ind + 1, ts);
                     }
                 }

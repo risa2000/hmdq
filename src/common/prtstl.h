@@ -17,14 +17,14 @@
 //  template functions
 //------------------------------------------------------------------------------
 //  Write std::pair to stdout
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& input)
 {
     os << "{" << input.first << ", " << input.second << "}";
     return os;
 }
 
-template<typename T>
+template <typename T>
 //  Write std::vector to stdout
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& input)
 {

@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <common/optmesh.h>
 #include <common/except.h>
+#include <common/optmesh.h>
 #include <common/xtdef.h>
 
 #include <xtensor/xview.hpp>
@@ -50,8 +50,7 @@ std::pair<harray2d_t, hfaces_t> reduce_verts(const harray2d_t& verts,
             auto i = v_in_verts(xt::view(verts, v_i), r_verts);
             if (i >= 0) {
                 new_f.push_back(i);
-            }
-            else {
+            } else {
                 r_verts.push_back(xt::view(verts, v_i));
                 new_f.push_back(r_verts.size() - 1);
             }
@@ -79,8 +78,7 @@ hedgelist_t sort_edges(const hedgelist_t& edges)
     for (const auto& e : edges) {
         if (e.first <= e.second) {
             res.push_back(e);
-        }
-        else {
+        } else {
             res.push_back({e.second, e.first});
         }
     }
@@ -103,11 +101,9 @@ hedgelist_t shared_edges(const hedgelist_t& edges1, const hedgelist_t& edges2)
     while (f1 != e1 && f2 != e2) {
         if (*f1 < *f2) {
             ++f1;
-        }
-        else if (*f1 > *f2) {
+        } else if (*f1 > *f2) {
             ++f2;
-        }
-        else {
+        } else {
             res.push_back(*f1);
             ++f1;
             ++f2;
@@ -134,8 +130,7 @@ hface_t build_face(const hedgelist_t& edges1, const hedgelist_t& edges2)
 
     if (edges1[edges1.size() - 1].second != edges2[0].first) {
         te2 = reverse_edges(edges2);
-    }
-    else {
+    } else {
         te2 = edges2;
     }
 
@@ -164,14 +159,12 @@ hedgelist_t remove_chain(const hedgelist_t& chain, const hedgelist_t& edges)
                 pivot = i;
                 count = chain.size();
                 break;
-            }
-            else if (match_edges(chain[1], edges[(i + 1) % se])) {
+            } else if (match_edges(chain[1], edges[(i + 1) % se])) {
                 // forward direction
                 pivot = i;
                 count = chain.size();
                 break;
-            }
-            else if (match_edges(chain[1], edges[mod_pos(i - 1, se)])) {
+            } else if (match_edges(chain[1], edges[mod_pos(i - 1, se)])) {
                 // backward direction
                 pivot = i;
                 count = -static_cast<long long>(chain.size());
@@ -184,25 +177,21 @@ hedgelist_t remove_chain(const hedgelist_t& chain, const hedgelist_t& edges)
         if (pivot + count < 0) {
             return hedgelist_t(edges.begin() + pivot + 1,
                                edges.begin() + mod_pos(pivot + count + 1, se));
-        }
-        else {
+        } else {
             hedgelist_t res(edges.begin() + pivot + 1, edges.end());
             res.insert(res.end(), edges.begin(), edges.begin() + pivot + count + 1);
             return res;
         }
-    }
-    else if (count > 0) {
+    } else if (count > 0) {
         if (pivot + count >= se) {
             return hedgelist_t(edges.begin() + (pivot + count) % se,
                                edges.begin() + pivot);
-        }
-        else {
+        } else {
             hedgelist_t res(edges.begin() + pivot + count, edges.end());
             res.insert(res.end(), edges.begin(), edges.begin() + pivot);
             return res;
         }
-    }
-    else {
+    } else {
         // technically this should match one way or the other
         HMDQ_ASSERT(count != 0);
         return hedgelist_t(); // dummy return to satisfy the compiler
@@ -233,17 +222,13 @@ hedgelist_t check_chained(const hedgelist_t& edges)
     for (size_t i = 0; i < se; ++i) {
         if (edges[i].first == edges[(i + 1) % se].first) {
             chained += 1;
-        }
-        else if (edges[i].first == edges[(i + 1) % se].second) {
+        } else if (edges[i].first == edges[(i + 1) % se].second) {
             chained += 1;
-        }
-        else if (edges[i].second == edges[(i + 1) % se].first) {
+        } else if (edges[i].second == edges[(i + 1) % se].first) {
             chained += 1;
-        }
-        else if (edges[i].first == edges[(i + 1) % se].second) {
+        } else if (edges[i].first == edges[(i + 1) % se].second) {
             chained += 1;
-        }
-        else {
+        } else {
             split = i;
         }
     }
@@ -304,16 +289,13 @@ hfaces_t reduce_faces(const hfaces_t& faces)
                         if (!has_cycle(new_face)) {
                             face = new_face;
                             found = true;
-                        }
-                        else {
+                        } else {
                             checked.push_back(f);
                         }
-                    }
-                    else {
+                    } else {
                         checked.push_back(f);
                     }
-                }
-                else {
+                } else {
                     checked.push_back(f);
                 }
             }

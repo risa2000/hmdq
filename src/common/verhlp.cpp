@@ -29,13 +29,11 @@ std::tuple<int, size_t> first_num(const std::string& vs, size_t pos)
     if (dpos == 0) {
         // starts with DOT, assume 0
         pos += 1;
-    }
-    else if (dpos == std::string::npos) {
+    } else if (dpos == std::string::npos) {
         // did not find DOT, it is all the number
         num = std::stoi(vs.substr(pos));
         pos = vs.size();
-    }
-    else {
+    } else {
         // parse the number until dot
         num = std::stoi(vs.substr(pos, dpos - pos));
         pos = dpos + 1;
@@ -60,8 +58,7 @@ int comp_ver(const std::string& va, const std::string& vb)
         if (numa < numb) {
             res = -1;
             break;
-        }
-        else if (numa > numb) {
+        } else if (numa > numb) {
             res = 1;
             break;
         }

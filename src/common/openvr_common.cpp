@@ -45,8 +45,7 @@ json parse_json_oapi(const json& jd)
                 tdprops[std::to_string(cat)][std::to_string(val)] = name;
                 tdprops[j_name2id][name] = val;
             }
-        }
-        else if (e[j_enumname].get<std::string>() == "vr::ETrackedDeviceClass") {
+        } else if (e[j_enumname].get<std::string>() == "vr::ETrackedDeviceClass") {
             for (const auto& v : e[j_values]) {
                 auto name = v[j_name].get<std::string>();
                 // val type is actually vr::ETrackedDeviceClass

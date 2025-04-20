@@ -28,9 +28,12 @@ class Collector : public BaseVRCollector
 {
   public:
     Collector(const std::filesystem::path& apiPath, vr::EVRApplicationType appType)
-        : BaseVRCollector(j_openvr, std::make_shared<json>()), m_appType(appType),
-          m_ivrSystem(nullptr), m_err(vr::VRInitError_None), m_apiPath(apiPath),
-          m_pjApi(std::make_shared<json>())
+        : BaseVRCollector(j_openvr, std::make_shared<json>())
+        , m_appType(appType)
+        , m_ivrSystem(nullptr)
+        , m_err(vr::VRInitError_None)
+        , m_apiPath(apiPath)
+        , m_pjApi(std::make_shared<json>())
     {}
     virtual ~Collector() override;
 

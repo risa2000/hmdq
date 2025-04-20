@@ -38,8 +38,7 @@ int polarity(const Plane& plane, const Point3& point)
     double dist = plane.signedDistance(point);
     if (abs(dist) <= DOUBLE_EPS_100) {
         return 0;
-    }
-    else {
+    } else {
         return signbit(dist) ? -1 : 1;
     }
 }
@@ -54,8 +53,7 @@ void Meshd::add_mesh(const harray2d_t& verts, const hedgelist_t& edges)
     if (0 == m_verts.shape(0)) {
         m_verts = verts;
         m_edges = edges;
-    }
-    else {
+    } else {
         auto vcount = m_verts.shape(0);
         //  add the vertices at the end
         m_verts = xt::concatenate(xt::xtuple(m_verts, verts));
@@ -70,11 +68,21 @@ void Meshd::add_mesh(const harray2d_t& verts, const hedgelist_t& edges)
 //  Calculates the frustum FOV while incorporating the hidden area mesh (HAM) if present.
 Frustum::Frustum(double left, double right, double bottom, double top,
                  const Rotation* pRot, const Meshd* pHam)
-    : m_leftTan(left), m_rightTan(right), m_bottomTan(bottom), m_topTan(top),
-      m_center(0, 0, 0), m_forward(0, 0, -1), m_leftBottom(left, bottom, -1),
-      m_bottom(0, -1, -1), m_rightBottom(right, bottom, -1), m_right(1, 0, -1),
-      m_rightTop(right, top, -1), m_top(0, 1, -1), m_leftTop(left, top, -1),
-      m_left(-1, 0, -1), m_pRot(pRot)
+    : m_leftTan(left)
+    , m_rightTan(right)
+    , m_bottomTan(bottom)
+    , m_topTan(top)
+    , m_center(0, 0, 0)
+    , m_forward(0, 0, -1)
+    , m_leftBottom(left, bottom, -1)
+    , m_bottom(0, -1, -1)
+    , m_rightBottom(right, bottom, -1)
+    , m_right(1, 0, -1)
+    , m_rightTop(right, top, -1)
+    , m_top(0, 1, -1)
+    , m_leftTop(left, top, -1)
+    , m_left(-1, 0, -1)
+    , m_pRot(pRot)
 {
     if (nullptr != m_pRot) {
         m_leftBottom = *m_pRot * m_leftBottom;
@@ -94,8 +102,7 @@ Frustum::Frustum(double left, double right, double bottom, double top,
     std::unique_ptr<Meshd> tHam2d;
     if (nullptr == pHam) {
         tHam2d = std::make_unique<Meshd>(lrbt_verts, lrbt_edges);
-    }
-    else {
+    } else {
         tHam2d = std::make_unique<Meshd>(*pHam);
         tHam2d->add_mesh(lrbt_verts, lrbt_edges);
     }
@@ -129,8 +136,7 @@ harray2d_t Frustum::get_fov_points(bool projected)
         // points
         harray2d_t tpoints = points / abs(zcol);
         return tpoints;
-    }
-    else {
+    } else {
         return points;
     }
 }

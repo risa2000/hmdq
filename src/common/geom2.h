@@ -53,7 +53,8 @@ class Meshd
     Meshd() = default;
     Meshd(const Meshd& mesh) = default;
     Meshd(const harray2d_t& verts, const hedgelist_t& edges)
-        : m_edges(edges), m_verts(verts)
+        : m_edges(edges)
+        , m_verts(verts)
     {}
 
     //  Add another mesh to this to form one mesh

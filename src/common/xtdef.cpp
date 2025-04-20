@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <common/xtdef.h>
 #include <common/except.h>
+#include <common/xtdef.h>
 
 #include <xtensor/xview.hpp>
 

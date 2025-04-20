@@ -50,8 +50,7 @@ std::string get_hmdx_ver(const json& jd)
     std::string hmdx_ver;
     if (misc.contains(j_hmdv_ver)) {
         hmdx_ver = misc[j_hmdv_ver].get<std::string>();
-    }
-    else {
+    } else {
         hmdx_ver = misc[j_hmdq_ver].get<std::string>();
     }
     return hmdx_ver;
@@ -76,8 +75,7 @@ void fix_misc_to_openvr(json& jd)
     if (jd[j_misc].contains("openvr_ver")) {
         jopenvr[j_rt_ver] = jd[j_misc]["openvr_ver"];
         jd[j_misc].erase("openvr_ver");
-    }
-    else {
+    } else {
         jopenvr[j_rt_ver] = "n/a";
     }
     jopenvr[j_rt_path] = "n/a";

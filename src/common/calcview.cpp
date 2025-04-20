@@ -57,8 +57,7 @@ std::tuple<harray2d_t, hfaces_t, bool> calc_resolve_verts_and_faces(const json& 
             faces.push_back(hface_t({i, i + 1, i + 2}));
         }
         faces_computed = true;
-    }
-    else {
+    } else {
         faces = ham_mesh[j_faces].get<hfaces_t>();
     }
     return {verts, faces, faces_computed};
@@ -220,8 +219,7 @@ json calc_geometry(const json& jd)
 
     if (jd.contains(j_ham_mesh)) {
         ham_mesh = jd[j_ham_mesh];
-    }
-    else {
+    } else {
         ham_mesh = json::object({{j_leye, json()}, {j_reye, json()}});
     }
 

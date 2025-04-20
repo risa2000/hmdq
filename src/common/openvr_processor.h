@@ -27,10 +27,12 @@ class Processor : public BaseVRProcessor
 {
   public:
     Processor(const std::filesystem::path& apiPath, const std::shared_ptr<json>& pjdata)
-        : BaseVRProcessor(j_openvr, pjdata), m_apiPath(apiPath)
+        : BaseVRProcessor(j_openvr, pjdata)
+        , m_apiPath(apiPath)
     {}
     Processor(const std::shared_ptr<json>& pjapi, const std::shared_ptr<json>& pjdata)
-        : BaseVRProcessor(j_openvr, pjdata), m_pjApi(pjapi)
+        : BaseVRProcessor(j_openvr, pjdata)
+        , m_pjApi(pjapi)
     {}
 
   public:

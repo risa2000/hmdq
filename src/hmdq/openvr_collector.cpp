@@ -65,8 +65,7 @@ std::filesystem::path get_runtime_path()
     }
     if (res) {
         return utf8_to_path(&buffer[0]);
-    }
-    else {
+    } else {
         return "";
     }
 }
@@ -111,7 +110,7 @@ inline json get_tp_error(vr::IVRSystem* vrsys, vr::ETrackedPropertyError err)
 }
 
 //  Get vector of scalar values (integral types) into a JSON dict.
-template<typename T>
+template <typename T>
 json get_val_1d_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
     const auto ptype = reinterpret_cast<const T*>(&buffer[0]);
@@ -121,7 +120,7 @@ json get_val_1d_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 }
 
 //  Get vector of vector values into a JSON dict.
-template<typename T, size_t ncount>
+template <typename T, size_t ncount>
 json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
     const auto pitem = reinterpret_cast<const T*>(&buffer[0]);
@@ -132,7 +131,7 @@ json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize
 }
 
 //  Get vector of matrix values into a JSON dict.
-template<typename T, size_t nrows, size_t ncols>
+template <typename T, size_t nrows, size_t ncols>
 json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
     const auto pcell = reinterpret_cast<const T*>(&buffer[0]);
@@ -143,7 +142,7 @@ json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize
 }
 
 //  Get vector of vr::HmdVector*_t into a JSON dict.
-template<typename V>
+template <typename V>
 json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
     using scalar_t = typename std::remove_all_extents<decltype(V::v)>::type;
@@ -152,7 +151,7 @@ json get_val_vec_array(const std::vector<unsigned char>& buffer, size_t buffsize
 }
 
 //  Get vector of vr::HmdMatrix**_t into a JSON dict.
-template<typename M>
+template <typename M>
 json get_val_mat_array(const std::vector<unsigned char>& buffer, size_t buffsize)
 {
     using scalar_t = typename std::remove_all_extents<decltype(M::m)>::type;
@@ -226,8 +225,7 @@ get_array_tracked_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
     if (vr::TrackedProp_Success == error) {
         buffer.resize(buffsize);
         return buffer;
-    }
-    else {
+    } else {
         return {};
     }
 }
@@ -261,8 +259,7 @@ json get_any_type_prop(vr::IVRSystem* vrsys, vr::TrackedDeviceIndex_t did,
     json temp = prop_array_to_json(pname, aval);
     if (is_array) {
         return temp;
-    }
-    else {
+    } else {
         // if not dealing with an array property "remove" the array (brackets)
         return temp[0];
     }
@@ -313,15 +310,13 @@ json get_all_props(vr::IVRSystem* vrsys, const hdevlist_t& devs, const json& api
                 vrsys, did, dclass, PROP_CAT_UI, PROP_CAT_UI_MIN, PROP_CAT_UI_MAX, api));
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_DRIVER, api));
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_INTERNAL, api));
-        }
-        else if (dclass == vr::TrackedDeviceClass_Controller) {
+        } else if (dclass == vr::TrackedDeviceClass_Controller) {
             pvals[sdid].update(
                 get_dev_props(vrsys, did, dclass, PROP_CAT_CONTROLLER, api));
             pvals[sdid].update(get_dev_props_range(
                 vrsys, did, dclass, PROP_CAT_UI, PROP_CAT_UI_MIN, PROP_CAT_UI_MAX, api));
             pvals[sdid].update(get_dev_props(vrsys, did, dclass, PROP_CAT_INTERNAL, api));
-        }
-        else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
+        } else if (dclass == vr::TrackedDeviceClass_TrackingReference) {
             pvals[sdid].update(
                 get_dev_props(vrsys, did, dclass, PROP_CAT_TRACKEDREF, api));
             pvals[sdid].update(get_dev_props_range(
@@ -485,8 +480,7 @@ bool Collector::try_init()
         json oapi = read_json(m_apiPath);
         *m_pjApi = parse_json_oapi(oapi);
         res = true;
-    }
-    else {
+    } else {
         add_error(*m_pjData, get_last_error_msg());
     }
     return res;

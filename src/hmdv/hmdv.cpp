@@ -136,8 +136,7 @@ int run_verify(const std::filesystem::path& in_json, int verb, int ind, int ts)
     if (verb >= vdef) {
         if (check_ok) {
             iprint(sf, "[OK] {}\n", path_to_utf8(in_json));
-        }
-        else {
+        } else {
             iprint(sf, "[Invalid] {}\n", path_to_utf8(in_json));
         }
     }
@@ -219,22 +218,19 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
 }
 
 //  wrapper for main runner to deal with domestic exceptions
-template<typename F, typename... Args>
+template <typename F, typename... Args>
 int run_wrapper(F func, Args&&... args)
 {
     int res = 0;
     try {
         res = func(std::forward<Args>(args)...);
-    }
-    catch (const hmdq_error& e) {
+    } catch (const hmdq_error& e) {
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
         res = 1;
-    }
-    catch (const json::exception& e) {
+    } catch (const json::exception& e) {
         fmt::print(stderr, "{}\n", e.what());
         res = 1;
-    }
-    catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error& e) {
         fmt::print(stderr, "{}\n", e.what());
         res = 1;
     }
@@ -355,8 +351,7 @@ int main(int argc, char* argv[])
                            usage_lines(cli, PROG_NAME).str(), documentation(cli).str());
                 break;
         }
-    }
-    else {
+    } else {
         fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
         res = 1;
     }

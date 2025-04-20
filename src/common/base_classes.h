@@ -40,7 +40,8 @@ class BaseVR
 {
   protected:
     BaseVR(const char* id, const std::shared_ptr<json>& pjdata)
-        : m_id(id), m_pjData(pjdata)
+        : m_id(id)
+        , m_pjData(pjdata)
     {}
 
     // Use virtual destructor to ensure proper object destruction
@@ -70,7 +71,8 @@ class BaseVR
 class BaseVRConfig : public BaseVR
 {
   protected:
-    BaseVRConfig(const char* id, const std::shared_ptr<json>& pjdata) : BaseVR(id, pjdata)
+    BaseVRConfig(const char* id, const std::shared_ptr<json>& pjdata)
+        : BaseVR(id, pjdata)
     {}
 };
 

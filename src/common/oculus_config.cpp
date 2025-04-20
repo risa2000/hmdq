@@ -49,7 +49,8 @@ static const json ANON_PROPS = {
 //  OculusVR Config class (default config)
 //------------------------------------------------------------------------------
 // Initialize the VR subsystem default config data
-Config::Config() : BaseVRConfig(j_oculus, std::make_shared<json>())
+Config::Config()
+    : BaseVRConfig(j_oculus, std::make_shared<json>())
 {
     json& cfg = *m_pjData;
     cfg[j_init_flags] = INIT_FLAGS;

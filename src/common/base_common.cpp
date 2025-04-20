@@ -55,8 +55,7 @@ PropType ptype_from_ptypename(const std::string& ptype_name)
     auto res = ptype_map.find(ptype_name);
     if (res != ptype_map.end()) {
         return res->second;
-    }
-    else {
+    } else {
         return PropType::Invalid;
     }
 }
@@ -90,11 +89,9 @@ inline void prop_head_out(int pid, const std::string& name, bool is_array, int i
 {
     if (pid >= 1000) {
         iprint(ind * ts, "{:4d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
-    }
-    else if (pid >= 0) {
+    } else if (pid >= 0) {
         iprint(ind * ts, "{:2d} : {:s}{:s} = ", pid, name, is_array ? "[]" : "");
-    }
-    else {
+    } else {
         iprint(ind * ts, "{:s}{:s} = ", name, is_array ? "[]" : "");
     }
 }
@@ -196,14 +193,12 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
         // the value is an error code, so print it out only if the verbosity
         // is at 'error' level
         pverb = verr;
-    }
-    else {
+    } else {
         // determine the "active" verbosity level for the current property
         if (verb_props.contains(pname)) {
             // explicitly defined property
             pverb = verb_props[pname].get<int>();
-        }
-        else {
+        } else {
             // otherwise set requested verbosity to vmax
             pverb = vmax;
         }
@@ -218,21 +213,17 @@ void print_one_prop(const std::string& pname, const json& pval, int pid,
     if (nerr) {
         const auto msg = get_error_msg(pval);
         fmt::print(ERR_MSG_FMT_JSON, msg);
-    }
-    else if (is_array) {
+    } else if (is_array) {
         fmt::print("\n");
         print_array_type(pname, pval, ind + 1, ts);
-    }
-    else {
+    } else {
         const auto fval = format_pval(ptype, pval);
         if (fval.size() == 1) {
             fmt::print("{}\n", fval[0]);
-        }
-        else if (fval.size() > 1) {
+        } else if (fval.size() > 1) {
             fmt::print("\n");
             print_multiline(fval, ind + 1, ts);
-        }
-        else {
+        } else {
             const auto msg = fmt::format(MSG_TYPE_NOT_IMPL, ptype_name);
             fmt::print(ERR_MSG_FMT_JSON, msg);
         }

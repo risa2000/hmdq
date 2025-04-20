@@ -28,8 +28,10 @@ class Collector : public BaseVRCollector
 {
   public:
     Collector(ovrInitFlags initFlags)
-        : BaseVRCollector(j_oculus, std::make_shared<json>()), m_initFlags(initFlags),
-          m_session(nullptr), m_inited(false)
+        : BaseVRCollector(j_oculus, std::make_shared<json>())
+        , m_initFlags(initFlags)
+        , m_session(nullptr)
+        , m_inited(false)
     {}
     virtual ~Collector() override;
 

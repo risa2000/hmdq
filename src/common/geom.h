@@ -24,7 +24,7 @@ inline double degrees(double rad)
 }
 
 //  Compute dot product of two 2-D vectors.
-template<typename TArray>
+template <typename TArray>
 double dot_prod(const TArray& v1, const TArray& v2)
 {
     auto sres = xt::sum(v1 * v2);
@@ -32,7 +32,7 @@ double dot_prod(const TArray& v1, const TArray& v2)
 }
 
 //  Compute vector length.
-template<typename TArray>
+template <typename TArray>
 double gnorm(const TArray& v)
 {
     return sqrt(dot_prod(v, v));
@@ -44,8 +44,7 @@ inline double angle(const hvector_t& v1, const hvector_t& v2)
     double tres = dot_prod(v1, v2) / (gnorm(v1) * gnorm(v2));
     if (tres > 1.0) {
         tres = 1.0;
-    }
-    else if (tres < -1.0) {
+    } else if (tres < -1.0) {
         tres = -1.0;
     }
     return acos(tres);

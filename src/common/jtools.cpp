@@ -160,15 +160,13 @@ std::string get_error_msg(const json& jd)
     const auto& jerr = get_error(jd);
     if (jerr.is_string()) {
         return jerr.get<std::string>();
-    }
-    else if (jerr.is_array()) {
+    } else if (jerr.is_array()) {
         std::vector<std::string> err_list;
         for (const auto& e : jerr) {
             err_list.push_back(e.get<std::string>());
         }
         return fmt::format("{}", fmt::join(err_list.cbegin(), err_list.cend(), ", "));
-    }
-    else {
+    } else {
         return fmt::format("Invalid error type {}", jerr.type_name());
     }
 }

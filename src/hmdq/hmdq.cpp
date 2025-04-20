@@ -204,8 +204,7 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
                     fmt::print("DEBUG: Reading raw collected data <- {}\n",
                                jinpath.string());
                     raw_read = true;
-                }
-                else {
+                } else {
                     fmt::print("DEBUG: Raw data JSON file {} not found\n",
                                jinpath.string());
                 }
@@ -268,12 +267,10 @@ int run_wrapper(const print_options& opts, const std::filesystem::path& api_json
     int res = 0;
     try {
         res = run(opts, api_json, out_json, ind, ts);
-    }
-    catch (hmdq_error e) {
+    } catch (hmdq_error e) {
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
         res = 1;
-    }
-    catch (std::runtime_error e) {
+    } catch (std::runtime_error e) {
         fmt::print(stderr, "{}\n", e.what());
     }
     return res;
@@ -386,14 +383,12 @@ int main(int argc, char* argv[])
                            usage_lines(cli, PROG_NAME).str(), documentation(cli).str());
                 break;
         }
-    }
-    else {
+    } else {
         if (parse(std::next(u8args.cbegin()), u8args.cend(), cli_nocmd)) {
             opts.mode = mode2pmode(mode::all);
             res = run_wrapper(opts, utf8_to_path(api_json), utf8_to_path(out_json), ind,
                               ts);
-        }
-        else {
+        } else {
             fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
             res = 1;
         }

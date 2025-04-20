@@ -28,9 +28,15 @@ enum class pmode { geom, props, all };
 //  Command line options passed to the program
 struct print_options {
     print_options()
-        : anonymize(false), oculus(true), openvr(true), ovr_def_fov(true),
-          ovr_max_fov(false), dbg_raw_in(false), dbg_raw_out(false), verbosity(0),
-          mode(pmode::all)
+        : anonymize(false)
+        , oculus(true)
+        , openvr(true)
+        , ovr_def_fov(true)
+        , ovr_max_fov(false)
+        , dbg_raw_in(false)
+        , dbg_raw_out(false)
+        , verbosity(0)
+        , mode(pmode::all)
     {}
     bool anonymize; // anonymize the sensitive data
     bool oculus; // show Oculus data

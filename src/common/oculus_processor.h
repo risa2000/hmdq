@@ -25,7 +25,9 @@ namespace oculus {
 class Processor : public BaseVRProcessor
 {
   public:
-    Processor(const std::shared_ptr<json>& pjdata) : BaseVRProcessor(j_oculus, pjdata) {}
+    Processor(const std::shared_ptr<json>& pjdata)
+        : BaseVRProcessor(j_oculus, pjdata)
+    {}
 
   public:
     // Initialize the processor

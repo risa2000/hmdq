@@ -147,8 +147,7 @@ bool init_config(const std::filesystem::path& argv0, const cfgmap_t& cfgs)
     g_cfg = load_config(cfile);
     if (g_cfg.empty()) {
         g_cfg = build_config(cfile, cfgs);
-    }
-    else {
+    } else {
         const auto cfg_ver = g_cfg[j_meta][j_cfg_ver].get<int>();
         if (cfg_ver != CFG_VERSION) {
             fmt::print(stderr,

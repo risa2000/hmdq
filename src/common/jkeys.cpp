@@ -26,8 +26,7 @@ const std::string& get_jkey_pretty(const std::string& jkey)
     const auto iter = j_key2pretty.find(jkey);
     if (iter != j_key2pretty.cend()) {
         return iter->second;
-    }
-    else {
+    } else {
         return jkey;
     }
 }
