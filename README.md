@@ -267,6 +267,7 @@ for parsing the command line arguments.
 * [`fmtlib/fmt`](https://github.com/fmtlib/fmt) for comfortable printing and formatting of the console output.
 * [`Oculus SDK`](https://developer.oculus.com/downloads/package/oculus-sdk-for-windows/)
 * [`libeigen/eigen`](https://gitlab.com/libeigen/eigen) for FOV calculations.
+* [`libgeos/geos`](https://github.com/libgeos/geos) for HAM area calculation.
 
 On top of that you will also need `cmake` version 3.15 or higher.
 
