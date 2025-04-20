@@ -1,5 +1,11 @@
 # HMDQ Tools Change Log
 
+## 2.2.1 - April 20, 2024
+
+Cosmetic:
+
+- Restored the order of the generated JSON, which was changed by previous changes.
+
 ## 2.2.0 - April 20, 2024
 
 Major update:
@@ -11,7 +17,7 @@ Major update:
 
 Until now the HAM calculation assumed that all HAMs were specified inside [(0,0), (1,1)] rectangle and _did not check it_. Thus calculating the total mesh area as a plain sum of all triangles' areas.
 
-Some HAMs however overlaps slightly the nominal rectangle and the sum of all triangles' areas gives slightly higher value. I thought originally the error would be small, but it turned out that the difference is perceivable.
+Some HAMs however overlap slightly the nominal rectangle and the sum of all triangles' areas gives slightly higher value. I thought originally the error would be small, but it turned out that the difference is perceivable.
 
 The affected headsets which were reported in HMDGDB with slightly bigger HAM area, are following:
 

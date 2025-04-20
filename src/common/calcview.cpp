@@ -82,6 +82,10 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     // preserve calculated area
     if (ham_mesh.contains(j_ham_area)) {
         res[j_ham_area] = ham_mesh[j_ham_area];
+    } else {
+        // if just running from new put a stub here so the later assignment will not add
+        // it to the end of the section
+        res[j_ham_area] = nullptr;
     }
 
     if (verts_raw != verts_opt) {
