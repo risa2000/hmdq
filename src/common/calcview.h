@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "json_proxy.h"
-#include "xtdef.h"
+#include <common/json_proxy.h>
+#include <common/xtdef.h>
 
 //  functions
 //------------------------------------------------------------------------------

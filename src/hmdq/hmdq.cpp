@@ -9,23 +9,23 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "config.h"
-#include "except.h"
-#include "fmthlp.h"
 #include "gitversion.h"
-#include "jkeys.h"
-#include "json_proxy.h"
-#include "jtools.h"
 #include "misc.h"
-#include "oculus_collector.h"
-#include "oculus_config.h"
-#include "oculus_processor.h"
-#include "openvr_collector.h"
-#include "openvr_common.h"
-#include "openvr_config.h"
-#include "openvr_processor.h"
-#include "prtdata.h"
-#include "wintools.h"
+#include <common/config.h>
+#include <common/except.h>
+#include <common/fmthlp.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/oculus_config.h>
+#include <common/oculus_processor.h>
+#include <common/openvr_common.h>
+#include <common/openvr_config.h>
+#include <common/openvr_processor.h>
+#include <common/prtdata.h>
+#include <common/wintools.h>
+#include <hmdq/oculus_collector.h>
+#include <hmdq/openvr_collector.h>
 
 #include <clipp/clipp.h>
 

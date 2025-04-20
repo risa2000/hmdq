@@ -32,31 +32,19 @@ find_package (openvr REQUIRED)
 find_package (botan REQUIRED)
 find_package (geos REQUIRED)
 
-# Project defines
-# ============
-set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
-
 # Custom files
 # ============
-configure_file (
-    ${CMAKE_SOURCE_DIR}/res/misc.h.in
-    ${PROJECT_BINARY_DIR}/misc.h
-    )
-
-# add output dir to the search path so "misc.h" is reachable
-include_directories (${PROJECT_BINARY_DIR})
-
 # copy the OpenVR API json file so the exe can run directly from there
 configure_file (
-    ${PROJECT_SOURCE_DIR}/../api/openvr_api.json
-    ${PROJECT_BINARY_DIR}/openvr_api.json
+    ${CMAKE_SOURCE_DIR}/api/openvr_api.json
+    ${CMAKE_CURRENT_BINARY_DIR}/openvr_api.json
     COPYONLY
     )
 
 # copy the batch file to save the hmdq data into .json file
 configure_file (
-    ${PROJECT_SOURCE_DIR}/../res/save_data.cmd
-    ${PROJECT_BINARY_DIR}/save_data.cmd
+    ${CMAKE_SOURCE_DIR}/res/save_data.cmd
+    ${CMAKE_CURRENT_BINARY_DIR}/save_data.cmd
     COPYONLY
     )
 
@@ -67,34 +55,17 @@ endif()
 
 # process version info and the icon
 configure_file (
-    ${PROJECT_RES_DIR}/hmdq.rc.in
-    ${PROJECT_BINARY_DIR}/hmdq.rc
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/hmdq.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdq.rc
     )
 
 # Targets
 # ============
 set (hmdq_SOURCES
-    calcview.cpp
-    config.cpp
-    geom.cpp
-    geom2.cpp
     hmdq.cpp
-    jkeys.cpp
-    jtools.cpp
-    base_common.cpp
-    oculus_common.cpp
-    oculus_config.cpp
     oculus_collector.cpp
-    oculus_processor.cpp
-    openvr_common.cpp
-    openvr_config.cpp
     openvr_collector.cpp
-    openvr_processor.cpp
-    optmesh.cpp
-    prtdata.cpp
-    wintools.cpp
-    xtdef.cpp
-    ${PROJECT_BINARY_DIR}/hmdq.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdq.rc
     )
 
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
@@ -104,7 +75,7 @@ set (EXT_LIBS botan openvr_api64)
 add_executable (hmdq)
 target_sources (hmdq PRIVATE ${hmdq_SOURCES})
 
-target_link_libraries (hmdq PRIVATE build_proxy)
+target_link_libraries (hmdq PRIVATE build_proxy hmdq_common)
 target_link_libraries (hmdq PRIVATE version.lib)
 target_link_libraries (hmdq PRIVATE
     clipp::clipp

@@ -9,13 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "jtools.h"
-#include "config.h"
-#include "except.h"
-#include "jkeys.h"
-#include "wintools.h"
-
-#include "json_proxy.h"
+#include <common/config.h>
+#include <common/except.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/wintools.h>
 
 #include <botan/filters.h>
 #include <botan/hash.h>

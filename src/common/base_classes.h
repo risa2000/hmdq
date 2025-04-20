@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "json_proxy.h"
-#include "prtdef.h"
+#include <common/json_proxy.h>
+#include <common/prtdef.h>
 
 #include <nlohmann/ordered_map.hpp>
 

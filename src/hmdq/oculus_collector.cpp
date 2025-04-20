@@ -9,13 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "oculus_collector.h"
-#include "except.h"
-#include "jkeys.h"
-#include "json_proxy.h"
-#include "jtools.h"
-#include "oculus_common.h"
-#include "oculus_props.h"
+#include <common/except.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/oculus_common.h>
+#include <common/oculus_props.h>
+#include <hmdq/oculus_collector.h>
 
 #include <OVR_CAPI.h>
 

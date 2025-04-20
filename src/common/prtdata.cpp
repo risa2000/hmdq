@@ -9,17 +9,17 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "prtdata.h"
-#include "calcview.h"
-#include "config.h"
-#include "except.h"
-#include "fmthlp.h"
-#include "jkeys.h"
-#include "json_proxy.h"
-#include "jtools.h"
 #include "misc.h"
-#include "prtstl.h"
-#include "xtdef.h"
+#include <common/calcview.h>
+#include <common/config.h>
+#include <common/except.h>
+#include <common/fmthlp.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/prtdata.h>
+#include <common/prtstl.h>
+#include <common/xtdef.h>
 
 #include <openvr/openvr.h>
 

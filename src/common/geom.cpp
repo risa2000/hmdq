@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "geom.h"
-#include "except.h"
+#include <common/geom.h>
+#include <common/except.h>
 
 #include <xtensor/xview.hpp>
 

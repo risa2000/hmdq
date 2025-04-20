@@ -9,12 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "base_common.h"
-#include "config.h"
-#include "fmthlp.h"
-#include "jkeys.h"
-#include "jtools.h"
-#include "xtdef.h"
+#include <common/base_classes.h>
+#include <common/base_common.h>
+#include <common/config.h>
+#include <common/fmthlp.h>
+#include <common/jkeys.h>
+#include <common/jtools.h>
+#include <common/xtdef.h>
 
 #include <xtensor/xjson.hpp>
 

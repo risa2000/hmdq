@@ -32,24 +32,12 @@ find_package (openvr REQUIRED)
 find_package (botan REQUIRED)
 find_package (geos REQUIRED)
 
-# Project defines
-# ============
-set (PROJECT_RES_DIR ${PROJECT_SOURCE_DIR}/res)
-
 # Custom files
 # ============
-configure_file (
-    ${CMAKE_SOURCE_DIR}/res/misc.h.in
-    ${PROJECT_BINARY_DIR}/misc.h
-    )
-
-# add output dir to the search path so "misc.h" is reachable
-include_directories (${PROJECT_BINARY_DIR})
-
 # copy the OpenVR API json file so the exe can run directly from there
 configure_file (
-    ${PROJECT_SOURCE_DIR}/../api/openvr_api.json
-    ${PROJECT_BINARY_DIR}/openvr_api.json
+    ${CMAKE_SOURCE_DIR}/api/openvr_api.json
+    ${CMAKE_CURRENT_BINARY_DIR}/openvr_api.json
     COPYONLY
     )
 
@@ -60,41 +48,17 @@ endif()
 
 # process version info and the icon
 configure_file (
-    ${PROJECT_RES_DIR}/hmdv.rc.in
-    ${PROJECT_BINARY_DIR}/hmdv.rc
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/hmdv.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdv.rc
     )
 
 # Targets
 # ============
-set (hmdq_DIR ../hmdq)
 set (hmdv_SOURCES
     hmdv.cpp
-    verhlp.cpp
     hmdfix.cpp
-    ${hmdq_DIR}/base_common.cpp
-    ${hmdq_DIR}/calcview.cpp
-    ${hmdq_DIR}/config.cpp
-    ${hmdq_DIR}/geom.cpp
-    ${hmdq_DIR}/geom2.cpp
-    ${hmdq_DIR}/jtools.cpp
-    ${hmdq_DIR}/jkeys.cpp
-    ${hmdq_DIR}/openvr_common.cpp
-    ${hmdq_DIR}/openvr_config.cpp
-    ${hmdq_DIR}/openvr_processor.cpp
-    ${hmdq_DIR}/oculus_common.cpp
-    ${hmdq_DIR}/oculus_config.cpp
-    ${hmdq_DIR}/oculus_processor.cpp
-    ${hmdq_DIR}/optmesh.cpp
-    ${hmdq_DIR}/prtdata.cpp
-    ${hmdq_DIR}/wintools.cpp
-    ${hmdq_DIR}/xtdef.cpp
-    ${PROJECT_BINARY_DIR}/hmdv.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdv.rc
     )
-
-# set the path to OVR_SDK
-if (NOT OVR_SDK)
-    set (OVR_SDK $ENV{OVR_SDK})
-endif()
 
 # 3rd party libs (linked as .lib, but needed as .dll in DLL CRT linkage)
 set (EXT_LIBS botan)
@@ -103,10 +67,7 @@ set (EXT_LIBS botan)
 add_executable (hmdv)
 target_sources (hmdv PRIVATE ${hmdv_SOURCES})
 
-target_include_directories (hmdv PRIVATE ${hmdq_DIR})
-target_include_directories (hmdv PRIVATE ${OVR_SDK}/LibOVR/Include)
-
-target_link_libraries (hmdv PRIVATE build_proxy)
+target_link_libraries (hmdv PRIVATE build_proxy hmdq_common)
 target_link_libraries (hmdv PRIVATE version.lib)
 target_link_libraries (hmdv PRIVATE
     clipp::clipp
@@ -117,7 +78,7 @@ target_link_libraries (hmdv PRIVATE
     botan::botan
     openvr::openvr
     GEOS::geos
-)
+    )
 
 # Generate a binary dump for a quick check of a CRT linkage type
 add_custom_command (TARGET hmdv

@@ -11,38 +11,52 @@
 
 cmake_minimum_required (VERSION 3.15)
 
-include(utils)
-
-# Project def
-# ============
-project (hmdq_test
-    DESCRIPTION "Unit tests for hmdq tool"
-)
-
 # Dependencies
 # ============
+find_package (clipp REQUIRED)
 find_package (fmt REQUIRED)
+find_package (nlohmann_json REQUIRED)
 find_package (xtensor REQUIRED)
 find_package (Eigen3 REQUIRED)
+find_package (openvr REQUIRED)
+find_package (botan REQUIRED)
 find_package (geos REQUIRED)
-find_package (Catch2 REQUIRED)
 
-set (hmdq_dir ../hmdq)
-set (hmdv_dir ../hmdv)
+# Targets
+# ============
+set (hmdq_common_SOURCES
+    base_common.cpp
+    calcview.cpp
+    config.cpp
+    geom.cpp
+    geom2.cpp
+    jtools.cpp
+    jkeys.cpp
+    openvr_common.cpp
+    openvr_config.cpp
+    openvr_processor.cpp
+    oculus_common.cpp
+    oculus_config.cpp
+    oculus_processor.cpp
+    optmesh.cpp
+    prtdata.cpp
+    verhlp.cpp
+    wintools.cpp
+    xtdef.cpp
+    )
 
-set (hmdq_test_SOURCES
-    geom_test.cpp # this one defines main
-    optmesh_test.cpp
-    verhlp_test.cpp
-    geos_test.cpp
+# Add sources to `hmdq` executable.
+add_library (hmdq_common STATIC ${hmdq_common_SOURCES})
+target_sources (hmdq_common PRIVATE ${hmdq_SOURCES})
+target_link_libraries (hmdq_common PUBLIC build_proxy)
+target_link_libraries (hmdq_common PUBLIC
+    clipp::clipp
+    fmt::fmt
+    nlohmann_json::nlohmann_json
+    xtensor
+    Eigen3::Eigen
+    openvr::openvr
+    botan::botan
+    GEOS::geos
+    LibOVR
 )
-
-# Add unity tests
-add_executable (hmdq_test ${hmdq_test_SOURCES})
-
-target_link_libraries (hmdq_test PRIVATE build_proxy hmdq_common)
-target_link_libraries (hmdq_test PRIVATE fmt::fmt Catch2::Catch2WithMain Eigen3::Eigen xtensor GEOS::geos)
-
-catch_discover_tests(hmdq_test)
-
-print_variables ("hmdq_test*")

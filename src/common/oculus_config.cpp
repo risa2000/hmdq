@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <OVR_CAPI.h>
+#include <common/jkeys.h>
+#include <common/oculus_config.h>
+#include <common/oculus_props.h>
 
-#include "jkeys.h"
-#include "oculus_config.h"
-#include "oculus_props.h"
+#include <OVR_CAPI.h>
 
 namespace oculus {
 

@@ -9,21 +9,21 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "oculus_processor.h"
-#include "base_common.h"
-#include "calcview.h"
-#include "config.h"
-#include "fmthlp.h"
-#include "jkeys.h"
-#include "jtools.h"
-#include "oculus_common.h"
-#include "oculus_props.h"
-#include "prtdata.h"
-#include "xtdef.h"
-
-#include <nlohmann/ordered_map.hpp>
+#include <common/base_common.h>
+#include <common/calcview.h>
+#include <common/config.h>
+#include <common/fmthlp.h>
+#include <common/jkeys.h>
+#include <common/jtools.h>
+#include <common/oculus_common.h>
+#include <common/oculus_processor.h>
+#include <common/oculus_props.h>
+#include <common/prtdata.h>
+#include <common/xtdef.h>
 
 #include <Extras/OVR_Math.h>
+
+#include <nlohmann/ordered_map.hpp>
 
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xbuilder.hpp>

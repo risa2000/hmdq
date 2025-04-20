@@ -9,14 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "calcview.h"
-#include "except.h"
-#include "jkeys.h"
-#include "jtools.h"
 #include "misc.h"
-#include "verhlp.h"
-
-#include "json_proxy.h"
+#include <common/calcview.h>
+#include <common/except.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/verhlp.h>
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "geom2.h"
+#include <common/geom2.h>
 
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xindex_view.hpp>

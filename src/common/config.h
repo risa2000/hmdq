@@ -11,12 +11,11 @@
 
 #pragma once
 
+#include <common/base_classes.h>
+#include <common/json_proxy.h>
+
 #include <filesystem>
 #include <vector>
-
-#include "base_classes.h"
-
-#include "json_proxy.h"
 
 //  globals
 //------------------------------------------------------------------------------

@@ -9,12 +9,12 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "oculus_common.h"
-#include "jkeys.h"
-
-#include <nlohmann/ordered_map.hpp>
+#include <common/jkeys.h>
+#include <common/oculus_common.h>
 
 #include <OVR_CAPI.h>
+
+#include <nlohmann/ordered_map.hpp>
 
 namespace oculus {
 

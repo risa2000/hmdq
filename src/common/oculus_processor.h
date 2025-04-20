@@ -11,9 +11,9 @@
 
 #pragma once
 
-#include "base_classes.h"
-#include "jkeys.h"
-#include "json_proxy.h"
+#include <common/base_classes.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
 
 #include <filesystem>
 #include <string>

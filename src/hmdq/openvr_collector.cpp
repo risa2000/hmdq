@@ -9,15 +9,15 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "openvr_collector.h"
-#include "base_common.h"
-#include "except.h"
-#include "jkeys.h"
-#include "json_proxy.h"
-#include "jtools.h"
-#include "openvr_common.h"
-#include "wintools.h"
-#include "xtdef.h"
+#include <common/base_common.h>
+#include <common/except.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/openvr_common.h>
+#include <common/wintools.h>
+#include <common/xtdef.h>
+#include <hmdq/openvr_collector.h>
 
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xjson.hpp>

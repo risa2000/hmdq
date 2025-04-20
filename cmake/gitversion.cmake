@@ -52,9 +52,6 @@ else()
     set (GIT_REPO_VERSION_PATCH 0)
 endif()
 
-string (TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
-message (STATUS "BUILD_TIMESTAMP = ${BUILD_TIMESTAMP}")
-
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/res/gitversion.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/res/gitversion.h
     @ONLY

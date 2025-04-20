@@ -9,10 +9,10 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
+#include <common/jkeys.h>
+
 #include <map>
 #include <string>
-
-#include "jkeys.h"
 
 //  Print friendly names for keys
 //------------------------------------------------------------------------------

@@ -14,21 +14,18 @@ cmake_minimum_required (VERSION 3.15)
 cmake_policy (SET CMP0091 NEW)
  
 # Add path for modules (helpers)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Versioning
 # ============
-include(gitversion)
+include (gitversion)
+include (build)
 message (STATUS "GIT_REPO_VERSION = ${GIT_REPO_VERSION}")
 
 # Standards
 # ============
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# CMake options
-# ============
-option(BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
 
 # Project root
 # ============
@@ -38,40 +35,11 @@ project (hmdq_tools
     HOMEPAGE_URL "https://github.com/risa2000/hmdq"
     )
 
-# Global build defs (proxy target)
-# ================================
-add_library (build_proxy INTERFACE)
-#target_compile_definitions (build_proxy INTERFACE XTENSOR_FORCE_TEMPORARY_MEMORY_IN_ASSIGNMENTS)
-target_compile_options (build_proxy INTERFACE /Zc:inline /Zc:__cplusplus)
-# turn on linker optimization back on in RelWithDebInfo config
-target_link_options (build_proxy INTERFACE $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>)
+# CMake options
+# ============
+option (BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
 
-# LibOVR stub (proxy target)
-# ==========================
-# set the path to OVR_SDK
-if (NOT OVR_SDK)
-    set (OVR_SDK $ENV{OVR_SDK})
-endif()
-
-if (OVR_SDK)
-    add_library (LibOVR INTERFACE)
-    target_compile_definitions (LibOVR INTERFACE OVR_SDK=${OVR_SDK})
-    target_include_directories (LibOVR INTERFACE ${OVR_SDK}/LibOVR/Include)
-    target_link_directories (LibOVR INTERFACE ${OVR_SDK}/LibOVR/Lib/Windows/x64/Release/VS2017)
-    target_link_libraries (LibOVR INTERFACE LibOVR.lib)
-endif()
-
-# Include sub-projects
-# ====================
-add_subdirectory ("hmdq")
-add_subdirectory ("hmdv")
-
-if (BUILD_TESTS)
-    include (CTest)
-    include (Catch)
-
-    add_subdirectory ("hmdq_test")
-endif (BUILD_TESTS)
+add_subdirectory (src)
 
 # Install
 # ============

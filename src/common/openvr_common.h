@@ -11,15 +11,14 @@
 
 #pragma once
 
-#include <string>
-#include <tuple>
-#include <vector>
+#include <common/base_common.h>
+#include <common/json_proxy.h>
 
 #include <openvr/openvr.h>
 
-#include "base_common.h"
-
-#include "json_proxy.h"
+#include <string>
+#include <tuple>
+#include <vector>
 
 namespace openvr {
 

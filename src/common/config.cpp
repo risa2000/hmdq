@@ -9,12 +9,11 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "config.h"
-#include "jkeys.h"
 #include "misc.h"
-#include "wintools.h"
-
-#include "json_proxy.h"
+#include <common/config.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/wintools.h>
 
 #include <fmt/format.h>
 

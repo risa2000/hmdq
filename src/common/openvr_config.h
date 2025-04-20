@@ -9,7 +9,9 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "base_classes.h"
+#pragma once
+
+#include <common/base_classes.h>
 
 namespace openvr {
 

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "verhlp.h"
+#include <common/verhlp.h>
 
 // Already defined in geom_test.cpp
 // #define CATCH_CONFIG_MAIN

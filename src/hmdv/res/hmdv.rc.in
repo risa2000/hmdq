@@ -11,6 +11,8 @@
 
 #include <verrsrc.h>
 
+#pragma code_page(65001) // UTF-8
+
 #define VER_FILEVERSION        @GIT_REPO_VERSION_MAJOR@,@GIT_REPO_VERSION_MINOR@,@GIT_REPO_VERSION_PATCH@,@GIT_REPO_VERSION_NCOMM@
 #define VER_FILEVERSION_STR    "@GIT_REPO_VERSION@"
 
@@ -26,7 +28,7 @@
 #endif
 
 //  add an icon to the executable
-1 ICON "${PROJECT_RES_DIR}\hmdv_icon.ico"
+1 ICON "${CMAKE_CURRENT_SOURCE_DIR}/res/hmdv_icon.ico"
 
 //  define version info
 VS_VERSION_INFO VERSIONINFO
@@ -46,7 +48,7 @@ BEGIN
             VALUE "FileDescription", "VR headset data processing utility"
             VALUE "FileVersion", VER_FILEVERSION_STR
             VALUE "InternalName", "${PROJECT_NAME}"
-            VALUE "LegalCopyright", "© 2019-2023 Richard Musil"
+            VALUE "LegalCopyright", "Â© 2019-${BUILD_YEAR} Richard Musil"
             VALUE "OriginalFilename", "${PROJECT_NAME}.exe"
             VALUE "ProductName", "${PROJECT_NAME}"
             VALUE "ProductVersion", VER_PRODUCTVERSION_STR

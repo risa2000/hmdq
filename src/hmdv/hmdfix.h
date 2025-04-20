@@ -9,7 +9,9 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "json_proxy.h"
+#pragma once
+
+#include <common/json_proxy.h>
 
 //  functions
 //------------------------------------------------------------------------------

@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "except.h"
-#include "optmesh.h"
+#include <common/except.h>
+#include <common/optmesh.h>
 
 // Already defined in geom_test.cpp
 // #define CATCH_CONFIG_MAIN

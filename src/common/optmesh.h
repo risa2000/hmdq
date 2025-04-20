@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "xtdef.h"
+#include <common/xtdef.h>
 
 //  functions
 //------------------------------------------------------------------------------

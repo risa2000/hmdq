@@ -11,10 +11,9 @@
 
 #pragma once
 
-#include "base_classes.h"
-#include "prtdef.h"
-
-#include "json_proxy.h"
+#include <common/base_classes.h>
+#include <common/json_proxy.h>
+#include <common/prtdef.h>
 
 //  functions (miscellanous)
 //------------------------------------------------------------------------------

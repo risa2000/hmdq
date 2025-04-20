@@ -11,9 +11,9 @@
 
 #pragma once
 
-#include <cmath>
+#include <common/xtdef.h>
 
-#include "xtdef.h"
+#include <cmath>
 
 //  functions
 //------------------------------------------------------------------------------

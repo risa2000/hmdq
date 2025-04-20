@@ -9,15 +9,15 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "calcview.h"
-#include "except.h"
-#include "geom.h"
-#include "geom2.h"
-#include "jkeys.h"
-#include "json_proxy.h"
-#include "jtools.h"
-#include "optmesh.h"
-#include "xtdef.h"
+#include <common/calcview.h>
+#include <common/except.h>
+#include <common/geom.h>
+#include <common/geom2.h>
+#include <common/jkeys.h>
+#include <common/json_proxy.h>
+#include <common/jtools.h>
+#include <common/optmesh.h>
+#include <common/xtdef.h>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xbuilder.hpp>

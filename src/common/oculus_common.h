@@ -11,14 +11,14 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-#include <nlohmann/ordered_map.hpp>
+#include <common/json_proxy.h>
 
 #include <OVR_CAPI.h>
 
-#include "json_proxy.h"
+#include <nlohmann/ordered_map.hpp>
+
+#include <string>
+#include <vector>
 
 namespace oculus {
 

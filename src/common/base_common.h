@@ -11,10 +11,10 @@
 
 #pragma once
 
+#include <common/json_proxy.h>
+
 #include <string>
 #include <tuple>
-
-#include "json_proxy.h"
 
 namespace basevr {
 

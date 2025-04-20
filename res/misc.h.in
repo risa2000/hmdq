@@ -26,3 +26,7 @@ constexpr const char* HOST_SYSTEM = "@CMAKE_HOST_SYSTEM@";
 constexpr const char* HOST_SYSTEM_NAME = "@CMAKE_HOST_SYSTEM_NAME@";
 constexpr const char* HOST_SYSTEM_PROCESSOR = "@CMAKE_HOST_SYSTEM_PROCESSOR@";
 constexpr const char* HOST_SYSTEM_VERSION = "@CMAKE_HOST_SYSTEM_VERSION@";
+
+// Build attributes
+constexpr const char* BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";
+constexpr const char* BUILD_YEAR = "@BUILD_YEAR@";

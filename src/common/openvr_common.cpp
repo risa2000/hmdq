@@ -9,10 +9,10 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include <openvr/openvr.h>
+#include <common/jkeys.h>
+#include <common/openvr_common.h>
 
-#include "jkeys.h"
-#include "openvr_common.h"
+#include <openvr/openvr.h>
 
 namespace openvr {
 
