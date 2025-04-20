@@ -226,11 +226,15 @@ int run_wrapper(F func, Args&&... args)
     try {
         res = func(std::forward<Args>(args)...);
     }
-    catch (hmdq_error e) {
+    catch (const hmdq_error& e) {
         fmt::print(stderr, ERR_MSG_FMT_OUT, e.what());
         res = 1;
     }
-    catch (std::runtime_error e) {
+    catch (const json::exception& e) {
+        fmt::print(stderr, "{}\n", e.what());
+        res = 1;
+    }
+    catch (const std::runtime_error& e) {
         fmt::print(stderr, "{}\n", e.what());
         res = 1;
     }

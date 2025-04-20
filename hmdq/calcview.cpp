@@ -26,51 +26,64 @@
 
 //  functions
 //------------------------------------------------------------------------------
-//  Calculate optimized HAM mesh topology
-json calc_opt_ham_mesh(const json& ham_mesh)
+//  load or build verts and faces from recorded data
+std::tuple<harray2d_t, hfaces_t, bool> calc_resolve_verts_and_faces(const json& ham_mesh)
 {
-    // raw vertices = three consecutive vertices define one triangle
-    harray2d_t verts_raw;
-    // faces (corresponding to verts_raw) either built or collected
-    hfaces_t faces_raw;
+    // vertices = three consecutive vertices define one triangle
+    harray2d_t verts;
+    // faces (corresponding to verts) either built or collected
+    hfaces_t faces;
     // faces raw computed or recorded?
-    bool faces_raw_computed = false;
+    bool faces_computed = false;
 
     // if the raw values are not explicitly present, the raw values are in "opt" values
     const char* j_verts = ham_mesh.contains(j_verts_raw) ? j_verts_raw : j_verts_opt;
-    // if there are verts_opt then "enforce" faces_raw to be raw as potential faces_opt
+    // if there are verts_opt then "enforce" faces to be raw as potential faces_opt
     // should address verts_opt
     const char* j_faces = ham_mesh.contains(j_faces_raw) || ham_mesh.contains(j_verts_opt)
         ? j_faces_raw
         : j_faces_opt;
 
-    verts_raw = ham_mesh[j_verts];
+    HMDQ_ASSERT(ham_mesh.contains(j_verts));
+
+    verts = ham_mesh[j_verts].get<harray2d_t>();
 
     // if there are already indexed vertices (Oculus) skip their creation
     if (!ham_mesh.contains(j_faces)) {
         // number of vertices must be divisible by 3 as each 3 defined one triangle
-        HMDQ_ASSERT(verts_raw.shape(0) % 3 == 0);
-        // build the trivial faces_raw for the triangles
-        for (size_t i = 0, e = verts_raw.shape(0); i < e; i += 3) {
-            faces_raw.push_back(hface_t({i, i + 1, i + 2}));
+        HMDQ_ASSERT(verts.shape(0) % 3 == 0);
+        // build the trivial faces for the triangles
+        for (size_t i = 0, e = verts.shape(0); i < e; i += 3) {
+            faces.push_back(hface_t({i, i + 1, i + 2}));
         }
-        faces_raw_computed = true;
+        faces_computed = true;
     }
     else {
-        faces_raw = ham_mesh[j_faces].get<hfaces_t>();
+        faces = ham_mesh[j_faces].get<hfaces_t>();
     }
+    return {verts, faces, faces_computed};
+}
+
+//  Calculate optimized HAM mesh topology
+json calc_opt_ham_mesh(const json& ham_mesh)
+{
+    // resolve or rebuild verts and faces from collected data
+    const auto& [verts_raw, faces_raw, faces_raw_computed]
+        = calc_resolve_verts_and_faces(ham_mesh);
 
     // reduce duplicated vertices
     const auto& [verts_opt, n_faces] = reduce_verts(verts_raw, faces_raw);
+
     // do final faces optimization
     const auto faces_opt = reduce_faces(n_faces);
 
     // build the resulting JSON
     json res;
 
-    // assume here that n_faces are 'faces_raw' and in fact triangles
-    // res["ham_area_old"] = area_mesh_tris_idx(verts_opt, n_faces);
-    res[j_ham_area] = area_mesh_tris_idx_geos(verts_opt, n_faces);
+    // preserve calculated area
+    if (ham_mesh.contains(j_ham_area)) {
+        res[j_ham_area] = ham_mesh[j_ham_area];
+    }
 
     if (verts_raw != verts_opt) {
         // save 'verts_raw' only if they differ from the optimized version
@@ -84,6 +97,16 @@ json calc_opt_ham_mesh(const json& ham_mesh)
     res[j_faces_opt] = faces_opt;
 
     return res;
+}
+
+//  Calculate optimized HAM mesh topology
+double calc_ham_area(const json& ham_mesh)
+{
+    // resolve or rebuild verts and faces from collected data
+    const auto& [verts_raw, faces_raw, faces_raw_computed]
+        = calc_resolve_verts_and_faces(ham_mesh);
+
+    return area_mesh_tris_idx_geos(verts_raw, faces_raw);
 }
 
 //  Calculate partial FOVs for the projection (new version).
@@ -213,6 +236,7 @@ json calc_geometry(const json& jd)
         // calculate optimized HAM mesh values
         if (!ham_mesh[neye].is_null()) {
             ham_mesh[neye] = calc_opt_ham_mesh(ham_mesh[neye]);
+            ham_mesh[neye][j_ham_area] = calc_ham_area(ham_mesh[neye]);
         }
 
         // build eye FOV points only if the eye FOV is rotated

@@ -16,8 +16,14 @@
 
 //  functions
 //------------------------------------------------------------------------------
+//  load or build verts and faces from recorded data
+std::tuple<harray2d_t, hfaces_t, bool> calc_resolve_verts_and_faces(const json& ham_mesh);
+
 //  Calculate optimized HAM mesh topology
 json calc_opt_ham_mesh(const json& ham_mesh);
+
+//  Calculate HAM area
+double calc_ham_area(const json& ham_mesh);
 
 //  Calculate partial FOVs for the projection (new version).
 json calc_fov(const json& raw, const json& mesh, const harray2d_t* rot = nullptr);

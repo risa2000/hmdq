@@ -12,6 +12,7 @@
 #include "calcview.h"
 #include "except.h"
 #include "jkeys.h"
+#include "jtools.h"
 #include "misc.h"
 #include "verhlp.h"
 
@@ -115,7 +116,7 @@ std::vector<json*> collect_geoms(json& jd)
     std::vector<json*> geoms;
     if (jd.contains(j_openvr)) {
         json& jd_openvr = jd[j_openvr];
-        if (jd_openvr.contains(j_geometry)) {
+        if (jd_openvr.contains(j_geometry) && !has_error(jd_openvr[j_geometry])) {
             geoms.push_back(&jd_openvr[j_geometry]);
         }
     }
@@ -123,7 +124,8 @@ std::vector<json*> collect_geoms(json& jd)
         json& jd_oculus = jd[j_oculus];
         if (jd_oculus.contains(j_geometry)) {
             for (const auto& fov_id : {j_default_fov, j_max_fov}) {
-                if (jd_oculus[j_geometry].contains(fov_id)) {
+                if (jd_oculus[j_geometry].contains(fov_id)
+                    && !has_error(jd_oculus[j_geometry][fov_id])) {
                     geoms.push_back(&jd_oculus[j_geometry][fov_id]);
                 }
             }
@@ -142,14 +144,21 @@ void fix_tris_opt(json& jd)
             for (const auto& neye : {j_leye, j_reye}) {
                 if ((*g)[j_ham_mesh].contains(neye)
                     && !(*g)[j_ham_mesh][neye].is_null()) {
-                    json& hm_eye = (*g)[j_ham_mesh][neye];
-                    if (hm_eye.contains(j_tris_opt)) {
-                        hm_eye[j_faces_raw] = std::move(hm_eye[j_tris_opt]);
-                        hm_eye.erase(j_tris_opt);
+                    json& ham_eye = (*g)[j_ham_mesh][neye];
+                    bool recalc{};
+                    if (ham_eye.contains(j_tris_opt)) {
+                        ham_eye[j_faces_raw] = std::move(ham_eye[j_tris_opt]);
+                        ham_eye.erase(j_tris_opt);
+                        recalc = recalc || true;
                     }
-                    if (hm_eye.contains(j_verts_opt) && !hm_eye.contains(j_verts_raw)) {
-                        hm_eye[j_verts_raw] = std::move(hm_eye[j_verts_opt]);
-                        hm_eye.erase(j_verts_opt);
+                    if (ham_eye.contains(j_verts_opt) && !ham_eye.contains(j_verts_raw)) {
+                        ham_eye[j_verts_raw] = std::move(ham_eye[j_verts_opt]);
+                        ham_eye.erase(j_verts_opt);
+                        recalc = recalc || true;
+                    }
+                    // calculate optimized HAM mesh values
+                    if (recalc) {
+                        (*g)[j_ham_mesh][neye] = calc_opt_ham_mesh(ham_eye);
                     }
                 }
             }
@@ -171,7 +180,7 @@ void fix_fov_algo(json& jd)
     }
 }
 
-bool fix_ham_algo(json& jd)
+bool fix_ham_area_algo(json& jd)
 {
     auto geoms = collect_geoms(jd);
     bool fixed{};
@@ -180,11 +189,12 @@ bool fix_ham_algo(json& jd)
             auto& ham_mesh = (*g)[j_ham_mesh];
             for (const auto& neye : {j_leye, j_reye}) {
                 if (!ham_mesh[neye].is_null()) {
-                    auto new_ham = calc_opt_ham_mesh(ham_mesh[neye]);
-                    if (std::abs(new_ham[j_ham_area].get<double>()
-                                 - ham_mesh[neye][j_ham_area].get<double>())
-                        >= HAM_AREA_ROUNDOFF) {
-                        ham_mesh[neye] = new_ham;
+                    auto& ham_eye = ham_mesh[neye];
+                    auto ham_area = calc_ham_area(ham_eye);
+                    if (!ham_eye.contains(j_ham_area)
+                        || std::abs(ham_area - ham_eye[j_ham_area].get<double>())
+                            >= HAM_AREA_ROUNDOFF) {
+                        ham_eye[j_ham_area] = ham_area;
                         fixed = true;
                     }
                 }
@@ -241,7 +251,8 @@ bool apply_all_relevant_fixes(json& jd)
     //  recalculate HAM area using a new algo which honors HAM out of (0,0), (1,1)
     //  rectangle.
     if (comp_ver(hmdx_ver, PROG_VER_NEW_HAM_ALGO) < 0) {
-        fixed = fixed || fix_ham_algo(jd);
+        auto local = fix_ham_area_algo(jd);
+        fixed = local || fixed;
     }
     // add 'hmdv_ver' into misc, if some change was made
     if (fixed) {

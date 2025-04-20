@@ -58,6 +58,7 @@ inline bool has_error(const json& jd)
 //  Return the error
 inline json get_error(const json& jd)
 {
+    HMDQ_ASSERT(jd.contains(ERROR_PREFIX));
     return jd.at(ERROR_PREFIX);
 }
 
