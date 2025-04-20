@@ -39,6 +39,11 @@ project (hmdq_tools
 # ============
 option (BUILD_TESTS "Build optional unit tests (needs Catch2 lib)" ON)
 
+if (BUILD_TESTS)
+    include (CTest)
+    include (Catch)
+endif (BUILD_TESTS)
+
 add_subdirectory (src)
 
 # Install
