@@ -10,7 +10,9 @@
  ******************************************************************************/
 
 #include "gitversion.h"
+#include "hmdv_misc.h"
 #include "misc.h"
+
 #include <common/config.h>
 #include <common/except.h>
 #include <common/fmthlp.h>
@@ -68,10 +70,10 @@ void print_info(int ind = 0, int ts = 0)
     const auto sf = ind * ts;
     const auto sf1 = (ind + 1) * ts;
     constexpr int tf1 = 8;
-    iprint(sf, "{:s} version {:s} - {:s}\n", PROG_NAME, PROG_VERSION, PROG_DESCRIPTION);
+    iprint(sf, "{:s} version {:s} - {:s}\n", HMDV_NAME, HMDV_VERSION, HMDV_DESCRIPTION);
     fmt::print("\n");
     iprint(sf, "build info:\n");
-    iprint(sf1, "{:>{}s}: {:s}\n", "git repo", tf1, PROG_URL);
+    iprint(sf1, "{:>{}s}: {:s}\n", "git repo", tf1, HMDV_URL);
     iprint(sf1, "{:>{}s}: {:s}\n", "git ver.", tf1, GIT_REPO_VERSION);
     iprint(sf1, "{:>{}s}: {:s} version {:s} ({:s})\n", "compiler", tf1, CXX_COMPILER_ID,
            CXX_COMPILER_VERSION, CXX_COMPILER_ARCHITECTURE_ID);
@@ -124,7 +126,7 @@ int run_verify(const std::filesystem::path& in_json, int verb, int ind, int ts)
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     // print the execution header
-    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, verb, ind, ts);
+    print_header(HMDV_NAME, HMDV_VERSION, HMDV_DESCRIPTION, verb, ind, ts);
     if (verb >= vdef)
         fmt::print("\n");
 
@@ -154,7 +156,7 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     const auto vdef = g_cfg[j_verbosity][j_default].get<int>();
 
     // print the execution header
-    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, opts.verbosity, ind, ts);
+    print_header(HMDV_NAME, HMDV_VERSION, HMDV_DESCRIPTION, opts.verbosity, ind, ts);
     if (opts.verbosity >= vdef)
         fmt::print("\n");
 
@@ -348,11 +350,11 @@ int main(int argc, char* argv[])
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
-                           usage_lines(cli, PROG_NAME).str(), documentation(cli).str());
+                           usage_lines(cli, HMDV_NAME).str(), documentation(cli).str());
                 break;
         }
     } else {
-        fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
+        fmt::print("Usage:\n{:s}\n", usage_lines(cli, HMDV_NAME).str());
         res = 1;
     }
     return res;

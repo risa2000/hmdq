@@ -10,7 +10,9 @@
  ******************************************************************************/
 
 #include "gitversion.h"
+#include "hmdq_misc.h"
 #include "misc.h"
+
 #include <common/config.h>
 #include <common/except.h>
 #include <common/fmthlp.h>
@@ -79,10 +81,10 @@ void print_info(int ind = 0, int ts = 0)
     const auto sf = ind * ts;
     const auto sf1 = (ind + 1) * ts;
     constexpr int tf1 = 8;
-    iprint(sf, "{:s} version {:s} - {:s}\n", PROG_NAME, PROG_VERSION, PROG_DESCRIPTION);
+    iprint(sf, "{:s} version {:s} - {:s}\n", HMDQ_NAME, HMDQ_VERSION, HMDQ_DESCRIPTION);
     fmt::print("\n");
     iprint(sf, "build info:\n");
-    iprint(sf1, "{:>{}s}: {:s}\n", "git repo", tf1, PROG_URL);
+    iprint(sf1, "{:>{}s}: {:s}\n", "git repo", tf1, HMDQ_URL);
     iprint(sf1, "{:>{}s}: {:s}\n", "git ver.", tf1, GIT_REPO_VERSION);
     iprint(sf1, "{:>{}s}: {:s} version {:s} ({:s})\n", "compiler", tf1, CXX_COMPILER_ID,
            CXX_COMPILER_VERSION, CXX_COMPILER_ARCHITECTURE_ID);
@@ -126,7 +128,7 @@ json get_misc()
 
     json res;
     res[j_time] = fmt::format("{:%F %T}", tm);
-    res[j_hmdq_ver] = PROG_VERSION;
+    res[j_hmdq_ver] = HMDQ_VERSION;
     res[j_log_ver] = LOG_VERSION;
     res[j_os_ver] = get_os_ver();
     return res;
@@ -158,7 +160,7 @@ int run(const print_options& opts, const std::filesystem::path& api_json,
     const auto verr = g_cfg[j_verbosity][j_error].get<int>();
 
     // print the execution header
-    print_header(PROG_NAME, PROG_VERSION, PROG_DESCRIPTION, opts.verbosity, ind, ts);
+    print_header(HMDQ_NAME, HMDQ_VERSION, HMDQ_DESCRIPTION, opts.verbosity, ind, ts);
     if (opts.verbosity >= vdef)
         fmt::print("\n");
 
@@ -380,7 +382,7 @@ int main(int argc, char* argv[])
                 break;
             case mode::help:
                 fmt::print("Usage:\n{:s}\nOptions:\n{:s}\n",
-                           usage_lines(cli, PROG_NAME).str(), documentation(cli).str());
+                           usage_lines(cli, HMDQ_NAME).str(), documentation(cli).str());
                 break;
         }
     } else {
@@ -389,7 +391,7 @@ int main(int argc, char* argv[])
             res = run_wrapper(opts, utf8_to_path(api_json), utf8_to_path(out_json), ind,
                               ts);
         } else {
-            fmt::print("Usage:\n{:s}\n", usage_lines(cli, PROG_NAME).str());
+            fmt::print("Usage:\n{:s}\n", usage_lines(cli, HMDQ_NAME).str());
             res = 1;
         }
     }

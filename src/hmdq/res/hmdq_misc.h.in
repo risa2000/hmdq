@@ -1,0 +1,19 @@
+/******************************************************************************
+ * HMDQ Tools - tools for VR headsets and other hardware introspection        *
+ * https://github.com/risa2000/hmdq                                           *
+ *                                                                            *
+ * Copyright (c) 2025, Richard Musil. All rights reserved.                    *
+ *                                                                            *
+ * This source code is licensed under the BSD 3-Clause "New" or "Revised"     *
+ * License found in the LICENSE file in the root directory of this project.   *
+ * SPDX-License-Identifier: BSD-3-Clause                                      *
+ ******************************************************************************/
+
+// hmdq details
+constexpr int HMDQ_VERSION_MAJOR = @PROJECT_VERSION_MAJOR@;
+constexpr int HMDQ_VERSION_MINOR = @PROJECT_VERSION_MINOR@;
+constexpr int HMDQ_VERSION_PATCH = @PROJECT_VERSION_PATCH@;
+constexpr const char* HMDQ_VERSION = "@PROJECT_VERSION@";
+constexpr const char* HMDQ_DESCRIPTION = "@PROJECT_DESCRIPTION@";
+constexpr const char* HMDQ_URL = "@PROJECT_HOMEPAGE_URL@";
+constexpr const char* HMDQ_NAME = "@PROJECT_NAME@";

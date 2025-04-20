@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "misc.h"
 #include <common/calcview.h>
 #include <common/config.h>
 #include <common/except.h>

@@ -9,7 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                      *
  ******************************************************************************/
 
-#include "misc.h"
+#include "hmdv_misc.h"
+
 #include <common/calcview.h>
 #include <common/except.h>
 #include <common/jkeys.h>
@@ -253,7 +254,7 @@ bool apply_all_relevant_fixes(json& jd)
     }
     // add 'hmdv_ver' into misc, if some change was made
     if (fixed) {
-        jd[j_misc][j_hmdv_ver] = PROG_VERSION;
+        jd[j_misc][j_hmdv_ver] = HMDV_VERSION;
     }
     return fixed;
 }

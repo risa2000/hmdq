@@ -59,6 +59,12 @@ configure_file (
     ${CMAKE_CURRENT_BINARY_DIR}/hmdq.rc
     )
 
+# prcess tool info
+configure_file (
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/hmdq_misc.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdq_misc.h
+    )
+
 # Targets
 # ============
 set (hmdq_SOURCES
@@ -72,8 +78,8 @@ set (hmdq_SOURCES
 set (EXT_LIBS botan openvr_api64)
 
 # Add sources to `hmdq` executable.
-add_executable (hmdq)
-target_sources (hmdq PRIVATE ${hmdq_SOURCES})
+add_executable (hmdq ${hmdq_SOURCES})
+target_include_directories (hmdq PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries (hmdq PRIVATE build_proxy hmdq_common)
 target_link_libraries (hmdq PRIVATE version.lib)

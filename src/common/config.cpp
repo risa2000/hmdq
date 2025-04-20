@@ -10,6 +10,7 @@
  ******************************************************************************/
 
 #include "misc.h"
+
 #include <common/config.h>
 #include <common/jkeys.h>
 #include <common/json_proxy.h>
@@ -112,7 +113,7 @@ static json build_meta()
 {
     json res;
     res[j_cfg_ver] = CFG_VERSION;
-    res[j_prog_ver] = PROG_VERSION;
+    res[j_prog_ver] = TOOLS_VERSION;
     return res;
 }
 

@@ -52,6 +52,12 @@ configure_file (
     ${CMAKE_CURRENT_BINARY_DIR}/hmdv.rc
     )
 
+# prcess tool info
+configure_file (
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/hmdv_misc.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/hmdv_misc.h
+    )
+
 # Targets
 # ============
 set (hmdv_SOURCES
@@ -64,8 +70,8 @@ set (hmdv_SOURCES
 set (EXT_LIBS botan)
 
 # Add sources to `hmdv` executable.
-add_executable (hmdv)
-target_sources (hmdv PRIVATE ${hmdv_SOURCES})
+add_executable (hmdv ${hmdv_SOURCES})
+target_include_directories (hmdv PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries (hmdv PRIVATE build_proxy hmdq_common)
 target_link_libraries (hmdv PRIVATE version.lib)
