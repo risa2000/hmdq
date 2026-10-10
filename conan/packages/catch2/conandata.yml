@@ -1,4 +1,7 @@
 sources:
+  "3.16.1":
+    url: "https://github.com/catchorg/Catch2/archive/v3.16.1.tar.gz"
+    sha256: "d16bd1b8b2364918bd472cb216394acb93bde6784890df0d91bccfb3f28d777d"
   "3.8.1":
     url: "https://github.com/catchorg/Catch2/archive/v3.8.1.tar.gz"
     sha256: "18b3f70ac80fccc340d8c6ff0f339b2ae64944782f8d2fca2bd705cf47cadb79"

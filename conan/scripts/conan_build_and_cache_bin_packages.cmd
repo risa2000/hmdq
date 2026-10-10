@@ -1,4 +1,37 @@
-conan create -pr:h=..\..\profiles\host_msvc_v193_crtdll.txt -pr:b=..\..\profiles\build_msvc_v193_crtdll.txt --test-folder None -s compiler.runtime=static -s build_type=Debug %RECIPE% %PACKAGE%/%VERSION%@
-conan create -pr:h=..\..\profiles\host_msvc_v193_crtdll.txt -pr:b=..\..\profiles\build_msvc_v193_crtdll.txt --test-folder None -s compiler.runtime=static -s build_type=Release %RECIPE% %PACKAGE%/%VERSION%@
-conan create -pr:h=..\..\profiles\host_msvc_v193_crtdll.txt -pr:b=..\..\profiles\build_msvc_v193_crtdll.txt --test-folder None -s compiler.runtime=dynamic -s build_type=Debug %RECIPE% %PACKAGE%/%VERSION%@
-conan create -pr:h=..\..\profiles\host_msvc_v193_crtdll.txt -pr:b=..\..\profiles\build_msvc_v193_crtdll.txt --test-folder None -s compiler.runtime=dynamic -s build_type=Release %RECIPE% %PACKAGE%/%VERSION%@
+SET PROFILES_PATH=..\..\profiles
+
+conan create ^
+    -pr:h=%PROFILES_PATH%\host_msvc_crtdll.txt ^
+    -pr:b=%PROFILES_PATH%\build_msvc_crtdll.txt ^
+    -s:h compiler.runtime=static ^
+    -s:h build_type=Debug ^
+    --name=%PACKAGE% ^
+    --version=%VERSION% ^
+    %RECIPE%
+
+conan create ^
+    -pr:h=%PROFILES_PATH%\host_msvc_crtdll.txt ^
+    -pr:b=%PROFILES_PATH%\build_msvc_crtdll.txt ^
+    -s:h compiler.runtime=static ^
+    -s:h build_type=Release ^
+    --name=%PACKAGE% ^
+    --version=%VERSION% ^
+    %RECIPE%
+
+conan create ^
+    -pr:h=%PROFILES_PATH%\host_msvc_crtdll.txt ^
+    -pr:b=%PROFILES_PATH%\build_msvc_crtdll.txt ^
+    -s:h compiler.runtime=dynamic ^
+    -s:h build_type=Debug ^
+    --name=%PACKAGE% ^
+    --version=%VERSION% ^
+    %RECIPE%
+
+conan create ^
+    -pr:h=%PROFILES_PATH%\host_msvc_crtdll.txt ^
+    -pr:b=%PROFILES_PATH%\build_msvc_crtdll.txt ^
+    -s:h compiler.runtime=dynamic ^
+    -s:h build_type=Release ^
+    --name=%PACKAGE% ^
+    --version=%VERSION% ^
+    %RECIPE%

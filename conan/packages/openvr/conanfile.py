@@ -1,73 +1,129 @@
+import os
+
 from conan import ConanFile
-from conan.tools.layout import cmake_layout
-from conan.tools.files import apply_conandata_patches, get, collect_libs
-from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps
+from conan.errors import ConanInvalidConfiguration, ConanException
+from conan.tools.apple import is_apple_os
+from conan.tools.build import check_min_cppstd, stdcpp_library
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get, replace_in_file, rmdir, \
+    save, mkdir, collect_libs
+from conan.tools.scm import Version
 
-required_conan_version = ">=1.43.0"
+required_conan_version = ">=2.1"
 
-class OpenVrConan(ConanFile):
+
+class OpenvrConan(ConanFile):
     name = "openvr"
-    description = "OpenVR SDK"
+    description = (
+        "API and runtime that allows access to VR hardware from applications "
+        "have specific knowledge of the hardware they are targeting."
+    )
     license = "BSD-3-Clause"
-    topics = ("openvr", "vr")
+    url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://github.com/ValveSoftware/openvr"
-    url = "https://github.com/ValveSoftware/openvr"
+    topics = ("vr", "virtual reality")
 
+    package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
+        "fPIC": [True, False],
     }
     default_options = {
         "shared": False,
+        "fPIC": True,
     }
 
-    generators = "CMakeToolchain"
-    exports_sources = ["patches/**"]
+    def export_sources(self):
+        export_conandata_patches(self)
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+
+    def configure(self):
+        if self.options.shared:
+            self.options.rm_safe("fPIC")
 
     def layout(self):
-        cmake_layout(self, src_folder=f"{self.name}-{self.version}")
+        cmake_layout(self, src_folder="src")
+
+    def requirements(self):
+        ## self.requires("jsoncpp/1.9.5", transitive_headers=True, transitive_libs=True)
+        pass
+
+    def validate(self):
+        if self.settings.compiler.cppstd:
+            check_min_cppstd(self, 11)
+        if self.settings.compiler == "gcc" and Version(self.settings.compiler.version) < "5":
+            raise ConanInvalidConfiguration(
+                f"OpenVR can't be compiled by {self.settings.compiler} {self.settings.compiler.version}"
+            )
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
+
+    def generate(self):
+        tc = CMakeToolchain(self)
+        tc.cache_variables["BUILD_SHARED_LIBS"] = self.options.shared
+        tc.cache_variables["BUILD_UNIVERSAL"] = False
+        # Let Conan handle the stdlib setting, even if we are using libc++
+        tc.cache_variables["USE_LIBCXX"] = False
+        tc.cache_variables["CMAKE_POLICY_VERSION_MINIMUM"] = "3.5" # CMake 4 support
+        ## if Version(self.version) > "1.16.8": # pylint: disable=conan-unreachable-upper-version
+        ##     raise ConanException("CMAKE_POLICY_VERSION_MINIMUM hardcoded to 3.5, check if new version supports CMake 4")
+        tc.generate()
+        tc = CMakeDeps(self)
+        tc.generate()
+
+    def _patch_sources(self):
         apply_conandata_patches(self)
+        # Honor fPIC=False
+        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"), "-fPIC", "")
+        # Unvendor jsoncpp
+        ## replace_in_file(self, os.path.join(self.source_folder, "src", "CMakeLists.txt"), "jsoncpp.cpp", "")
+        ## rmdir(self, os.path.join(self.source_folder, "src", "json"))
+        ## # Add jsoncpp dependency from Conan
+        ## save(self, os.path.join(self.source_folder, "src", "CMakeLists.txt"),
+        ##      "find_package(jsoncpp REQUIRED CONFIG)\n"
+        ##      "target_link_libraries(${LIBNAME} JsonCpp::JsonCpp)",
+        ##      append=True)
 
     def build(self):
+        self._patch_sources()
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
 
-    def generate(self):
-        toolchain = CMakeToolchain(self)
-        toolchain.generate()
-
-        deps = CMakeDeps(self)
-        deps.generate()
-
-    def package_id(self):
-        del self.info.settings.compiler.cppstd
+    @property
+    def _lib_name(self):
+        if self.settings.os == "Windows" and self.settings.arch == "x86_64":
+            return "openvr_api64"
+        return "openvr_api"
 
     def package(self):
-        self.copy("LICENSE", dst="licenses", src=self.folders.source)
+        copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
         cmake = CMake(self)
         cmake.install()
+        ##if self.settings.os == "Windows" and self.options.shared:
+        ##    mkdir(self, os.path.join(self.package_folder, "bin"))
+        ##    os.rename(os.path.join(self.package_folder, "lib", f"{self._lib_name}.dll"),
+        ##              os.path.join(self.package_folder, "bin", f"{self._lib_name}.dll"))
+        rmdir(self, os.path.join(self.package_folder, "share"))
 
     def package_info(self):
-        self.cpp_info.names["generator_name"] = "openvr"
-        self.cpp_info.includedirs = ['include']  # Ordered list of include paths
-        self.cpp_info.libs = collect_libs(self) # The libs to link against
-        self.cpp_info.system_libs = []  # System libs to link against
-        self.cpp_info.libdirs = ['lib']  # Directories where libraries can be found
-        self.cpp_info.resdirs = ['res']  # Directories where resources, data, etc. can be found
-        self.cpp_info.bindirs = ['bin']  # Directories where executables and shared libs can be found
-        self.cpp_info.srcdirs = []  # Directories where sources can be found (debugging, reusing sources)
-        self.cpp_info.build_modules = {}  # Build system utility module files
+        self.cpp_info.set_property("pkg_config_name", "openvr")
+        self.cpp_info.libs = collect_libs(self)
+        self.cpp_info.includedirs.append(os.path.join("include", "openvr"))
+
         if not self.options.shared:
-            self.cpp_info.defines = ['OPENVR_BUILD_STATIC']  # preprocessor definitions
-        else:
-            self.cpp_info.defines = []  # preprocessor definitions
-        self.cpp_info.cflags = []  # pure C flags
-        self.cpp_info.cxxflags = []  # C++ compilation flags
-        self.cpp_info.sharedlinkflags = []  # linker flags
-        self.cpp_info.exelinkflags = []  # linker flags
-        self.cpp_info.components = {} # Dictionary with the different components a package may have
-        self.cpp_info.requires = []  # List of components from requirements
+            self.cpp_info.defines.append("OPENVR_BUILD_STATIC")
+            libcxx = stdcpp_library(self)
+            if libcxx:
+                self.cpp_info.system_libs.append(libcxx)
+
+        if self.settings.os in ["Linux", "FreeBSD"]:
+            self.cpp_info.system_libs.append("dl")
+
+        if is_apple_os(self):
+            self.cpp_info.frameworks.extend(["Foundation", "CoreFoundation"])

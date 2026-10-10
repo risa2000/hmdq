@@ -7,6 +7,7 @@ from datetime import datetime
 
 from conan import ConanFile
 from conan.tools.scm import Git
+from conan.tools.files import copy
 
 required_conan_version = ">=1.51.0"
 
@@ -54,8 +55,8 @@ class ClippConan(ConanFile):
         self.folders.source = self.branch
 
     def package(self):
-        self.copy("LICENSE", src=self.folders.source, dst="licenses")
-        self.copy("*.h", dst="include/clipp", src=os.path.join(self.folders.source, "include"))
+        copy(self, "LICENSE", os.path.join(self.source_folder, "master"), os.path.join(self.package_folder, "licenses"))
+        copy(self, "*.h", os.path.join(self.source_folder, "master/include"), os.path.join(self.package_folder, "include/clipp"))
 
     def package_id(self):
         self.info.clear()

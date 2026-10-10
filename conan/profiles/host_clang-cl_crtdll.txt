@@ -1,0 +1,12 @@
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=195
+compiler.runtime=dynamic
+compiler.cppstd=20
+build_type=Release
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:compiler_executables = {"c": "clang-cl", "cpp": "clang-cl"}

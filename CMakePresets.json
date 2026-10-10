@@ -77,8 +77,7 @@
       "displayName": "x64-xClang-Static-Debug",
       "inherits": ["clang-cl", "generic-base", "arch_x64"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/out/conan/x64-Static-Debug/conan_toolchain.cmake"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -86,8 +85,7 @@
       "displayName": "x64-xClang-Static-Release",
       "inherits": ["clang-cl", "generic-base", "arch_x64"],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/out/conan/x64-Static-Release/conan_toolchain.cmake"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],

@@ -1,4 +1,7 @@
 sources:
+  "12.2.0":
+    url: "https://github.com/fmtlib/fmt/releases/download/12.2.0/fmt-12.2.0.zip"
+    sha256: "a2f4a8d51178f954e4c339007f77edd76ba0cb2e36f87a48e5a5403d9be5878f"
   "11.1.4":
     url: "https://github.com/fmtlib/fmt/releases/download/11.1.4/fmt-11.1.4.zip"
     sha256: "49b039601196e1a765e81c5c9a05a61ed3d33f23b3961323d7322e4fe213d3e6"

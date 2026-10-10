@@ -1,13 +1,13 @@
 [requires]
+botan/3.13.0
+catch2/3.16.1
 clipp/cci.20230831
-fmt/11.1.4
-nlohmann_json/3.12.0
-xtensor/0.25.0
 eigen/3.4.0
-openvr/2.5.1
-catch2/3.8.1
-botan/3.7.1
-geos/3.13.1
+fmt/12.2.0
+geos/3.15.0
+nlohmann_json/3.12.0
+openvr/2.15.6
+xtensor/0.25.0
 
 [generators]
 CMakeToolchain
