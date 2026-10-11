@@ -1,5 +1,14 @@
 # HMDQ Tools Change Log
 
+## 2.2.2 - October 11, 2026
+
+Maintenance release:
+
+- Bumped dependencies versions (except xtensor and LibOVR).
+- Migrated all conan local recipes and build scripts to conan2.
+- Rebuilt everything with VS 2026 (insider) C++.
+- Updated OpenVR openvr_api.json to match the latest version of OpenVR SDK (2.15.6) used in the code.
+
 ## 2.2.1 - April 20, 2024
 
 Cosmetic:
