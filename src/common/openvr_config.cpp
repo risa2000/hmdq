@@ -65,7 +65,9 @@ static const json ANON_PROPS = {
     "Prop_AllWirelessDongleDescriptions_String",
     "Prop_ConnectedWirelessDongle_String",
     "Prop_Firmware_ProgrammingTarget_String",
-    "Prop_RegisteredDeviceType_String"
+    "Prop_RegisteredDeviceType_String",
+    "Prop_ManufacturerSerialNumber_String",
+    "Prop_ComputedSerialNumber_String"
 };
 // clang-format on
 

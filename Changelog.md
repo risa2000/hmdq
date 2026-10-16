@@ -1,5 +1,12 @@
 # HMDQ Tools Change Log
 
+## 2.2.3 - October 16, 2026
+
+Minor update:
+
+- Added `Prop_ManufacturerSerialNumber_String` and `Prop_ComputedSerialNumber_String` to the list of anonymized properties in OpenVR.
+- Note: When replacing just the exe file, delete `hmdq.conf.json` to make sure the new settings are used.
+
 ## 2.2.2 - October 11, 2026
 
 Maintenance release:
